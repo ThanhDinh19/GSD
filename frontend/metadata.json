@@ -1,0 +1,6 @@
+{
+  "name": "IE Planning System",
+  "description": "Industrial engineering, SAM database, line balancing and routing planning for apparel manufacturing in high density.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
