@@ -1,0 +1,11 @@
+const express = require('express');
+const machineEquipmentController = require('../controllers/machineEquipment.controller');
+
+const router = express.Router();
+
+router.get('/', machineEquipmentController.getMachineEquipments);
+router.post('/', machineEquipmentController.createMachineEquipment);
+router.put('/:id', machineEquipmentController.updateMachineEquipment);
+router.delete('/:id', machineEquipmentController.deactivateMachineEquipment);
+
+module.exports = router;

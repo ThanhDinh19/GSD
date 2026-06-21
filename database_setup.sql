@@ -119,3 +119,79 @@ BEGIN
     PRINT 'Da nap du lieu cau hinh mac dinh cho bang mapping_configs';
 END
 GO
+
+
+
+
+
+
+-- 8. Tạo bảng master_status
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='master_status' AND xtype='U')
+BEGIN
+    CREATE TABLE master_status (
+        id TINYINT PRIMARY KEY,
+        status_code NVARCHAR(20) NOT NULL UNIQUE,
+        status_name NVARCHAR(100) NOT NULL
+    );
+
+    PRINT 'Da tao bang master_status';
+END
+ELSE
+BEGIN
+    PRINT 'Bang master_status da ton tai';
+END
+GO
+
+-- 9. Seed master_status
+IF NOT EXISTS (SELECT 1 FROM master_status WHERE id = 0)
+BEGIN
+    INSERT INTO master_status (id, status_code, status_name)
+    VALUES (0, N'ACTIVE', N'Còn sử dụng');
+END
+GO
+
+IF NOT EXISTS (SELECT 1 FROM master_status WHERE id = 1)
+BEGIN
+    INSERT INTO master_status (id, status_code, status_name)
+    VALUES (1, N'INACTIVE', N'Không sử dụng');
+END
+GO
+
+-- 10. Tạo bảng clusters
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='clusters' AND xtype='U')
+BEGIN
+    CREATE TABLE clusters (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+        cluster_code NVARCHAR(50) NOT NULL UNIQUE,
+        cluster_name NVARCHAR(255) NOT NULL,
+        status_id TINYINT NOT NULL DEFAULT 0,
+        created_at DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+
+        CONSTRAINT FK_clusters_status 
+            FOREIGN KEY (status_id) REFERENCES master_status(id)
+    );
+
+    PRINT 'Da tao bang clusters';
+END
+ELSE
+BEGIN
+    PRINT 'Bang clusters da ton tai';
+END
+GO
+
+
+
+select  * from master_status;
+
+select * from dbo.clusters;
+
+select * from dbo.gsd_codes;
+
+select * from dbo.sources;
+
+alter table sources 
+alter column source_code NVARCHAR(255) NOT NULL;
+
+
+select * from gsd_analysis_details;
+select * from gsd_analysis_headers;

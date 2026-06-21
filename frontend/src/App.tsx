@@ -9,6 +9,9 @@ import CapacityPlanningView from './components/CapacityPlanningView';
 import OutputTrackingView from './components/OutputTrackingView';
 import ExcelRoutingView from './components/ExcelRoutingView';
 import ExcelEmployeeView from './components/ExcelEmployeeView';
+import MasterDataView from './components/MasterDataView';
+import GsdAnalysisView from './components/GsdAnalysisView';
+
 
 // Import Syncfusion Spreadsheet CSS files
 import "@syncfusion/ej2-base/styles/material.css";
@@ -20,7 +23,7 @@ import "@syncfusion/ej2-navigations/styles/material.css";
 import "@syncfusion/ej2-popups/styles/material.css";
 import "@syncfusion/ej2-dropdowns/styles/material.css";
 import "@syncfusion/ej2-grids/styles/material.css";
-import "@syncfusion/ej2-react-spreadsheet/styles/material.css";
+import "@syncfusion/ej2-spreadsheet/styles/material.css";
 
 const getBackendUrl = () => {
   const metaEnv = (import.meta as any).env;
@@ -147,13 +150,11 @@ export default function App() {
 
   return (
     <div className="flex min-h-screen bg-[#f0f2f5] text-slate-800 font-sans">
-      
+
       {/* Sidebar navigation panel */}
-      <aside className={`bg-[#0d47a1] text-white flex flex-col fixed h-full z-50 transition-all duration-300 ease-in-out ${
-        isSidebarCollapsed ? 'w-20' : 'w-64'
-      } ${
-        mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-      }`}>
+      <aside className={`bg-[#0d47a1] text-white flex flex-col fixed h-full z-50 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-20' : 'w-64'
+        } ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
+        }`}>
         {/* Brand identity banner */}
         <div className="p-5 border-b border-blue-800/60 flex items-center justify-between relative">
           <div className="flex items-center gap-3 overflow-hidden">
@@ -169,7 +170,7 @@ export default function App() {
           </div>
 
           {/* Toggle Button */}
-          <button 
+          <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
             className="hidden md:flex absolute -right-3 top-6 bg-white text-blue-900 border border-slate-200 rounded-full w-6 h-6 items-center justify-center z-50 hover:bg-slate-100 shadow-sm transition-transform cursor-pointer"
           >
@@ -181,7 +182,7 @@ export default function App() {
 
         {/* Modules navigation list */}
         <nav className="flex-1 py-4 overflow-y-auto text-xs space-y-5 scrollbar-thin select-none">
-          
+
           <div>
             <h3 className={`px-5 text-[9px] font-extrabold text-blue-300 uppercase tracking-widest mb-1.5 opacity-50 whitespace-nowrap ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
               Chức năng chính
@@ -190,15 +191,28 @@ export default function App() {
               <li>
                 <button
                   onClick={() => { setActiveTab('gsd-routing'); setMobileMenuOpen(false); }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${
-                    activeTab === 'gsd-routing' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
-                  }`}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'gsd-routing' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
                   title="GSD / SAM Routing"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
                   </svg>
                   {!isSidebarCollapsed && <span className="whitespace-nowrap">GSD / SAM Routing</span>}
+                </button>
+
+                <button
+                  onClick={() => { setActiveTab('gsd-analysis'); setMobileMenuOpen(false); }}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'gsd-analysis'
+                      ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                      : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
+                  title="Phân tích công đoạn"
+                >
+                  <span className="h-4 w-4 shrink-0">∑</span>
+                  {!isSidebarCollapsed && (
+                    <span className="whitespace-nowrap">Phân tích công đoạn</span>
+                  )}
                 </button>
               </li>
             </ul>
@@ -212,9 +226,8 @@ export default function App() {
               <li>
                 <button
                   onClick={() => { setActiveTab('sam-db'); setMobileMenuOpen(false); }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${
-                    activeTab === 'sam-db' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
-                  }`}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'sam-db' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
                   title="Style & SAM Database"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -226,9 +239,8 @@ export default function App() {
               <li>
                 <button
                   onClick={() => { setActiveTab('line-balancing'); setMobileMenuOpen(false); }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${
-                    activeTab === 'line-balancing' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
-                  }`}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'line-balancing' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
                   title="Châm Cân Bằng Chuyền (LOB)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -240,9 +252,8 @@ export default function App() {
               <li>
                 <button
                   onClick={() => { setActiveTab('manpower'); setMobileMenuOpen(false); }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${
-                    activeTab === 'manpower' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
-                  }`}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'manpower' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
                   title="Nhân Sự & Tay Nghề"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -254,9 +265,8 @@ export default function App() {
               <li>
                 <button
                   onClick={() => { setActiveTab('capacity'); setMobileMenuOpen(false); }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${
-                    activeTab === 'capacity' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
-                  }`}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'capacity' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
                   title="Capacity Planning"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -268,6 +278,46 @@ export default function App() {
             </ul>
           </div>
 
+
+          <div>
+            <h3 className={`px-5 text-[9px] font-extrabold text-blue-300 uppercase tracking-widest mb-1.5 opacity-50 whitespace-nowrap ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
+              Danh mục hệ thống
+            </h3>
+            <ul className="space-y-0.5">
+              <li>
+                <button
+                  onClick={() => { setActiveTab('master-data'); setMobileMenuOpen(false); }}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'master-data'
+                    ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                    : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
+                  title="Danh mục"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+
+                  {!isSidebarCollapsed && (
+                    <span className="whitespace-nowrap">Danh mục</span>
+                  )}
+                </button>
+              </li>
+            </ul>
+          </div>
+
+
+
           <div>
             <h3 className={`px-5 text-[9px] font-extrabold text-blue-300 uppercase tracking-widest mb-1.5 opacity-50 whitespace-nowrap ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
               Nhà xưởng module
@@ -276,9 +326,8 @@ export default function App() {
               <li>
                 <button
                   onClick={() => { setActiveTab('output-tracking'); setMobileMenuOpen(false); }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${
-                    activeTab === 'output-tracking' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
-                  }`}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'output-tracking' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
                   title="Đầu Ra Từng Giờ"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -298,9 +347,8 @@ export default function App() {
               <li>
                 <button
                   onClick={() => { setActiveTab('excel-routing'); setMobileMenuOpen(false); }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${
-                    activeTab === 'excel-routing' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
-                  }`}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'excel-routing' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
                   title="Nhập liệu Routing (Excel)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -312,9 +360,8 @@ export default function App() {
               <li>
                 <button
                   onClick={() => { setActiveTab('excel-manpower'); setMobileMenuOpen(false); }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${
-                    activeTab === 'excel-manpower' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
-                  }`}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'excel-manpower' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
                   title="Nhập liệu Nhân sự (Excel)"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -337,7 +384,7 @@ export default function App() {
 
       {/* Screen Backdrop for mobile sidebar toggler */}
       {mobileMenuOpen && (
-        <div 
+        <div
           onClick={() => setMobileMenuOpen(false)}
           className="fixed inset-0 bg-black/40 z-45 md:hidden"
         ></div>
@@ -345,11 +392,11 @@ export default function App() {
 
       {/* Main Content Arena */}
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
-        
+
         {/* Top Header Navigation */}
         <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40 shadow-sm shrink-0">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="text-slate-500 hover:bg-slate-100 p-2 rounded md:hidden cursor-pointer"
             >
@@ -357,7 +404,7 @@ export default function App() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
-            
+
             <div className="hidden md:flex items-center gap-1.5 text-xs text-slate-400 font-semibold select-none">
               <span>Hệ Thống</span>
               <span>/</span>
@@ -394,7 +441,7 @@ export default function App() {
         {/* Dashboard Main Workspace View Area */}
         <div className={`p-6 flex-1 w-full mx-auto transition-all duration-300 ${isSidebarCollapsed ? 'max-w-full' : 'max-w-7xl'}`}>
           {activeTab === 'gsd-routing' && (
-            <GsdRoutingView 
+            <GsdRoutingView
               currentStyle={currentStyle}
               allStyles={appState.styles}
               onStyleChange={setCurrentStyleCode}
@@ -404,7 +451,7 @@ export default function App() {
           )}
 
           {activeTab === 'sam-db' && (
-            <SamDatabaseView 
+            <SamDatabaseView
               styles={appState.styles}
               onSelectStyle={setCurrentStyleCode}
               onAddStyle={handleAddStyle}
@@ -415,7 +462,7 @@ export default function App() {
           )}
 
           {activeTab === 'line-balancing' && (
-            <LineBalancingView 
+            <LineBalancingView
               currentStyle={currentStyle}
               allWorkers={appState.workers}
               onUpdateStyle={handleUpdateStyle}
@@ -424,7 +471,7 @@ export default function App() {
           )}
 
           {activeTab === 'manpower' && (
-            <ManpowerView 
+            <ManpowerView
               workers={appState.workers}
               onAddWorker={handleAddWorker}
               onUpdateWorker={handleUpdateWorker}
@@ -433,28 +480,36 @@ export default function App() {
           )}
 
           {activeTab === 'capacity' && (
-            <CapacityPlanningView 
+            <CapacityPlanningView
               styles={appState.styles}
               currentStyle={currentStyle}
             />
           )}
 
           {activeTab === 'output-tracking' && (
-            <OutputTrackingView 
+            <OutputTrackingView
               currentStyle={currentStyle}
             />
           )}
 
           {activeTab === 'excel-routing' && (
-            <ExcelRoutingView 
+            <ExcelRoutingView
               onRefreshData={fetchDatabaseData}
             />
           )}
 
           {activeTab === 'excel-manpower' && (
-            <ExcelEmployeeView 
+            <ExcelEmployeeView
               onRefreshData={fetchDatabaseData}
             />
+          )}
+
+          {activeTab === 'master-data' && (
+            <MasterDataView />
+          )}
+
+          {activeTab === 'gsd-analysis' && (
+            <GsdAnalysisView />
           )}
         </div>
 
