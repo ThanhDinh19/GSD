@@ -207,11 +207,11 @@ export default function App() {
                       ? 'bg-[#1e40af] border-r-4 border-white font-bold'
                       : 'hover:bg-blue-800/40 text-blue-100'
                     }`}
-                  title="Phân tích công đoạn"
+                  title="Tổng quan GSD"
                 >
                   <span className="h-4 w-4 shrink-0">∑</span>
                   {!isSidebarCollapsed && (
-                    <span className="whitespace-nowrap">Phân tích công đoạn</span>
+                    <span className="whitespace-nowrap">Tổng quan GSD</span>
                   )}
                 </button>
               </li>

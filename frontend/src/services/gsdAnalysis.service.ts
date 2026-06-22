@@ -1,11 +1,22 @@
 import {
   GsdAnalysisCalculateResult,
   GsdAnalysisPayload,
+  GsdAnalysisSummary,
   SourceActionForAnalysis,
+  GsdAnalysisDetail,
 } from '../types';
 import { request } from './httpClient';
 
 export const gsdAnalysisService = {
+
+  getAnalysisById(id: number) {
+    return request<GsdAnalysisDetail>(`/api/gsd-analysis/${id}`);
+  },
+
+  getAnalyses() {
+    return request<GsdAnalysisSummary[]>('/api/gsd-analysis');
+  },
+
   getSourceActions(sourceId: number) {
     return request<SourceActionForAnalysis[]>(
       `/api/gsd-analysis/source-actions/${sourceId}`

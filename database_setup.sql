@@ -195,3 +195,17 @@ alter column source_code NVARCHAR(255) NOT NULL;
 
 select * from gsd_analysis_details;
 select * from gsd_analysis_headers;
+
+
+
+IF COL_LENGTH('gsd_analysis_details', 'repeat_count') IS NOT NULL
+   AND COL_LENGTH('gsd_analysis_details', 'frequency') IS NULL
+BEGIN
+    EXEC sp_rename 
+        'gsd_analysis_details.repeat_count',
+        'frequency',
+        'COLUMN';
+END
+GO
+
+

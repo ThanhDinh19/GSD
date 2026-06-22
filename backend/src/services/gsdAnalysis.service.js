@@ -376,9 +376,92 @@ async function getAnalyses() {
     return result.recordset;
 }
 
+
+async function getAnalysisById(id) {
+  const pool = getPool();
+
+  const headerResult = await pool.request()
+    .input('id', sql.Int, id)
+    .query(`
+      SELECT
+        a.id AS [id],
+        a.analysis_no AS [analysisNo],
+        a.analysis_date AS [analysisDate],
+        a.operation_name AS [operationName],
+
+        a.source_id AS [sourceId],
+        s.source_code AS [sourceCode],
+        s.source_name AS [sourceName],
+
+        a.machine_id AS [machineId],
+        m.machine_code AS [machineCode],
+        m.machine_name AS [machineName],
+
+        a.seam_length AS [seamLength],
+        a.attached_action_time AS [attachedActionTime],
+        a.difficulty_percent AS [difficultyPercent],
+        a.product_multiplier AS [productMultiplier],
+
+        a.stitch_count AS [stitchCount],
+        a.machine_speed AS [machineSpeed],
+        a.machine_velocity AS [machineVelocity],
+        a.allowance AS [allowance],
+
+        a.total_tmu AS [totalTmu],
+        a.total_manual_seconds AS [totalManualSeconds],
+        a.machine_seconds AS [machineSeconds],
+        a.total_smv_before_difficulty AS [totalSmvBeforeDifficulty],
+        a.difficulty_seconds AS [difficultySeconds],
+        a.final_smv AS [finalSmv],
+        a.skill_grade AS [skillGrade],
+
+        a.note AS [note],
+        a.created_at AS [createdAt],
+        a.updated_at AS [updatedAt]
+      FROM gsd_analysis_headers a
+      LEFT JOIN sources s ON a.source_id = s.id
+      LEFT JOIN machine_equipments m ON a.machine_id = m.id
+      WHERE a.id = @id
+    `);
+
+  if (headerResult.recordset.length === 0) {
+    const err = new Error('Không tìm thấy phân tích công đoạn.');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  const detailResult = await pool.request()
+    .input('analysis_id', sql.Int, id)
+    .query(`
+      SELECT
+        d.id AS [id],
+        d.analysis_id AS [analysisId],
+        d.line_no AS [lineNo],
+        d.step_no AS [stepNo],
+        d.source_action_detail_id AS [sourceActionDetailId],
+        d.gsd_code_id AS [gsdCodeId],
+        d.gsd_code AS [gsdCode],
+        d.action_name AS [actionName],
+        d.tmu AS [tmu],
+        d.frequency AS [frequency],
+        CAST((d.tmu * d.frequency) / 27.8 AS DECIMAL(18,6)) AS [seconds],
+        d.note AS [note],
+        d.is_selected AS [isSelected]
+      FROM gsd_analysis_details d
+      WHERE d.analysis_id = @analysis_id
+      ORDER BY d.step_no, d.line_no
+    `);
+
+  return {
+    ...headerResult.recordset[0],
+    details: detailResult.recordset,
+  };
+}
+
 module.exports = {
     getSourceActionsForAnalysis,
     calculateAnalysis,
     createAnalysis,
     getAnalyses,
+    getAnalysisById,
 };

@@ -18,6 +18,16 @@ function formatNumber(value: number | null | undefined, digits = 4) {
     return numberValue.toFixed(digits);
 }
 
+function formatDateTime(value?: string) {
+    if (!value) return '';
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) return value;
+
+    return date.toLocaleString('vi-VN');
+}
+
 function getLaborGradeByDifficulty(value: number | null | undefined) {
     if (value === null || value === undefined || value === 0) return 2;
     if (Number(value) === 5) return 3;
@@ -50,7 +60,13 @@ export default function GsdAnalysisPage() {
 
         calculate,
         save,
-        updatePopupFrequency
+        updatePopupFrequency,
+
+        analyses,
+        loadingAnalyses,
+        loadAnalyses,
+        togglePopupActionRow,
+
     } = useGsdAnalysis();
 
     const [form, setForm] = useState(initialForm);
@@ -135,7 +151,7 @@ export default function GsdAnalysisPage() {
 
     return (
         <div className="space-y-5">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <div className="bg-white rounded-xl border-slate-200 p-5">
                 <div className="flex items-center justify-between gap-4 mb-5">
                     <div>
                         <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
@@ -437,6 +453,118 @@ export default function GsdAnalysisPage() {
                 </div>
             </div>
 
+            {/* <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+                <div className="flex items-center justify-between gap-4 mb-5">
+                    <div>
+                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
+                            Danh sách công đoạn đã phân tích
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-1">
+                            Các công đoạn đã được lưu sau khi bấm “Lưu phân tích”.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={loadAnalyses}
+                        disabled={loadingAnalyses}
+                        className="px-4 py-2 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 disabled:opacity-50"
+                    >
+                        {loadingAnalyses ? 'Đang tải...' : 'Tải lại'}
+                    </button>
+                </div>
+
+                <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                    <table className="min-w-full text-xs">
+                        <thead className="bg-slate-50 text-slate-500 uppercase">
+                            <tr>
+                                <th className="px-4 py-3 text-left">STT</th>
+                                <th className="px-4 py-3 text-left">Mã phân tích</th>
+                                <th className="px-4 py-3 text-left">Tên công đoạn</th>
+                                <th className="px-4 py-3 text-left">Source</th>
+                                <th className="px-4 py-3 text-left">Máy</th>
+                                <th className="px-4 py-3 text-right">Tổng TMU</th>
+                                <th className="px-4 py-3 text-right">Giây thao tác</th>
+                                <th className="px-4 py-3 text-right">Thời gian MMTB</th>
+                                <th className="px-4 py-3 text-right">Bậc tay nghề</th>
+                                <th className="px-4 py-3 text-right">SMV cuối</th>
+                                <th className="px-4 py-3 text-left">Ngày tạo</th>
+                            </tr>
+                        </thead>
+
+                        <tbody className="divide-y divide-slate-100">
+                            {loadingAnalyses && (
+                                <tr>
+                                    <td colSpan={11} className="px-4 py-6 text-center text-slate-400">
+                                        Đang tải danh sách công đoạn đã phân tích...
+                                    </td>
+                                </tr>
+                            )}
+
+                            {!loadingAnalyses && analyses.length === 0 && (
+                                <tr>
+                                    <td colSpan={11} className="px-4 py-6 text-center text-slate-400">
+                                        Chưa có công đoạn nào được phân tích.
+                                    </td>
+                                </tr>
+                            )}
+
+                            {!loadingAnalyses && analyses.map((item, index) => (
+                                <tr key={item.id} className="hover:bg-blue-50">
+                                    <td className="px-4 py-3 font-mono text-slate-500">
+                                        {index + 1}
+                                    </td>
+
+                                    <td className="px-4 py-3 font-bold text-slate-700">
+                                        {item.analysisNo}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-slate-700">
+                                        {item.operationName}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-slate-700">
+                                        {item.sourceCode || '-'}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-slate-700">
+                                        {item.machineCode
+                                            ? `${item.machineCode}${item.machineName ? ` - ${item.machineName}` : ''}`
+                                            : '-'}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-right font-bold">
+                                        {Number(item.totalTmu || 0).toFixed(2)}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-right">
+                                        {Number(item.totalManualSeconds || 0).toFixed(4)}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-right">
+                                        {Number(item.machineSeconds || 0).toFixed(4)}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-right">
+                                        {item.skillGrade ?? '-'}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-right font-black text-green-700">
+                                        {Number(item.finalSmv || 0).toFixed(0)}
+                                    </td>
+
+                                    <td className="px-4 py-3 text-slate-500">
+                                        {formatDateTime(item.createdAt || item.analysisDate)}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </div> */}
+
+
+
             {isPickerOpen && (
                 <SourceActionPickerModal
                     sources={sources}
@@ -448,17 +576,16 @@ export default function GsdAnalysisPage() {
                     onStepChange={updatePopupStepNo}
                     onFrequencyChange={updatePopupFrequency}
                     onUncheckRow={uncheckPopupRow}
-                    onClose={() => setIsPickerOpen(false)}
+                    onToggleRowSelection={togglePopupActionRow}
                     onTakeData={() => {
                         const count = takeSelectedActionsToAnalysis();
-
                         if (count > 0) {
                             setIsPickerOpen(false);
                         }
                     }}
+                    onClose={() => setIsPickerOpen(false)}
                 />
             )}
-
         </div>
     );
 }

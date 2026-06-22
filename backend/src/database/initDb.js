@@ -294,9 +294,9 @@ async function initDb() {
       action_name NVARCHAR(500) NOT NULL,
 
       tmu DECIMAL(18,4) NOT NULL DEFAULT 0,
-      repeat_count DECIMAL(18,4) NOT NULL DEFAULT 1,
+      frequency DECIMAL(18,4) NOT NULL DEFAULT 1,
 
-      seconds AS CAST((tmu * repeat_count) / 27.8 AS DECIMAL(18,6)) PERSISTED,
+      seconds AS CAST((tmu * frequency) / 27.8 AS DECIMAL(18,6)) PERSISTED,
 
       note NVARCHAR(500) NULL,
       is_selected BIT NOT NULL DEFAULT 1,

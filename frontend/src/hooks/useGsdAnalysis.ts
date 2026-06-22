@@ -5,6 +5,7 @@ import {
     GsdAnalysisRow,
     MachineEquipment,
     SourceMaster,
+    GsdAnalysisSummary,
 } from '../types';
 import { sourceService } from '../services/source.service';
 import { machineEquipmentService } from '../services/machineEquipment.service';
@@ -27,6 +28,9 @@ export function useGsdAnalysis() {
 
     const [result, setResult] = useState<GsdAnalysisCalculateResult | null>(null);
 
+    const [analyses, setAnalyses] = useState<GsdAnalysisSummary[]>([]);
+    const [loadingAnalyses, setLoadingAnalyses] = useState(false);
+
     const popupRows = useMemo(() => {
         if (!popupSourceId) return [];
         return sourceActionMap[popupSourceId] || [];
@@ -48,6 +52,17 @@ export function useGsdAnalysis() {
             .sort((a, b) => Number(a.stepNo) - Number(b.stepNo));
     }, [sourceActionMap]);
 
+
+    const loadAnalyses = async () => {
+        setLoadingAnalyses(true);
+
+        try {
+            const data = await gsdAnalysisService.getAnalyses();
+            setAnalyses(data);
+        } finally {
+            setLoadingAnalyses(false);
+        }
+    };
 
     function normalizeStepNo(value: number | string | null | undefined) {
         if (value === null || value === undefined) return null;
@@ -73,7 +88,7 @@ export function useGsdAnalysis() {
         if (selectedRows.length === 0) {
             return {
                 ok: false,
-                message: 'Vui lòng nhập Bước cho ít nhất một thao tác.',
+                message: 'Vui lòng tick chọn ít nhất một thao tác.',
             };
         }
 
@@ -288,6 +303,9 @@ export function useGsdAnalysis() {
         try {
             const response = await gsdAnalysisService.createAnalysis(payload);
             setResult(response.data);
+
+            await loadAnalyses();
+
             return response;
         } finally {
             setSaving(false);
@@ -295,11 +313,124 @@ export function useGsdAnalysis() {
     };
 
 
+    // const updatePopupFrequency = (
+    //     sourceId: number,
+    //     rowIndex: number,
+    //     value: string
+    // ) => {
+    //     setSourceActionMap((prev) => ({
+    //         ...prev,
+    //         [sourceId]: (prev[sourceId] || []).map((row, index) => {
+    //             if (index !== rowIndex) return row;
+
+    //             return {
+    //                 ...row,
+    //                 frequency: value === '' ? 0 : Number(value),
+    //             };
+    //         }),
+    //     }));
+
+    //     setResult(null);
+    // };
+
+
+    const getNextStepNo = (map: SourceActionMap) => {
+        const selectedRows = Object.values(map)
+            .flat()
+            .filter((row) => row.isSelected);
+
+        if (selectedRows.length === 0) return 1;
+
+        const maxStep = selectedRows.reduce((max, row) => {
+            const stepNo = Number(row.stepNo || 0);
+            return stepNo > max ? stepNo : max;
+        }, 0);
+
+        return maxStep + 1;
+    };
+
+    const renumberSelectedRows = (map: SourceActionMap): SourceActionMap => {
+        const selectedRows: Array<{
+            sourceId: number;
+            rowIndex: number;
+            stepNo: number;
+        }> = [];
+
+        Object.entries(map).forEach(([sourceIdText, rows]) => {
+            const sourceId = Number(sourceIdText);
+
+            rows.forEach((row, rowIndex) => {
+                if (row.isSelected) {
+                    selectedRows.push({
+                        sourceId,
+                        rowIndex,
+                        stepNo: Number(row.stepNo || 0),
+                    });
+                }
+            });
+        });
+
+        selectedRows.sort((a, b) => a.stepNo - b.stepNo);
+
+        const nextMap: SourceActionMap = {};
+
+        Object.entries(map).forEach(([sourceIdText, rows]) => {
+            const sourceId = Number(sourceIdText);
+            nextMap[sourceId] = rows.map((row) => ({ ...row }));
+        });
+
+        selectedRows.forEach((item, index) => {
+            nextMap[item.sourceId][item.rowIndex].stepNo = index + 1;
+        });
+
+        return nextMap;
+    };
+
+    const togglePopupActionRow = (
+        sourceId: number,
+        rowIndex: number,
+        checked: boolean
+    ) => {
+        setSourceActionMap((prev) => {
+            let nextMap: SourceActionMap = {
+                ...prev,
+                [sourceId]: (prev[sourceId] || []).map((row, index) => {
+                    if (index !== rowIndex) return row;
+
+                    if (checked) {
+                        return {
+                            ...row,
+                            isSelected: true,
+                            stepNo: getNextStepNo(prev),
+                        };
+                    }
+
+                    return {
+                        ...row,
+                        isSelected: false,
+                        stepNo: '',
+                    };
+                }),
+            };
+
+            if (!checked) {
+                nextMap = renumberSelectedRows(nextMap);
+            }
+
+            return nextMap;
+        });
+
+        setResult(null);
+    };
+
     const updatePopupFrequency = (
         sourceId: number,
         rowIndex: number,
         value: string
     ) => {
+        const nextFrequency =
+            value.trim() === '' ? 1 : Math.max(1, Number(value) || 1);
+
         setSourceActionMap((prev) => ({
             ...prev,
             [sourceId]: (prev[sourceId] || []).map((row, index) => {
@@ -307,7 +438,7 @@ export function useGsdAnalysis() {
 
                 return {
                     ...row,
-                    frequency: value === '' ? 0 : Number(value),
+                    frequency: nextFrequency,
                 };
             }),
         }));
@@ -317,6 +448,7 @@ export function useGsdAnalysis() {
 
     useEffect(() => {
         loadMasterData();
+        loadAnalyses();
     }, []);
 
     return {
@@ -344,6 +476,11 @@ export function useGsdAnalysis() {
 
         calculate,
         save,
-        updatePopupFrequency
+        updatePopupFrequency,
+
+        analyses,
+        loadingAnalyses,
+        loadAnalyses,
+        togglePopupActionRow
     };
 }

@@ -265,3 +265,85 @@ export interface GsdAnalysisRow extends SourceActionForAnalysis {
   frequency: number;
   isSelected: boolean;
 }
+
+
+export interface GsdAnalysisSummary {
+  id: number;
+  analysisNo: string;
+  analysisDate?: string;
+  operationName: string;
+
+  sourceCode?: string | null;
+  machineCode?: string | null;
+  machineName?: string | null;
+
+  totalTmu: number;
+  totalManualSeconds: number;
+  machineSeconds: number;
+  totalSmvBeforeDifficulty: number;
+  difficultySeconds: number;
+  finalSmv: number;
+  skillGrade?: number | null;
+
+  createdAt?: string;
+}
+
+export interface GsdAnalysisSummary {
+  id: number;
+  analysisNo: string;
+  analysisDate?: string;
+  operationName: string;
+
+  sourceCode?: string | null;
+  machineCode?: string | null;
+  machineName?: string | null;
+
+  totalTmu: number;
+  totalManualSeconds: number;
+  machineSeconds: number;
+  totalSmvBeforeDifficulty: number;
+  difficultySeconds: number;
+  finalSmv: number;
+  skillGrade?: number | null;
+
+  createdAt?: string;
+}
+
+
+export interface GsdAnalysisDetailRow {
+  id: number;
+  analysisId: number;
+  lineNo: number;
+  stepNo?: number | null;
+  sourceActionDetailId?: number | null;
+  gsdCodeId?: number | null;
+  gsdCode?: string | null;
+  actionName: string;
+  tmu: number;
+  frequency: number;
+  seconds: number;
+  note?: string | null;
+  isSelected?: boolean;
+}
+
+export interface GsdAnalysisDetail extends GsdAnalysisSummary {
+  sourceId?: number | null;
+  sourceName?: string | null;
+
+  machineId?: number | null;
+
+  seamLength?: number | null;
+  attachedActionTime?: number | null;
+  difficultyPercent?: number | null;
+  productMultiplier?: number | null;
+
+  stitchCount?: number | null;
+  machineSpeed?: number | null;
+  machineVelocity?: number | null;
+  allowance?: number | null;
+
+  note?: string | null;
+  updatedAt?: string | null;
+
+  details: GsdAnalysisDetailRow[];
+}

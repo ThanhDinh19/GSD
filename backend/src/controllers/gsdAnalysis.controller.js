@@ -30,9 +30,18 @@ const getAnalyses = asyncHandler(async (req, res) => {
   return res.json(data);
 });
 
+const getAnalysisById = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  const data = await gsdAnalysisService.getAnalysisById(Number(id));
+
+  return res.json(data);
+});
+
 module.exports = {
   getSourceActionsForAnalysis,
   calculateAnalysis,
   createAnalysis,
   getAnalyses,
+  getAnalysisById
 };
