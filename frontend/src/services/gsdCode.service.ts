@@ -25,27 +25,56 @@ export const gsdCodeService = {
         });
     },
 
-    importGsdCodesFromExcel(file: File, sheetName = 'GSD') {
+    // importGsdCodesFromExcel(file: File, sheetName = 'GSD') {
+    //     const formData = new FormData();
+    //     formData.append('file', file);
+    //     formData.append('sheetName', sheetName);
+
+    //     return fetch(`${API_BASE_URL}/api/gsd-codes/import-gsd`, {
+    //         method: 'POST',
+    //         body: formData,
+    //     }).then(async (response) => {
+    //         const data = await response.json().catch(() => null);
+
+    //         if (!response.ok) {
+    //             throw new Error(data?.error || 'Import Excel thất bại.');
+    //         }
+
+    //         return data as {
+    //             inserted: number;
+    //             skippedDuplicate: number;
+    //             skippedEmpty: number;
+    //             totalRead: number;
+    //             message: string;
+    //         };
+    //     });
+    // },
+
+
+    importGsdCodesExcel(file: File) {
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('sheetName', sheetName);
 
-        return fetch(`${API_BASE_URL}/api/gsd-codes/import-gsd`, {
+        return fetch('/api/gsd-codes/import-excel', {
             method: 'POST',
             body: formData,
         }).then(async (response) => {
             const data = await response.json().catch(() => null);
 
             if (!response.ok) {
-                throw new Error(data?.error || 'Import Excel thất bại.');
+                throw new Error(data?.message || 'Import Excel thất bại.');
             }
 
             return data as {
-                inserted: number;
-                skippedDuplicate: number;
-                skippedEmpty: number;
-                totalRead: number;
                 message: string;
+                data: {
+                    sheetName: string;
+                    totalRows: number;
+                    inserted: number;
+                    updated: number;
+                    skipped: number;
+                    errors: string[];
+                };
             };
         });
     },

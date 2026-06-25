@@ -179,7 +179,7 @@ BEGIN
 END
 GO
 
-
+use [demo_db]
 
 select  * from master_status;
 
@@ -207,5 +207,272 @@ BEGIN
         'COLUMN';
 END
 GO
+
+
+USE demo_db;
+GO
+
+DECLARE @clusterId INT = 6;
+
+MERGE machine_equipments AS target
+USING (
+    VALUES
+    (N'MMTB0001', N'Máy Lập trình khổ 1400x900mm', N'LT90', 0.94, 4.5, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0002', N'Máy Lập Trình 800x350mm', N'LT35', 0.94, 4.5, 3000, NULL, NULL, NULL, 0),
+    (N'MMTB0003', N'Máy lập trình khổ 800x550mm', N'LT55', 0.94, 4.5, 3000, NULL, NULL, NULL, 0),
+    (N'MMTB0004', N'Máy Lập Trình Khung 30x20mm', N'LTNho', 0.94, 4.5, 3000, NULL, NULL, NULL, 0),
+    (N'MMTB0005', N'Máy 1K điện tử', N'1K', 0.94, 4.5, 5000, NULL, NULL, NULL, 0),
+    (N'MMTB0006', N'Máy 1K thường', N'1K', 0.94, 4.5, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0007', N'Máy 1 Kim Xén', N'1KXen', 0.94, 4.5, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0008', N'Máy 1 Kim Xén viền', N'1KXen', 0.94, 4.5, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0009', N'Máy 1 Kim Xén Cơ', N'1KXen', 0.94, 4.5, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0010', N'Máy 1 Kim Cào', N'1KC', 0.94, 4.5, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0011', N'Máy 1 Kim Chống Nhăn', N'1KCN', 0.94, 4.5, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0012', N'Máy 1 Kim Cùi Chỏ - Đầu Nhỏ', N'1KDaunho', 0.94, 4.5, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0013', N'Máy 1 kim dùng lên lai quần', N'1KLai', 0.94, 4.5, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0014', N'Máy 1 Kim Thân Dài', N'1KTD', 0.94, 4.5, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0015', N'Máy 1 Kim Móch Xích', N'1KMX', 1.01, 4, 3000, NULL, NULL, NULL, 0),
+    (N'MMTB0016', N'Máy 2K điện tử', N'2K', 1.06, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0017', N'Máy 2K Thường', N'2K', 1.08, 4, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0018', N'Máy 2 Kim Móc Xích', N'2KMX', 0.85, 4, 3000, NULL, NULL, NULL, 0),
+    (N'MMTB0019', N'Máy 3 Kim Móc Xích', N'3KMX', 0.85, 4, 3000, NULL, NULL, NULL, 0),
+    (N'MMTB0020', N'Máy Đánh Bông 4K6C Fatseam', N'4K6C', 0.85, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0021', N'Máy Cuốn Sườn 2 Kim', N'Cuonsuon', 0.85, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0022', N'Máy Cuốn Sườn 3 Kim', N'Cuonsuon', 0.85, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0023', N'Đánh Bông đầu nhỏ', N'KSNho', 1.01, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0024', N'Đánh Bông đầu trung', N'KSTrung', 1.01, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0025', N'Đánh Bông xén lai', N'KSXenlai', 1.01, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0026', N'Đánh Bông đầu bằng', N'KSbang', 1.01, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0027', N'Đánh Bông đầu heo', N'KSHeo', 1.01, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0028', N'Kansai 4K', N'KSLung4K', 1.12, 4.5, 2500, NULL, NULL, NULL, 0),
+    (N'MMTB0029', N'Kansai 12K', N'KSLung12K', 1.08, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0030', N'Máy Kansai Lưng 13K', N'KSLung13K', 1.12, 4.5, 1400, NULL, NULL, NULL, 0),
+    (N'MMTB0031', N'Kansai 21K', N'KSLung21K', 1.12, 4.5, 1400, NULL, NULL, NULL, 0),
+    (N'MMTB0032', N'Máy kansai lưng 23K', N'KSLung23K', 1.12, 4.5, 1400, NULL, NULL, NULL, 0),
+    (N'MMTB0033', N'Máy Đột', N'Maydot', 1.01, 4.5, 2500, NULL, NULL, NULL, 0),
+    (N'MMTB0034', N'Máy Săm Lai', N'Samlai', 1.01, 4.5, 3500, NULL, NULL, NULL, 0),
+    (N'MMTB0035', N'May đường cong', N'Duongcong', 0.77, 4.5, 3200, NULL, NULL, NULL, 0),
+    (N'MMTB0036', N'Vắt Sổ 6C - Đường cong', N'VS6C', 1.01, 4.5, 2800, NULL, NULL, NULL, 0),
+    (N'MMTB0037', N'Vắt Sổ 5C - Đường cong', N'VS5C', 1.01, 4.5, 2800, NULL, NULL, NULL, 0),
+    (N'MMTB0038', N'Vắt Sổ 4C - Đường cong', N'VS4C', 1.01, 4.5, 3200, NULL, NULL, NULL, 0),
+    (N'MMTB0039', N'Vắt sổ 4 chỉ cùi nhỏ', N'VS4CN', 1.01, 4.5, 3200, NULL, NULL, NULL, 0),
+    (N'MMTB0040', N'Vắt Sổ 3C - Đường cong', N'VS3C', 1.01, 4.5, 3200, NULL, NULL, NULL, 0),
+    (N'MMTB0041', N'Vắt Sổ 1 Lớp', N'VS3C', 1.01, 4.5, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0042', N'Vắt Sổ 5C - Đường thẳng', N'VS5C', 1.01, 4.5, 6000, NULL, NULL, NULL, 0),
+    (N'MMTB0043', N'Vắt Sổ 4C - Đường thẳng', N'VS4C', 1.01, 4.5, 6000, NULL, NULL, NULL, 0),
+    (N'MMTB0044', N'Vắt Sổ 3C - Đường thẳng', N'VS3C', 1.01, 4.5, 6000, NULL, NULL, NULL, 0),
+    (N'MMTB0045', N'Vắt Sổ 6C - Đường thẳng', N'VS6C', 1.01, 4.5, 6000, NULL, NULL, NULL, 0),
+    (N'MMTB0046', N'Máy Mỗ Túi tự động', N'MotuiTD', 1.03, 4, 4500, NULL, NULL, NULL, 0),
+    (N'MMTB0047', N'Máy 1 Kim ZicZac', N'Ziczac', 1.21, 8, 4000, NULL, NULL, NULL, 0),
+    (N'MMTB0048', N'Ép Seam', N'Seam', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0049', N'Máy Dán Keo Đa Năng', N'SeamDan', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0050', N'Máy xén keo 2 mặt', N'Seamxen', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0051', N'Máy chằn Ultra', N'Ultra', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0052', N'Máy Ép keo', N'Epkeo', 1.21, 5, 1200, NULL, NULL, NULL, 0),
+    (N'MMTB0053', N'Máy Thêu', N'THEU', 2.11, 30, 800, NULL, NULL, NULL, 0),
+    (N'MMTB0054', N'Máy Dập nút Hơi', N'Dapnut', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0055', N'Máy Ép Nhiệt', N'EP', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0056', N'Máy Ép Nóng', N'EP', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0057', N'Máy Ép Nóng-Lạnh Khuôn Cong', N'EPCNL', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0058', N'Máy Ép Nhiệt Khuôn Cong', N'EPCong', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0059', N'Máy Ép Keo', N'Epkeo', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0060', N'Máy Ép Nóng Lai Tròn', N'EPLAI', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0061', N'Máy ép Nóng Lạnh', N'EPNL', 0.92, 4, 1500, NULL, NULL, NULL, 0),
+    (N'MMTB0062', N'Máy Bọ', N'Bo', 2.18, 30, 2000, NULL, NULL, NULL, 0),
+    (N'MMTB0063', N'Máy khuy thường Điện tử', N'Khuy', 1.53, 12, 1800, NULL, NULL, NULL, 0),
+    (N'MMTB0064', N'Máy Khuy thường', N'Khuy', 1.53, 12, 1800, NULL, NULL, NULL, 0),
+    (N'MMTB0065', N'Máy Khuy mắt phụng', N'KhuyO', 1.53, 12, 1800, NULL, NULL, NULL, 0),
+    (N'MMTB0066', N'Máy Đính Nút điện tử', N'Nut', 1.96, 24, 1800, NULL, NULL, NULL, 0),
+    (N'MMTB0067', N'Máy Đính Nút', N'Nut', 1.96, 24, 1800, NULL, NULL, NULL, 0),
+    (N'MMTB0068', N'Bàn ủi Nhiệt', N'BAUI', 1.21, NULL, 2000, NULL, NULL, NULL, 0),
+    (N'MMTB0069', N'Bàn Hút', N'BHUT', 0.92, NULL, 2000, NULL, NULL, NULL, 0),
+    (N'MMTB0070', N'Máy Cắt Lazer', N'Laser', 2.11, NULL, 1800, NULL, NULL, NULL, 0),
+    (N'MMTB0071', N'Máy đai thùng', N'Maydai', 0.92, NULL, 2000, NULL, NULL, NULL, 0)
+) AS src (
+    machine_code,
+    machine_name,
+    code_mmtb,
+    allowance,
+    stitch_count,
+    machine_speed,
+    default_smv,
+    skill_grade,
+    note,
+    status_id
+)
+ON target.machine_code = src.machine_code
+
+WHEN MATCHED THEN
+    UPDATE SET
+        target.machine_name = src.machine_name,
+        target.cluster_id = @clusterId,
+        target.code_mmtb = src.code_mmtb,
+        target.allowance = src.allowance,
+        target.stitch_count = src.stitch_count,
+        target.machine_speed = src.machine_speed,
+        target.default_smv = src.default_smv,
+        target.skill_grade = src.skill_grade,
+        target.note = src.note,
+        target.status_id = src.status_id
+
+WHEN NOT MATCHED THEN
+    INSERT (
+        machine_code,
+        machine_name,
+        cluster_id,
+        code_mmtb,
+        allowance,
+        stitch_count,
+        machine_speed,
+        default_smv,
+        skill_grade,
+        note,
+        status_id
+    )
+    VALUES (
+        src.machine_code,
+        src.machine_name,
+        @clusterId,
+        src.code_mmtb,
+        src.allowance,
+        src.stitch_count,
+        src.machine_speed,
+        src.default_smv,
+        src.skill_grade,
+        src.note,
+        src.status_id
+    );
+GO
+
+
+
+
+USE demo_db;
+GO
+
+;WITH ClusterSource AS (
+    SELECT DISTINCT
+        cluster_code,
+        cluster_name,
+        status_id
+    FROM (
+        VALUES
+        (N'Lượt-Đính-Ghim (GH)', N'Lượt-Đính-Ghim (GH)', 0),
+        (N'Lượt-Đính-Ghim-Gắn Phụ Liệu (GHPL)', N'Lượt-Đính-Ghim-Gắn Phụ Liệu (GHPL)', 0),
+        (N'May Kê - Gấp (MC)', N'May Kê - Gấp (MC)', 0),
+        (N'Viền Cử Gá (KV)', N'Viền Cử Gá (KV)', 0),
+        (N'Chần, Nhồi, Lập Trình Gòn - Lông Vịt (TRDN)', N'Chần, Nhồi, Lập Trình Gòn - Lông Vịt (TRDN)', 0),
+        (N'Gấp, Diễu (GD)', N'Gấp, Diễu (GD)', 0),
+        (N'ÉP Cử Gá, Ép Dập (EC)', N'ÉP Cử Gá, Ép Dập (EC)', 0),
+        (N'Cuốn Lai, Miệng Túi (CG)', N'Cuốn Lai, Miệng Túi (CG)', 0),
+        (N'Mí Diễu (MD)', N'Mí Diễu (MD)', 0),
+        (N'Quay Rập (Pát, Nắp Túi Chi tiết Nhỏ,…) (QU)', N'Quay Rập (Pát, Nắp Túi Chi tiết Nhỏ,…) (QU)', 0),
+        (N'Ép SEAM (ES)', N'Ép SEAM (ES)', 0),
+        (N'Vắt Sổ (VS)', N'Vắt Sổ (VS)', 0),
+        (N'Ép Dán (DA)', N'Ép Dán (DA)', 0),
+        (N'Mỗ Túi (BT)', N'Mỗ Túi (BT)', 0),
+        (N'Ép Dán Cử Gá (EKD)', N'Ép Dán Cử Gá (EKD)', 0),
+        (N'Lộn Từ Trong Ra Ngoài (LO)', N'Lộn Từ Trong Ra Ngoài (LO)', 0),
+        (N'Đính Bọ, Đục Lỗ (BĐ)', N'Đính Bọ, Đục Lỗ (BĐ)', 0),
+        (N'LUỒN (LU)', N'LUỒN (LU)', 0),
+        (N'Ủi (LA)', N'Ủi (LA)', 0),
+        (N'Đo Và Cắt (Đ&C)', N'Đo Và Cắt (Đ&C)', 0),
+        (N'Lấy Dấu - Sang Dấu (SD)', N'Lấy Dấu - Sang Dấu (SD)', 0)
+    ) AS src(cluster_code, cluster_name, status_id)
+)
+INSERT INTO clusters (
+    cluster_code,
+    cluster_name,
+    status_id
+)
+SELECT
+    src.cluster_code,
+    src.cluster_name,
+    src.status_id
+FROM ClusterSource src
+WHERE NOT EXISTS (
+    SELECT 1
+    FROM clusters c
+    WHERE c.cluster_code = src.cluster_code
+);
+GO
+
+    
+select * from [master_status]
+select * from [sources]
+select * from [machine_equipments]
+select * from [gsd_codes]
+
+
+use [demo_db]
+
+SELECT
+    s.id AS source_id,
+    s.source_code,
+    s.source_name,
+
+    h.id AS header_id,
+    h.total_actions,
+    h.total_tmu,
+
+    d.id AS detail_id,
+    d.line_no,
+    d.gsd_code_id,
+
+    g.action_code,
+    d.action_name,
+    d.gsd_code,
+    d.code_new,
+    d.frequency,
+    d.tmu,
+    CAST((ISNULL(d.tmu, 0) * ISNULL(d.frequency, 1)) / 27.8 AS DECIMAL(18,6)) AS seconds,
+    d.note
+FROM sources s
+LEFT JOIN source_action_headers h 
+    ON h.source_id = s.id
+LEFT JOIN source_action_details d 
+    ON d.header_id = h.id
+LEFT JOIN gsd_codes g 
+    ON g.id = d.gsd_code_id
+ORDER BY
+    s.id,
+    d.line_no;
+
+
+
+select * from [source_action_details]
+
+select * from [source_action_headers]
+select * from [sources]
+select * from [machine_equipments]
+
+
+update [machine_equipments]
+set cluster_id = NULL
+where cluster_id IS NOT NULL
+
+select
+    id,
+    header_id,
+    gsd_code_id,
+    action_name
+from [source_action_details]
+where header_id = 11
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

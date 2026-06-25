@@ -104,26 +104,46 @@ const deactivateGsdCode = asyncHandler(async (req, res) => {
     });
 });
 
-const importGsdCodesFromExcel = asyncHandler(async (req, res) => {
+// const importGsdCodesFromExcel = asyncHandler(async (req, res) => {
+//     if (!req.file) {
+//         return res.status(400).json({
+//             error: 'Vui lòng chọn file Excel.',
+//         });
+//     }
+
+//     try {
+//         const sheetName = req.body.sheetName || 'GSD';
+
+//         const result = await gsdCodeService.importGsdCodesFromExcel(
+//             req.file.path,
+//             sheetName
+//         );
+
+//         return res.json(result);
+//     } finally {
+//         fs.unlink(req.file.path, () => { });
+//     }
+// });
+
+
+async function importGsdCodesExcel_ver2(req, res, next) {
+  try {
     if (!req.file) {
-        return res.status(400).json({
-            error: 'Vui lòng chọn file Excel.',
-        });
+      return res.status(400).json({
+        message: 'Vui lòng chọn file Excel.',
+      });
     }
 
-    try {
-        const sheetName = req.body.sheetName || 'GSD';
+    const result = await gsdCodeService.importGsdCodesFromExcel_ver2(req.file.buffer);
 
-        const result = await gsdCodeService.importGsdCodesFromExcel(
-            req.file.path,
-            sheetName
-        );
-
-        return res.json(result);
-    } finally {
-        fs.unlink(req.file.path, () => { });
-    }
-});
+    return res.json({
+      message: 'Import kho thao tác chuẩn thành công.',
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
 
 module.exports = {
     getGsdCodes,
@@ -131,5 +151,5 @@ module.exports = {
     createGsdCode,
     updateGsdCode,
     deactivateGsdCode,
-    importGsdCodesFromExcel,
+    importGsdCodesExcel_ver2
 };

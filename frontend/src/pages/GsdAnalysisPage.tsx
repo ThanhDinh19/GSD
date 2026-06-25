@@ -247,6 +247,7 @@ export default function GsdAnalysisPage() {
                             <option value={5}>5%</option>
                             <option value={10}>10%</option>
                             <option value={15}>15%</option>
+                            <option value={20}>20%</option>
                         </select>
                     </div>
 
@@ -314,7 +315,7 @@ export default function GsdAnalysisPage() {
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                            <div className="text-slate-500">Vận tốc máy</div>
+                            <div className="text-slate-500">Cm/ giây</div>
                             <div className="font-bold text-slate-800">
                                 {result
                                     ? Number(result.machineVelocity || 0).toFixed(4)
@@ -352,7 +353,7 @@ export default function GsdAnalysisPage() {
                     </div>
 
                     <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
-                        <div className="text-blue-600">Giây thao tác</div>
+                        <div className="text-blue-600">Tổng giây thao tác</div>
                         <div className="font-black text-blue-900 text-lg">
                             {result ? formatNumber(result.totalManualSeconds, 4) : formatNumber(previewManualSeconds, 4)}
                         </div>
@@ -386,12 +387,12 @@ export default function GsdAnalysisPage() {
                             <tr>
                                 <th className="px-4 py-3 text-left">STT</th>
                                 <th className="px-4 py-3 text-left">Source</th>
-                                <th className="px-4 py-3 text-left">Bước</th>
-                                <th className="px-4 py-3 text-left">Code</th>
+                                <th className="px-4 py-3 text-left">Các bước</th>
+                                <th className="px-4 py-3 text-left">Mã GSD (Code)</th>
                                 <th className="px-4 py-3 text-left">Thao tác</th>
-                                <th className="px-4 py-3 text-right">TMU</th>
-                                <th className="px-4 py-3 text-right">Lặp lại</th>
-                                <th className="px-4 py-3 text-right">Giây</th>
+                                <th className="px-4 py-3 text-right">Điểm TMU</th>
+                                <th className="px-4 py-3 text-right">Số lần lặp lại</th>
+                                <th className="px-4 py-3 text-right">Thời gian (Giây)</th>
                                 <th className="px-4 py-3 text-left">Ghi chú</th>
                             </tr>
                         </thead>

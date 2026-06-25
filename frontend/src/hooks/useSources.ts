@@ -50,6 +50,7 @@ export function useSources() {
     sources,
     statuses,
     loading,
+    loadSources,
     refresh,
     createSource,
     updateSource,

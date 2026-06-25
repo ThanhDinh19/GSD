@@ -42,7 +42,7 @@ export function useGsdCodes() {
     };
 
     const importGsdCodesFromExcel = async (file: File) => {
-        const result = await gsdCodeService.importGsdCodesFromExcel(file, 'GSD');
+        const result = await gsdCodeService.importGsdCodesExcel(file);
         await loadGsdCodes();
         return result;
     };
@@ -55,6 +55,7 @@ export function useGsdCodes() {
         gsdCodes,
         statuses,
         loading,
+        loadGsdCodes,
         refresh,
         createGsdCode,
         updateGsdCode,

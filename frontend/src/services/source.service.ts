@@ -19,4 +19,34 @@ export const sourceService = {
       body: payload,
     });
   },
+
+
+  importSourcesExcel(file: File) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    return fetch('/api/sources/import-excel', {
+      method: 'POST',
+      body: formData,
+    }).then(async (response) => {
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok) {
+        throw new Error(data?.message || 'Import Excel thất bại.');
+      }
+
+      return data as {
+        message: string;
+        data: {
+          sheetName: string;
+          totalRows: number;
+          inserted: number;
+          updated: number;
+          skipped: number;
+          errors: string[];
+        };
+      };
+    });
+  },
 };
+

@@ -112,7 +112,7 @@ export default function MachineEquipmentMasterPage() {
             <thead className="bg-slate-50 text-slate-500 uppercase">
               <tr>
                 <th className="px-4 py-3 text-left">STT</th>
-                <th className="px-4 py-3 text-left">Mã MMTB</th>
+                <th className="px-4 py-3 text-left">Code MMTB</th>
                 <th className="px-4 py-3 text-left">Tên MMTB</th>
                 <th className="px-4 py-3 text-left">Cụm</th>
                 <th className="px-4 py-3 text-left">Code</th>

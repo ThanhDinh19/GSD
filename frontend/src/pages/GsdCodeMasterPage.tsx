@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { GsdCode, GsdCodePayload } from '../types';
 import { useGsdCodes } from '../hooks/useGsdCodes';
+import { gsdCodeService } from '../services/gsdCode.service';
 
 const emptyForm: GsdCodePayload = {
     actionCode: '',
@@ -18,9 +19,9 @@ export default function GsdCodeMasterPage() {
         gsdCodes,
         statuses,
         loading,
+        loadGsdCodes,
         createGsdCode,
         updateGsdCode,
-        importGsdCodesFromExcel,
     } = useGsdCodes();
 
     const [selectedItem, setSelectedItem] = useState<GsdCode | null>(null);
@@ -28,6 +29,7 @@ export default function GsdCodeMasterPage() {
     const [isFormOpen, setIsFormOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement | null>(null);
     const [importing, setImporting] = useState(false);
+
 
     const openCreateForm = () => {
         setSelectedItem(null);
@@ -72,30 +74,71 @@ export default function GsdCodeMasterPage() {
         }
     };
 
-    const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    // const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    //     const file = e.target.files?.[0];
+
+    //     if (!file) return;
+
+    //     try {
+    //         setImporting(true);
+
+    //         const result = await gsdCodeService.importGsdCodesFromExcel(file);
+
+    //         alert(
+    //             `${result.message}\n` +
+    //             `Tổng dòng đọc: ${result.totalRead}\n` +
+    //             `Thêm mới: ${result.inserted}\n` +
+    //             `Bỏ qua trùng: ${result.skippedDuplicate}\n` +
+    //             `Bỏ qua rỗng: ${result.skippedEmpty}`
+    //         );
+    //     } catch (err) {
+    //         alert(err instanceof Error ? err.message : 'Import Excel thất bại.');
+    //     } finally {
+    //         setImporting(false);
+
+    //         if (fileInputRef.current) {
+    //             fileInputRef.current.value = '';
+    //         }
+    //     }
+    // };
+
+    const handleImportExcel = async (
+        event: React.ChangeEvent<HTMLInputElement>
+    ) => {
+        const file = event.target.files?.[0];
 
         if (!file) return;
 
-        try {
-            setImporting(true);
+        setImporting(true);
 
-            const result = await importGsdCodesFromExcel(file);
+        try {
+            const response = await gsdCodeService.importGsdCodesExcel(file);
+            const result = response.data;
 
             alert(
-                `${result.message}\n` +
-                `Tổng dòng đọc: ${result.totalRead}\n` +
-                `Thêm mới: ${result.inserted}\n` +
-                `Bỏ qua trùng: ${result.skippedDuplicate}\n` +
-                `Bỏ qua rỗng: ${result.skippedEmpty}`
+                [
+                    response.message,
+                    `Sheet: ${result.sheetName}`,
+                    `Tổng dòng: ${result.totalRows}`,
+                    `Thêm mới: ${result.inserted}`,
+                    `Cập nhật: ${result.updated}`,
+                    `Bỏ qua: ${result.skipped}`,
+                    result.errors?.length
+                        ? `Lỗi:\n${result.errors.slice(0, 10).join('\n')}`
+                        : '',
+                ]
+                    .filter(Boolean)
+                    .join('\n')
             );
+
+            await loadGsdCodes();
         } catch (err) {
             alert(err instanceof Error ? err.message : 'Import Excel thất bại.');
         } finally {
             setImporting(false);
 
-            if (fileInputRef.current) {
-                fileInputRef.current.value = '';
+            if (event.target) {
+                event.target.value = '';
             }
         }
     };
@@ -109,8 +152,16 @@ export default function GsdCodeMasterPage() {
                             ref={fileInputRef}
                             type="file"
                             accept=".xlsx,.xlsm,.xls"
-                            onChange={handleImportFile}
+                            onChange={handleImportExcel}
                             className="hidden"
+                        />
+
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept=".xlsx,.xls"
+                            className="hidden"
+                            onChange={handleImportExcel}
                         />
 
                         <button
@@ -118,7 +169,7 @@ export default function GsdCodeMasterPage() {
                             disabled={importing}
                             className="px-4 py-2 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 disabled:opacity-50"
                         >
-                            {importing ? 'Đang import...' : 'Import GSD Excel'}
+                            {importing ? 'Đang import...' : 'Import Excel'}
                         </button>
 
                         <button

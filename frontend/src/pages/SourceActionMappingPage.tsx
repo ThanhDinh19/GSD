@@ -163,7 +163,7 @@ export default function SourceActionMappingPage() {
                             <option value="">-- Chọn source --</option>
                             {sources.map(source => (
                                 <option key={source.id} value={source.id}>
-                                    {source.sourceCode}
+                                    {source.sourceName}
                                 </option>
                             ))}
                         </select>
@@ -211,7 +211,7 @@ export default function SourceActionMappingPage() {
                         <thead className="bg-slate-50 text-slate-500 uppercase">
                             <tr>
                                 <th className="px-4 py-3 text-left">STT</th>
-                                <th className="px-4 py-3 text-left">Source</th>
+                                <th className="px-4 py-3 text-left">Source name</th>
                                 <th className="px-4 py-3 text-left">Thao tác</th>
                                 <th className="px-4 py-3 text-left">Code</th>
                                 <th className="px-4 py-3 text-left">Code mới</th>
@@ -246,7 +246,7 @@ export default function SourceActionMappingPage() {
                                     </td>
 
                                     <td className="px-4 py-3 text-slate-700">
-                                        {selectedSource?.sourceCode || ''}
+                                        {selectedSource?.sourceName || ''}
                                     </td>
 
                                     <td className="px-4 py-3 text-slate-700">

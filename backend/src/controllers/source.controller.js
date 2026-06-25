@@ -71,9 +71,30 @@ const deactivateSource = asyncHandler(async (req, res) => {
   });
 });
 
+
+async function importSourcesExcel(req, res, next) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        message: 'Vui lòng chọn file Excel.',
+      });
+    }
+
+    const result = await sourceService.importSourcesFromExcel(req.file.buffer);
+
+    return res.json({
+      message: 'Import danh mục source thành công.',
+      data: result,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
 module.exports = {
   getSources,
   createSource,
   updateSource,
-  deactivateSource
+  deactivateSource,
+  importSourcesExcel,
 };
