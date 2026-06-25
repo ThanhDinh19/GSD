@@ -4,6 +4,7 @@ const app = require('./src/app');
 const { connectDB } = require('./src/database/connection');
 const { initDb } = require('./src/database/initDb');
 
+
 const PORT = process.env.PORT || 9000;
 
 async function startServer() {
@@ -11,8 +12,9 @@ async function startServer() {
     await connectDB();
     await initDb();
 
-    app.listen(PORT, () => {
-      console.log(`Backend server running on http://localhost:${PORT}`);
+
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Backend server running on http://0.0.0.0:${PORT}`);
     });
   } catch (err) {
     console.error('Failed to start server:', err.message);
