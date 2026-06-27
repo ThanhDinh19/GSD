@@ -6,22 +6,26 @@ import {
     MachineEquipment,
     SourceMaster,
     GsdAnalysisSummary,
+    MachineEquipment_test,
 } from '../types';
 import { sourceService } from '../services/source.service';
 import { machineEquipmentService } from '../services/machineEquipment.service';
 import { gsdAnalysisService } from '../services/gsdAnalysis.service';
+
 
 type SourceActionMap = Record<number, GsdAnalysisRow[]>;
 
 export function useGsdAnalysis() {
     const [sources, setSources] = useState<SourceMaster[]>([]);
     const [machines, setMachines] = useState<MachineEquipment[]>([]);
+    const [machines_test, setMachines_test] = useState<MachineEquipment_test[]>([]);
 
     const [popupSourceId, setPopupSourceId] = useState<number | null>(null);
     const [sourceActionMap, setSourceActionMap] = useState<SourceActionMap>({});
     const [analysisRows, setAnalysisRows] = useState<GsdAnalysisRow[]>([]);
 
     const [loadingMasterData, setLoadingMasterData] = useState(false);
+    const [loadingMachines_test, setLoadingMachines_test] = useState(false);
     const [loadingSourceActions, setLoadingSourceActions] = useState(false);
     const [calculating, setCalculating] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -142,6 +146,16 @@ export function useGsdAnalysis() {
             setLoadingMasterData(false);
         }
     };
+
+    const loadMachines_test = async () => {
+        setLoadingMachines_test(true);
+        try{
+            const data = await machineEquipmentService.getMachineEquipments_test();
+            setMachines_test(data);
+        }finally{
+            setLoadingMachines_test(false);
+        }
+    }
 
     const isStepNoUsed = (
         stepNo: number,
@@ -277,9 +291,7 @@ export function useGsdAnalysis() {
         };
     };
 
-    const calculate = async (
-        form: Omit<GsdAnalysisPayload, 'sourceId' | 'details'>
-    ) => {
+    const calculate = async ( form: Omit<GsdAnalysisPayload, 'sourceId' | 'details'> ) => {
         const payload = buildPayload(form);
 
         setCalculating(true);
@@ -311,27 +323,6 @@ export function useGsdAnalysis() {
             setSaving(false);
         }
     };
-
-
-    // const updatePopupFrequency = (
-    //     sourceId: number,
-    //     rowIndex: number,
-    //     value: string
-    // ) => {
-    //     setSourceActionMap((prev) => ({
-    //         ...prev,
-    //         [sourceId]: (prev[sourceId] || []).map((row, index) => {
-    //             if (index !== rowIndex) return row;
-
-    //             return {
-    //                 ...row,
-    //                 frequency: value === '' ? 0 : Number(value),
-    //             };
-    //         }),
-    //     }));
-
-    //     setResult(null);
-    // };
 
 
     const getNextStepNo = (map: SourceActionMap) => {
@@ -448,12 +439,15 @@ export function useGsdAnalysis() {
 
     useEffect(() => {
         loadMasterData();
+        loadMachines_test();
         loadAnalyses();
     }, []);
 
     return {
         sources,
         machines,
+
+        machines_test,
 
         popupSourceId,
         popupRows,
@@ -463,6 +457,11 @@ export function useGsdAnalysis() {
         analysisRows,
 
         loadingMasterData,
+
+        loadMachines_test,
+
+        loadingMachines_test,
+
         loadingSourceActions,
         calculating,
         saving,

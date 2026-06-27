@@ -75,9 +75,10 @@ async function calculateAnalysis(payload) {
           machine_name AS [machineName],
           stitch_count AS [stitchCount],
           machine_speed AS [machineSpeed],
+          attached_action_time AS [attachedActionTime],
           allowance AS [allowance],
           skill_grade AS [skillGrade]
-        FROM machine_equipments
+        FROM machine_equipments_test
         WHERE id = @machine_id
       `);
 
@@ -85,7 +86,7 @@ async function calculateAnalysis(payload) {
     }
 
     const seamLength = toNumber(payload.seamLength, 0);
-    const attachedActionTime = toNumber(payload.attachedActionTime, 0);
+    const attachedActionTime = toNumber(payload.attachedActionTime, 0); // attachedActionTime có thể được edit nên cho vào payload (lấy data từ frontend)
     const difficultyPercent = toNumber(payload.difficultyPercent, 0);
     const productMultiplier = toNumber(payload.productMultiplier, 1);
 
@@ -94,8 +95,6 @@ async function calculateAnalysis(payload) {
     const allowance = machine ? toNumber(machine.allowance, 0) : 0;
 
     const details = Array.isArray(payload.details) ? payload.details : [];
-
-
 
     const selectedInputDetails = details.filter((item) => {
         return item.stepNo !== null &&
@@ -193,6 +192,8 @@ async function createAnalysis(payload) {
 
     const operationName = String(payload.operationName || '').trim();
 
+    const machineId = payload.machineId ? Number(payload.machineId) : null;
+
     if (!operationName) {
         const err = new Error('Tên công đoạn là bắt buộc.');
         err.statusCode = 400;
@@ -218,6 +219,17 @@ async function createAnalysis(payload) {
     await transaction.begin();
 
     try {
+
+        const updateAttachedActionTime = await new sql.Request(transaction)
+            .input('attached_action_time', sql.Decimal(5, 2), toNumber(payload.attachedActionTime, 0))
+            .input('machineId', sql.Int, payload.machineId ? Number(payload.machineId) : null)
+            .query(`
+                UPDATE machine_equipments_test 
+                SET attached_action_time = @attached_action_time
+                WHERE Id = @machineId
+            `);
+        
+
         const headerResult = await new sql.Request(transaction)
             .input('analysis_no', sql.NVarChar, analysisNo)
             .input('source_id', sql.Int, payload.sourceId ? Number(payload.sourceId) : null)
@@ -420,7 +432,7 @@ async function getAnalysisById(id) {
         a.updated_at AS [updatedAt]
       FROM gsd_analysis_headers a
       LEFT JOIN sources s ON a.source_id = s.id
-      LEFT JOIN machine_equipments m ON a.machine_id = m.id
+      LEFT JOIN machine_equipments_test m ON a.machine_id = m.id
       WHERE a.id = @id
     `);
 
@@ -465,3 +477,6 @@ module.exports = {
     getAnalyses,
     getAnalysisById,
 };
+
+
+

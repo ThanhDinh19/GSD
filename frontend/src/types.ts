@@ -140,6 +140,28 @@ export interface MachineEquipmentPayload {
   statusId: number;
 }
 
+export interface MachineEquipment_test {
+  id: number;
+  machineCode: string;
+  machineName: string;
+
+  clusterId?: number | null;
+
+  codeMmtb?: string | null;
+  allowance?: number | null;
+  stitchCount?: number | null;
+  machineSpeed?: number | null;
+
+  defaultSmv?: number | null;
+  skillGrade?: string | null;
+
+  note?: string | null;
+  statusId: number;
+  statusName?: string;
+  createdAt?: string;
+
+  attachedActionTime: number;
+}
 
 export interface SourceMaster {
   id: number;
@@ -193,7 +215,6 @@ export interface SaveSourceActionMappingPayload {
   details: SourceActionDetail[];
 }
 
-
 export interface SourceActionForAnalysis {
   sourceActionDetailId: number;
   lineNo: number;
@@ -223,6 +244,7 @@ export interface GsdAnalysisPayload {
   machineId?: number | null;
   operationName: string;
   seamLength?: number | null;
+  // attachedActionTime có thể được edit nên cho vào payload (lấy data từ frontend)
   attachedActionTime?: number | null;
   difficultyPercent?: number | null;
   productMultiplier?: number | null;
@@ -265,7 +287,6 @@ export interface GsdAnalysisRow extends SourceActionForAnalysis {
   frequency: number;
   isSelected: boolean;
 }
-
 
 export interface GsdAnalysisSummary {
   id: number;

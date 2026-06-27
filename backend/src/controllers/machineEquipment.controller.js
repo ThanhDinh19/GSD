@@ -6,6 +6,11 @@ const getMachineEquipments = asyncHandler(async (req, res) => {
   return res.json(data);
 });
 
+const getMachineEquiments_Test = asyncHandler(async (req, res) => {
+  const data = await machineEquipmentService.getMachineEquipments_test();
+  return res.json(data);
+});
+
 const createMachineEquipment = asyncHandler(async (req, res) => {
   const { machineCode, machineName } = req.body;
 
@@ -66,4 +71,5 @@ module.exports = {
   createMachineEquipment,
   updateMachineEquipment,
   deactivateMachineEquipment,
+  getMachineEquiments_Test,
 };

@@ -33,6 +33,40 @@ async function getMachineEquipments() {
   return result.recordset;
 }
 
+
+async function getMachineEquipments_test(){
+  const pool = getPool();
+
+  const result = await pool.request().query(
+    `
+    SELECT
+      m.id,
+      m.machine_code AS machineCode,
+      m.machine_name AS machineName,
+
+      m.cluster_id AS clusterId,
+
+      m.code_mmtb AS codeMmtb,
+      m.allowance,
+      m.stitch_count AS stitchCount,
+      m.machine_speed AS machineSpeed,
+
+      m.default_smv AS defaultSmv,
+      m.skill_grade AS skillGrade,
+
+      m.note,
+      m.status_id AS statusId,
+      s.status_name AS statusName,
+      m.created_at AS createdAt,
+      m.attached_action_time AS attachedActionTime
+    FROM machine_equipments_test m
+    LEFT JOIN master_status s ON m.status_id = s.id
+    ORDER BY m.id DESC
+    `
+  );
+  return result.recordset;
+}
+
 async function createMachineEquipment(payload) {
   const pool = getPool();
 
@@ -148,4 +182,5 @@ module.exports = {
   createMachineEquipment,
   updateMachineEquipment,
   deactivateMachineEquipment,
+  getMachineEquipments_test,
 };

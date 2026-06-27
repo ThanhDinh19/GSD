@@ -1,9 +1,13 @@
 import { request } from './httpClient';
-import { MachineEquipment, MachineEquipmentPayload } from '../types';
+import { MachineEquipment, MachineEquipment_test, MachineEquipmentPayload } from '../types';
 
 export const machineEquipmentService = {
   getMachineEquipments() {
     return request<MachineEquipment[]>('/api/machine-equipments');
+  },
+
+  getMachineEquipments_test() {
+    return request<MachineEquipment_test[]>('/api/machine-equipments/test');
   },
 
   createMachineEquipment(payload: MachineEquipmentPayload) {

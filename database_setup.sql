@@ -463,6 +463,82 @@ where header_id = 11
 
 
 
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='machine_equipments_test' and xtype='U')
+    BEGIN
+      CREATE TABLE machine_equipments_test (
+        id INT IDENTITY(1,1) PRIMARY KEY,
+
+        machine_code NVARCHAR(16) NOT NULL UNIQUE,   -- Mã MMTB
+        machine_name NVARCHAR(256) NOT NULL,         -- Tên MMTB
+
+        cluster_id INT NULL,                         -- Cụm
+
+        code_mmtb NVARCHAR(16) NULL,                 -- Code
+        allowance DECIMAL(5,2) NULL,                 -- Hao phí
+        stitch_count DECIMAL(5,2) NULL,              -- Số mũi chỉ
+        machine_speed INT NULL,                      -- Tốc độ máy
+
+        default_smv DECIMAL(5,2) NULL,               -- SMV
+        skill_grade CHAR(1) NULL,                    -- Bậc CĐ
+
+        note NVARCHAR(256) NULL,
+        status_id TINYINT NOT NULL DEFAULT 0,
+        created_at DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+      )
+    END
+
+
+ALTER TABLE machine_equipments_test
+ADD attached_action_time DECIMAL(5, 2) NOT NULL DEFAULT 4.4;
+
+select st.status_name, m.machine_name
+from master_status as st with(nolock), machine_equipments_test as m with(nolock)
+where st.id = m.status_id
+
+
+select * from machine_equipments_test with(nolock)
+
+update machine_equipments_test
+set machine_name = N'Máy đai thùng test'
+where machine_code = 'MMTB0071'
+
+
+DELETE FROM machine_equipments_test;
+
+SET IDENTITY_INSERT machine_equipments_test ON;
+
+INSERT INTO machine_equipments_test (
+    id,
+    machine_code,
+    machine_name,
+    cluster_id,
+    code_mmtb,
+    allowance,
+    stitch_count,
+    machine_speed,
+    default_smv,
+    skill_grade,
+    note,
+    status_id,
+    created_at
+)
+SELECT
+    id,
+    machine_code,
+    machine_name,
+    cluster_id,
+    code_mmtb,
+    allowance,
+    stitch_count,
+    machine_speed,
+    default_smv,
+    skill_grade,
+    note,
+    status_id,
+    created_at
+FROM machine_equipments;
+
+SET IDENTITY_INSERT machine_equipments_test OFF;
 
 
 
@@ -473,6 +549,75 @@ where header_id = 11
 
 
 
+SELECT
+      m.id,
+      m.machine_code AS machineCode,
+      m.machine_name AS machineName,
+
+      m.cluster_id AS clusterId,
+
+      m.code_mmtb AS codeMmtb,
+      m.allowance,
+      m.stitch_count AS stitchCount,
+      m.machine_speed AS machineSpeed,
+
+      m.default_smv AS defaultSmv,
+      m.skill_grade AS skillGrade,
+
+      m.note,
+      m.status_id AS statusId,
+      s.status_name AS statusName,
+      m.created_at AS createdAt
+    FROM machine_equipments m
+    LEFT JOIN master_status s ON m.status_id = s.id
+    ORDER BY m.id DESC
 
 
 
+select * from machine_equipments with(nolock)
+
+select * from gsd_analysis_details with(nolock)
+
+select * from gsd_analysis_headers with(nolock)
+
+select * from gsd_codes with(nolock)
+where seconds = '0.160000'
+
+
+SELECT
+    id,
+    machine_code AS [machineCode],
+    machine_name AS [machineName],
+    stitch_count AS [stitchCount],
+    machine_speed AS [machineSpeed],
+    allowance AS [allowance],
+    skill_grade AS [skillGrade]
+FROM machine_equipments_test
+WHERE id = 3
+
+
+
+
+    SELECT
+      m.id,
+      m.machine_code AS machineCode,
+      m.machine_name AS machineName,
+
+      m.cluster_id AS clusterId,
+
+      m.code_mmtb AS codeMmtb,
+      m.allowance,
+      m.stitch_count AS stitchCount,
+      m.machine_speed AS machineSpeed,
+
+      m.default_smv AS defaultSmv,
+      m.skill_grade AS skillGrade,
+
+      m.note,
+      m.status_id AS statusId,
+      s.status_name AS statusName,
+      m.created_at AS createdAt,
+      m.attached_action_time
+    FROM machine_equipments_test m
+    LEFT JOIN master_status s ON m.status_id = s.id
+    ORDER BY m.id DESC  

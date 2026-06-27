@@ -4,6 +4,7 @@ const machineEquipmentController = require('../controllers/machineEquipment.cont
 const router = express.Router();
 
 router.get('/', machineEquipmentController.getMachineEquipments);
+router.get('/test', machineEquipmentController.getMachineEquiments_Test);
 router.post('/', machineEquipmentController.createMachineEquipment);
 router.put('/:id', machineEquipmentController.updateMachineEquipment);
 router.delete('/:id', machineEquipmentController.deactivateMachineEquipment);

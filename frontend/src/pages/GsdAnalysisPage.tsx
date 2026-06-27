@@ -1,8 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { GsdAnalysisPayload } from '../types';
 import { useGsdAnalysis } from '../hooks/useGsdAnalysis';
 import SourceActionPickerModal from '../components/gsd-analysis/SourceActionPickerModal';
 
+// Omit lấy type GsdAnalysisPayload, bỏ cột sourceId, details
 const initialForm: Omit<GsdAnalysisPayload, 'sourceId' | 'details'> = {
     machineId: null,
     operationName: '',
@@ -18,15 +19,15 @@ function formatNumber(value: number | null | undefined, digits = 4) {
     return numberValue.toFixed(digits);
 }
 
-function formatDateTime(value?: string) {
-    if (!value) return '';
+// function formatDateTime(value?: string) {
+//     if (!value) return '';
 
-    const date = new Date(value);
+//     const date = new Date(value);
 
-    if (Number.isNaN(date.getTime())) return value;
+//     if (Number.isNaN(date.getTime())) return value;
 
-    return date.toLocaleString('vi-VN');
-}
+//     return date.toLocaleString('vi-VN');
+// }
 
 function getLaborGradeByDifficulty(value: number | null | undefined) {
     if (value === null || value === undefined || value === 0) return 2;
@@ -42,10 +43,20 @@ export default function GsdAnalysisPage() {
         sources,
         machines,
 
+        machines_test,
+
         popupSourceId,
         popupRows,
+        sourceActionMap,
         selectedDraftRows,
+
         analysisRows,
+
+        loadingMasterData,
+
+        loadMachines_test,
+
+        loadingMachines_test,
 
         loadingSourceActions,
         calculating,
@@ -65,9 +76,11 @@ export default function GsdAnalysisPage() {
         analyses,
         loadingAnalyses,
         loadAnalyses,
-        togglePopupActionRow,
+        togglePopupActionRow
 
     } = useGsdAnalysis();
+
+    const [attachedAcTime, setAttachedAcTime] = useState(0);
 
     const [form, setForm] = useState(initialForm);
     const [isPickerOpen, setIsPickerOpen] = useState(false);
@@ -75,6 +88,12 @@ export default function GsdAnalysisPage() {
     const selectedMachine = useMemo(() => {
         return machines.find((item) => item.id === Number(form.machineId)) || null;
     }, [machines, form.machineId]);
+
+    // Dinh 28/06/2026 : giữ lại kết quả return của useMemo lần trước, nếu machine_test và form.machineId ko đổi thì k cần chạy lại find
+    const selectedMachine_test = useMemo(() => {
+        return machines_test.find((item) => item.id === Number(form.machineId)) || null;
+    }, [machines_test, form.machineId]);
+
 
     const previewLaborGrade = getLaborGradeByDifficulty(
         form.difficultyPercent === null || form.difficultyPercent === undefined
@@ -128,6 +147,9 @@ export default function GsdAnalysisPage() {
 
     const handleCalculate = async () => {
         if (!validateBeforeCalculate()) return;
+
+        console.log("form: ", form);
+        console.log("attached action time vừa gửi đi: ", form.attachedActionTime);
 
         try {
             await calculate(form);
@@ -196,9 +218,7 @@ export default function GsdAnalysisPage() {
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-5">
-
-
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-5">
                     <div>
                         <label className="block text-xs font-bold text-slate-600 mb-1">
                             Tên công đoạn <span className="text-red-500">*</span>
@@ -217,16 +237,24 @@ export default function GsdAnalysisPage() {
                         </label>
                         <select
                             value={form.machineId ?? ''}
+
+                            // Dinh, 28/06/2026
                             onChange={(e) => {
-                                setForm({
-                                    ...form,
-                                    machineId: e.target.value ? Number(e.target.value) : null,
-                                });
+
+                                const machineId = e.target.value ? Number(e.target.value) : null
+
+                                const machine = machines_test.find((item) => item.id === machineId) || null;
+
+                                setForm((prev) => ({
+                                    ...prev,
+                                    machineId: machineId,
+                                    attachedActionTime: machine?.attachedActionTime ?? 0
+                                }));
                             }}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                         >
                             <option value="">-- Chọn máy --</option>
-                            {machines.map((machine) => (
+                            {machines_test.map((machine) => (
                                 <option key={machine.id} value={machine.id}>
                                     {machine.machineCode} - {machine.machineName}
                                 </option>
@@ -264,7 +292,7 @@ export default function GsdAnalysisPage() {
                         />
                     </div>
 
-                    <div>
+                    {/* <div>
                         <label className="block text-xs font-bold text-slate-600 mb-1">
                             Thao tác kèm theo
                         </label>
@@ -275,7 +303,7 @@ export default function GsdAnalysisPage() {
                             onChange={(e) => handleNumberChange('attachedActionTime', e.target.value)}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                         />
-                    </div>
+                    </div> */}
 
                     <div>
                         <label className="block text-xs font-bold text-slate-600 mb-1">
@@ -302,16 +330,35 @@ export default function GsdAnalysisPage() {
                     </div>
                 </div>
 
-                {selectedMachine && (
-                    <div className="mb-5 grid grid-cols-1 md:grid-cols-5 gap-3 text-xs">
+                {selectedMachine_test && (
+                    <div className="mb-5 grid grid-cols-1 md:grid-cols-6 gap-3 text-xs">
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                            <div className="text-slate-500">Số mũi chỉ</div>
-                            <div className="font-bold text-slate-800">{selectedMachine.stitchCount ?? 0}</div>
+                            <div className="text-slate-500">Thao tác kèm theo</div>
+                            <input
+
+                                // Dinh, 28/06/2026
+                                className="font-bold text-slate-800"
+                                style={{ outline: 'none' }}
+                                type="number"
+                                step="0.01"
+                                value={form.attachedActionTime ?? 0}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        attachedActionTime: e.target.value === '' ? 0 : Number(e.target.value),
+                                    }))
+                                }
+                            />
+                        </div>
+
+                        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                            <div className="text-slate-500">Số mũi chỉ</div> 
+                            <div className="font-bold text-slate-800">{selectedMachine_test.stitchCount ?? 0}</div>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                             <div className="text-slate-500">Tốc độ máy</div>
-                            <div className="font-bold text-slate-800">{selectedMachine.machineSpeed ?? 0}</div>
+                            <div className="font-bold text-slate-800">{selectedMachine_test.machineSpeed ?? 0}</div>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
@@ -319,15 +366,15 @@ export default function GsdAnalysisPage() {
                             <div className="font-bold text-slate-800">
                                 {result
                                     ? Number(result.machineVelocity || 0).toFixed(4)
-                                    : selectedMachine.machineSpeed
-                                        ? (((Number(selectedMachine.stitchCount || 0) / Number(selectedMachine.machineSpeed || 1)) * 60)).toFixed(4)
+                                    : selectedMachine_test.machineSpeed
+                                        ? (((Number(selectedMachine_test.stitchCount || 0) / Number(selectedMachine_test.machineSpeed || 1)) * 60)).toFixed(4)
                                         : '0.0000'}
                             </div>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                             <div className="text-slate-500">Hao phí</div>
-                            <div className="font-bold text-slate-800">{selectedMachine.allowance ?? 0}</div>
+                            <div className="font-bold text-slate-800">{selectedMachine_test.allowance ?? 0}</div>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
@@ -453,118 +500,6 @@ export default function GsdAnalysisPage() {
                     </table>
                 </div>
             </div>
-
-            {/* <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
-                <div className="flex items-center justify-between gap-4 mb-5">
-                    <div>
-                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
-                            Danh sách công đoạn đã phân tích
-                        </h2>
-                        <p className="text-xs text-slate-500 mt-1">
-                            Các công đoạn đã được lưu sau khi bấm “Lưu phân tích”.
-                        </p>
-                    </div>
-
-                    <button
-                        type="button"
-                        onClick={loadAnalyses}
-                        disabled={loadingAnalyses}
-                        className="px-4 py-2 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 disabled:opacity-50"
-                    >
-                        {loadingAnalyses ? 'Đang tải...' : 'Tải lại'}
-                    </button>
-                </div>
-
-                <div className="overflow-x-auto border border-slate-200 rounded-lg">
-                    <table className="min-w-full text-xs">
-                        <thead className="bg-slate-50 text-slate-500 uppercase">
-                            <tr>
-                                <th className="px-4 py-3 text-left">STT</th>
-                                <th className="px-4 py-3 text-left">Mã phân tích</th>
-                                <th className="px-4 py-3 text-left">Tên công đoạn</th>
-                                <th className="px-4 py-3 text-left">Source</th>
-                                <th className="px-4 py-3 text-left">Máy</th>
-                                <th className="px-4 py-3 text-right">Tổng TMU</th>
-                                <th className="px-4 py-3 text-right">Giây thao tác</th>
-                                <th className="px-4 py-3 text-right">Thời gian MMTB</th>
-                                <th className="px-4 py-3 text-right">Bậc tay nghề</th>
-                                <th className="px-4 py-3 text-right">SMV cuối</th>
-                                <th className="px-4 py-3 text-left">Ngày tạo</th>
-                            </tr>
-                        </thead>
-
-                        <tbody className="divide-y divide-slate-100">
-                            {loadingAnalyses && (
-                                <tr>
-                                    <td colSpan={11} className="px-4 py-6 text-center text-slate-400">
-                                        Đang tải danh sách công đoạn đã phân tích...
-                                    </td>
-                                </tr>
-                            )}
-
-                            {!loadingAnalyses && analyses.length === 0 && (
-                                <tr>
-                                    <td colSpan={11} className="px-4 py-6 text-center text-slate-400">
-                                        Chưa có công đoạn nào được phân tích.
-                                    </td>
-                                </tr>
-                            )}
-
-                            {!loadingAnalyses && analyses.map((item, index) => (
-                                <tr key={item.id} className="hover:bg-blue-50">
-                                    <td className="px-4 py-3 font-mono text-slate-500">
-                                        {index + 1}
-                                    </td>
-
-                                    <td className="px-4 py-3 font-bold text-slate-700">
-                                        {item.analysisNo}
-                                    </td>
-
-                                    <td className="px-4 py-3 text-slate-700">
-                                        {item.operationName}
-                                    </td>
-
-                                    <td className="px-4 py-3 text-slate-700">
-                                        {item.sourceCode || '-'}
-                                    </td>
-
-                                    <td className="px-4 py-3 text-slate-700">
-                                        {item.machineCode
-                                            ? `${item.machineCode}${item.machineName ? ` - ${item.machineName}` : ''}`
-                                            : '-'}
-                                    </td>
-
-                                    <td className="px-4 py-3 text-right font-bold">
-                                        {Number(item.totalTmu || 0).toFixed(2)}
-                                    </td>
-
-                                    <td className="px-4 py-3 text-right">
-                                        {Number(item.totalManualSeconds || 0).toFixed(4)}
-                                    </td>
-
-                                    <td className="px-4 py-3 text-right">
-                                        {Number(item.machineSeconds || 0).toFixed(4)}
-                                    </td>
-
-                                    <td className="px-4 py-3 text-right">
-                                        {item.skillGrade ?? '-'}
-                                    </td>
-
-                                    <td className="px-4 py-3 text-right font-black text-green-700">
-                                        {Number(item.finalSmv || 0).toFixed(0)}
-                                    </td>
-
-                                    <td className="px-4 py-3 text-slate-500">
-                                        {formatDateTime(item.createdAt || item.analysisDate)}
-                                    </td>
-                                </tr>
-                            ))}
-                        </tbody>
-                    </table>
-                </div>
-            </div> */}
-
-
 
             {isPickerOpen && (
                 <SourceActionPickerModal
