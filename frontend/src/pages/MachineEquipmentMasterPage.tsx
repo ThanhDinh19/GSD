@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { MachineEquipment, MachineEquipmentPayload } from '../types';
+import { MachineEquipment, MachineEquipment_test, MachineEquipmentPayload } from '../types';
 import { useMachineEquipments } from '../hooks/useMachineEquipments';
 
 const emptyForm: MachineEquipmentPayload = {
@@ -8,6 +8,7 @@ const emptyForm: MachineEquipmentPayload = {
   clusterId: null,
   codeMmtb: '',
   allowance: null,
+  attachedActionTime: null,
   stitchCount: null,
   machineSpeed: null,
   defaultSmv: null,
@@ -19,6 +20,7 @@ const emptyForm: MachineEquipmentPayload = {
 export default function MachineEquipmentMasterPage() {
   const {
     machineEquipments,
+    machineEquiments_test,
     clusters,
     statuses,
     loading,
@@ -28,22 +30,30 @@ export default function MachineEquipmentMasterPage() {
 
   const [selectedItem, setSelectedItem] = useState<MachineEquipment | null>(null);
   const [form, setForm] = useState<MachineEquipmentPayload>(emptyForm);
+
+
+  // Dinh, 28/06/2026
+  const [selectedItem_test, setSelectedItem_test] = useState<MachineEquipment_test | null>(null);
+  
+
   const [isFormOpen, setIsFormOpen] = useState(false);
 
   const openCreateForm = () => {
     setSelectedItem(null);
+    setSelectedItem_test(null);
     setForm(emptyForm);
     setIsFormOpen(true);
   };
 
-  const openEditForm = (item: MachineEquipment) => {
-    setSelectedItem(item);
+  const openEditForm = (item: MachineEquipment_test) => {
+    setSelectedItem_test(item);
     setForm({
       machineCode: item.machineCode,
       machineName: item.machineName,
       clusterId: item.clusterId || null,
       codeMmtb: item.codeMmtb || '',
       allowance: item.allowance ?? null,
+      attachedActionTime: item.attachedActionTime ?? null,
       stitchCount: item.stitchCount ?? null,
       machineSpeed: item.machineSpeed ?? null,
       defaultSmv: item.defaultSmv ?? null,
@@ -56,6 +66,7 @@ export default function MachineEquipmentMasterPage() {
 
   const closeForm = () => {
     setSelectedItem(null);
+    setSelectedItem_test(null);
     setForm(emptyForm);
     setIsFormOpen(false);
   };
@@ -74,8 +85,8 @@ export default function MachineEquipmentMasterPage() {
     e.preventDefault();
 
     try {
-      if (selectedItem) {
-        await updateMachineEquipment(selectedItem.id, form);
+      if (selectedItem_test) {
+        await updateMachineEquipment(selectedItem_test.id, form);
       } else {
         await createMachineEquipment(form);
       }
@@ -114,9 +125,10 @@ export default function MachineEquipmentMasterPage() {
                 <th className="px-4 py-3 text-left">STT</th>
                 <th className="px-4 py-3 text-left">Code MMTB</th>
                 <th className="px-4 py-3 text-left">Tên MMTB</th>
-                <th className="px-4 py-3 text-left">Cụm</th>
+        
                 <th className="px-4 py-3 text-left">Code</th>
                 <th className="px-4 py-3 text-right">Hao phí</th>
+                <th className="px-4 py-3 text-left">Thao tác kèm theo</th>
                 <th className="px-4 py-3 text-right">Số mũi chỉ</th>
                 <th className="px-4 py-3 text-right">Tốc độ máy</th>
                 <th className="px-4 py-3 text-right">SMV</th>
@@ -134,7 +146,7 @@ export default function MachineEquipmentMasterPage() {
                 </tr>
               )}
 
-              {!loading && machineEquipments.length === 0 && (
+              {!loading && machineEquiments_test.length === 0 && (
                 <tr>
                   <td colSpan={11} className="px-4 py-6 text-center text-slate-400">
                     Chưa có dữ liệu MMTB.
@@ -142,7 +154,7 @@ export default function MachineEquipmentMasterPage() {
                 </tr>
               )}
 
-              {!loading && machineEquipments.map((item, index) => (
+              {!loading && machineEquiments_test.map((item, index) => (
                 <tr
                   key={item.id}
                   onClick={() => openEditForm(item)}
@@ -151,9 +163,9 @@ export default function MachineEquipmentMasterPage() {
                   <td className="px-4 py-3 font-mono text-slate-500">{index + 1}</td>
                   <td className="px-4 py-3 font-bold text-slate-700">{item.machineCode}</td>
                   <td className="px-4 py-3 text-slate-700">{item.machineName}</td>
-                  <td className="px-4 py-3 text-slate-700">{item.clusterName || ''}</td>
                   <td className="px-4 py-3 text-slate-700">{item.codeMmtb || ''}</td>
                   <td className="px-4 py-3 text-right">{item.allowance ?? ''}</td>
+                  <td className="px-4 py-3 text-slate-700">{item.attachedActionTime || ''}</td>
                   <td className="px-4 py-3 text-right">{item.stitchCount ?? ''}</td>
                   <td className="px-4 py-3 text-right">{item.machineSpeed ?? ''}</td>
                   <td className="px-4 py-3 text-right font-bold">{item.defaultSmv ?? ''}</td>
@@ -181,7 +193,7 @@ export default function MachineEquipmentMasterPage() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl border border-slate-200">
             <div className="px-5 py-4 border-b border-slate-100">
               <h3 className="text-sm font-black text-slate-800 uppercase">
-                {selectedItem ? 'Cập nhật MMTB' : 'Thêm mới MMTB'}
+                {selectedItem_test ? 'Cập nhật MMTB' : 'Thêm mới MMTB'}
               </h3>
             </div>
 
@@ -213,7 +225,7 @@ export default function MachineEquipmentMasterPage() {
                   />
                 </div>
 
-                <div>
+                {/* <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">
                     Cụm
                   </label>
@@ -229,7 +241,7 @@ export default function MachineEquipmentMasterPage() {
                       </option>
                     ))}
                   </select>
-                </div>
+                </div> */}
 
                 <div>
                   <label className="block text-xs font-bold text-slate-600 mb-1">
@@ -265,6 +277,19 @@ export default function MachineEquipmentMasterPage() {
                     step="0.01"
                     value={form.allowance ?? ''}
                     onChange={(e) => handleNumberChange('allowance', e.target.value)}
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    Thao tác kèm theo
+                  </label>
+                  <input 
+                    type="number"
+                    step="0.01"
+                    value={form.attachedActionTime ?? ''}
+                    onChange={(e) => handleNumberChange('attachedActionTime', e.target.value)}
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                   />
                 </div>

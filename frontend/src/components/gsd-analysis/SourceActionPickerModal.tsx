@@ -1,8 +1,6 @@
-<<<<<<< Updated upstream
-import {useState } from 'react';
-=======
 
->>>>>>> Stashed changes
+import {useState } from 'react';
+
 import { GsdAnalysisRow, SourceMaster } from '../../types';
 
 interface SourceActionPickerModalProps {

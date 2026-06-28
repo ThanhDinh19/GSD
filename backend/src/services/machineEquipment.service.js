@@ -77,6 +77,7 @@ async function createMachineEquipment(payload) {
       .input('cluster_id', sql.Int, payload.clusterId ? Number(payload.clusterId) : null)
       .input('code_mmtb', sql.NVarChar, payload.codeMmtb ? String(payload.codeMmtb).trim() : null)
       .input('allowance', sql.Decimal(5, 2), payload.allowance !== null && payload.allowance !== undefined && payload.allowance !== '' ? Number(payload.allowance) : null)
+      .input('attached_action_time', sql.Decimal(5,2), payload.attachedActionTime !== null && payload.attachedActionTime !== undefined && payload.attachedActionTime !== '' ? Number(payload.attachedActionTime) : null)
       .input('stitch_count', sql.Decimal(5, 2), payload.stitchCount !== null && payload.stitchCount !== undefined && payload.stitchCount !== '' ? Number(payload.stitchCount) : null)
       .input('machine_speed', sql.Int, payload.machineSpeed !== null && payload.machineSpeed !== undefined && payload.machineSpeed !== '' ? Number(payload.machineSpeed) : null)
       .input('default_smv', sql.Decimal(5, 2), payload.defaultSmv !== null && payload.defaultSmv !== undefined && payload.defaultSmv !== '' ? Number(payload.defaultSmv) : null)
@@ -84,12 +85,13 @@ async function createMachineEquipment(payload) {
       .input('note', sql.NVarChar, payload.note ? String(payload.note).trim() : null)
       .input('status_id', sql.TinyInt, payload.statusId !== undefined ? Number(payload.statusId) : 0)
       .query(`
-        INSERT INTO machine_equipments (
+        INSERT INTO machine_equipments_test (
           machine_code,
           machine_name,
           cluster_id,
           code_mmtb,
           allowance,
+          attached_action_time,
           stitch_count,
           machine_speed,
           default_smv,
@@ -103,6 +105,7 @@ async function createMachineEquipment(payload) {
           @cluster_id,
           @code_mmtb,
           @allowance,
+          @attached_action_time,
           @stitch_count,
           @machine_speed,
           @default_smv,
@@ -137,6 +140,7 @@ async function updateMachineEquipment(id, payload) {
     .input('cluster_id', sql.Int, payload.clusterId ? Number(payload.clusterId) : null)
     .input('code_mmtb', sql.NVarChar, payload.codeMmtb ? String(payload.codeMmtb).trim() : null)
     .input('allowance', sql.Decimal(5, 2), payload.allowance !== null && payload.allowance !== undefined && payload.allowance !== '' ? Number(payload.allowance) : null)
+    .input('attached_action_time', sql.Decimal(5,2), payload.attachedActionTime !== null && payload.attachedActionTime !== undefined && payload.attachedActionTime !== '' ? Number(payload.attachedActionTime) : null)
     .input('stitch_count', sql.Decimal(5, 2), payload.stitchCount !== null && payload.stitchCount !== undefined && payload.stitchCount !== '' ? Number(payload.stitchCount) : null)
     .input('machine_speed', sql.Int, payload.machineSpeed !== null && payload.machineSpeed !== undefined && payload.machineSpeed !== '' ? Number(payload.machineSpeed) : null)
     .input('default_smv', sql.Decimal(5, 2), payload.defaultSmv !== null && payload.defaultSmv !== undefined && payload.defaultSmv !== '' ? Number(payload.defaultSmv) : null)
@@ -144,13 +148,14 @@ async function updateMachineEquipment(id, payload) {
     .input('note', sql.NVarChar, payload.note ? String(payload.note).trim() : null)
     .input('status_id', sql.TinyInt, payload.statusId !== undefined ? Number(payload.statusId) : 0)
     .query(`
-      UPDATE machine_equipments
+      UPDATE machine_equipments_test
       SET
         machine_code = @machine_code,
         machine_name = @machine_name,
         cluster_id = @cluster_id,
         code_mmtb = @code_mmtb,
         allowance = @allowance,
+        attached_action_time = @attached_action_time,
         stitch_count = @stitch_count,
         machine_speed = @machine_speed,
         default_smv = @default_smv,

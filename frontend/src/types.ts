@@ -130,6 +130,9 @@ export interface MachineEquipmentPayload {
 
   codeMmtb?: string | null;
   allowance?: number | null;
+
+  attachedActionTime?: number | null;
+
   stitchCount?: number | null;
   machineSpeed?: number | null;
 

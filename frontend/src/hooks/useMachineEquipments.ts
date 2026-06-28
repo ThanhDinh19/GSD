@@ -60,12 +60,12 @@ export function useMachineEquipments() {
 
   const createMachineEquipment = async (payload: MachineEquipmentPayload) => {
     await machineEquipmentService.createMachineEquipment(payload);
-    await loadMachineEquipments();
+    await loadMachineEquipments_test();
   };
 
   const updateMachineEquipment = async (id: number, payload: MachineEquipmentPayload) => {
     await machineEquipmentService.updateMachineEquipment(id, payload);
-    await loadMachineEquipments();
+    await loadMachineEquipments_test();
   };
 
   useEffect(() => {
