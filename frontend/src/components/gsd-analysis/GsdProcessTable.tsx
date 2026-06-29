@@ -9,13 +9,20 @@ interface GsdProcessTableProps {
 }
 
 function formatDateTime(value?: string) {
-    if (!value) return '';
+  if (!value) return '';
 
-    const date = new Date(value);
+  const normalized = value.replace(' ', 'T');
 
-    if (Number.isNaN(date.getTime())) return value;
+  const [datePart, timePart = ''] = normalized.split('T');
 
-    return date.toLocaleString('vi-VN');
+  const [year, month, day] = datePart.split('-');
+  const [hour = '00', minute = '00', secondRaw = '00'] = timePart.split(':');
+
+  const second = secondRaw.split('.')[0];
+
+  if (!year || !month || !day) return value;
+
+  return `${hour}:${minute}:${second} ${day}/${month}/${year}`;
 }
 
 export default function GsdProcessTable({
@@ -26,7 +33,7 @@ export default function GsdProcessTable({
     showRefreshButton = true,
 }: GsdProcessTableProps) {
     return (
-        <div className="bg-white rounded-xl border-slate-200 p-5">
+        <div className="bg-white rounded-xl border-slate-200 p-5">.
             <div className="flex items-center justify-between gap-4 mb-5">
                 <div>
                     <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
