@@ -68,12 +68,13 @@ export default function GsdAnalysisDetailModal({
             <InfoCard label="Hao phí" value={formatNumber(analysis.allowance, 2)} />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-6 gap-3 text-xs">
+          <div className="grid grid-cols-1 md:grid-cols-7 gap-3 text-xs">
             <MetricCard label="Tổng thao tác" value={analysis.details.length} />
             <MetricCard label="Tổng TMU" value={formatNumber(analysis.totalTmu, 2)} />
             <MetricCard label="Giây thao tác" value={formatNumber(analysis.totalManualSeconds, 4)} />
             <MetricCard label="Thời gian MMTB" value={formatNumber(analysis.machineSeconds, 4)} />
             <MetricCard label="Thời gian mức độ" value={formatNumber(analysis.difficultySeconds, 4)} />
+            <MetricCard label="Tổng SMV" value={formatNumber(analysis.totalSmvBeforeDifficulty, 0)} highlight />
             <MetricCard label="SMV cuối" value={formatNumber(analysis.finalSmv, 0)} highlight />
           </div>
 
