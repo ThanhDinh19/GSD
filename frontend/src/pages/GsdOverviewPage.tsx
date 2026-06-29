@@ -163,18 +163,18 @@ export default function GsdOverviewPage() {
                     </div>
 
                     <div className="p-5 bg-slate-10">
-                        {activeTab === 'analysis' && (
+                        <div style={{ display: activeTab === 'analysis' ? 'block' : 'none' }}>
                             <GsdAnalysisPage />
-                        )}
+                        </div>
 
-                        {activeTab === 'process' && (
+                        <div style={{ display: activeTab === 'process' ? 'block' : 'none' }}>
                             <GsdProcessTable
                                 analyses={analyses}
                                 loading={loading}
                                 onRefresh={loadAnalyses}
                                 onRowClick={handleOpenAnalysisDetail}
                             />
-                        )}
+                        </div>
                     </div>
                 </div>
             )}
