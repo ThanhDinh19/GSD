@@ -74,7 +74,7 @@ export default function GsdAnalysisDetailModal({
             <MetricCard label="Giây thao tác" value={formatNumber(analysis.totalManualSeconds, 4)} />
             <MetricCard label="Thời gian MMTB" value={formatNumber(analysis.machineSeconds, 4)} />
             <MetricCard label="Thời gian mức độ" value={formatNumber(analysis.difficultySeconds, 4)} />
-            <MetricCard label="Tổng SMV" value={formatNumber(analysis.totalSmvBeforeDifficulty, 0)} highlight />
+            <MetricCard label="Tổng SMV" value={analysis.totalSmvBeforeDifficulty} highlight />
             <MetricCard label="SMV cuối" value={formatNumber(analysis.finalSmv, 0)} highlight />
           </div>
 

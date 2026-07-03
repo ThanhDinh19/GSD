@@ -161,11 +161,19 @@ async function calculateAnalysis(payload) {
     const totalSmvBeforeDifficulty =
         (totalManualSeconds + machineSeconds) * productMultiplier;
 
+        // totalManualSeconds: tổng giây thao tác
+
+        // tổng smv = ( tổng giây thao tác + thời gian MMTB ) * hệ số nhân SP
+        // smv cuối = (tổng smv + thời gian mức độ)
+
     const difficultySeconds =
         totalSmvBeforeDifficulty * difficultyPercent / 100;
 
     const finalSmv =
         Math.ceil(totalSmvBeforeDifficulty + difficultySeconds);
+
+
+        // smv = thời gian thủ công * (
 
     const skillGrade = calculateSkillGrade(difficultyPercent);
 
