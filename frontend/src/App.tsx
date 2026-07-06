@@ -11,7 +11,7 @@ import ExcelRoutingView from './components/ExcelRoutingView';
 import ExcelEmployeeView from './components/ExcelEmployeeView';
 import MasterDataView from './components/MasterDataView';
 import GsdAnalysisView from './components/GsdAnalysisView';
-
+import OrganizationChartPage from './pages/OrganizationChartPage';
 
 // Import Syncfusion Spreadsheet CSS files
 import "@syncfusion/ej2-base/styles/material.css";
@@ -204,8 +204,8 @@ export default function App() {
                 <button
                   onClick={() => { setActiveTab('gsd-analysis'); setMobileMenuOpen(false); }}
                   className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'gsd-analysis'
-                      ? 'bg-[#1e40af] border-r-4 border-white font-bold'
-                      : 'hover:bg-blue-800/40 text-blue-100'
+                    ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                    : 'hover:bg-blue-800/40 text-blue-100'
                     }`}
                   title="Tổng quan GSD"
                 >
@@ -310,6 +310,38 @@ export default function App() {
 
                   {!isSidebarCollapsed && (
                     <span className="whitespace-nowrap">Danh mục</span>
+                  )}
+                </button>
+              </li>
+              <li>
+                <button
+                  onClick={() => {
+                    setActiveTab('organization-chart');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'organization-chart'
+                      ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                      : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
+                  title="Sơ đồ tổ chức"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 3h12v6H6V3zM6 15h5v6H6v-6zM13 15h5v6h-5v-6zM12 9v3m-3 0h6m-6 0v3m6-3v3"
+                    />
+                  </svg>
+
+                  {!isSidebarCollapsed && (
+                    <span className="whitespace-nowrap">Sơ đồ tổ chức</span>
                   )}
                 </button>
               </li>
@@ -506,6 +538,10 @@ export default function App() {
 
           {activeTab === 'master-data' && (
             <MasterDataView />
+          )}
+
+          {activeTab === 'organization-chart' &&(
+            <OrganizationChartPage/>
           )}
 
           {activeTab === 'gsd-analysis' && (

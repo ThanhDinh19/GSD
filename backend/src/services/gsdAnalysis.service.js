@@ -169,6 +169,9 @@ async function calculateAnalysis(payload) {
     const difficultySeconds =
         totalSmvBeforeDifficulty * difficultyPercent / 100;
 
+    // difficultySeconds: thời gian mức độ
+    // difficultyPercent: mức độ phức tạp
+
     const finalSmv =
         Math.ceil(totalSmvBeforeDifficulty + difficultySeconds);
 

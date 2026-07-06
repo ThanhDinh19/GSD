@@ -13,6 +13,8 @@ const gsdAnalysisRoutes = require('./gsdAnalysis.routes');
 
 const employeeController = require('../controllers/employee.controller');
 
+const organizationRoutes = require('./organization.routes');
+
 const router = express.Router();
 
 router.use('/statuses', statusRoutes);
@@ -27,6 +29,9 @@ router.use('/gsd-analysis', gsdAnalysisRoutes);
 
 router.use('/routing', routingRoutes);
 router.use('/mapping-config', mappingRoutes);
+
+// dinh 07/06/2026
+router.use('/organization', organizationRoutes);
 
 
 module.exports = router;

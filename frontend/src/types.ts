@@ -371,3 +371,42 @@ export interface GsdAnalysisDetail extends GsdAnalysisSummary {
 
   details: GsdAnalysisDetailRow[];
 }
+
+
+export interface DepartmentType {
+  department_type_id: string;
+  department_type_name: string;
+  sort_order: number;
+  status: number;
+}
+
+export interface DepartmentNode {
+  department_id: string;
+  department_name: string;
+  manager_employee_id?: string | null;
+  manager_name?: string | null;
+  parent_department_id?: string | null;
+  department_type_id: string;
+  department_type_name?: string | null;
+  department_type_sort_order?: number | null;
+  status: number;
+  dissolved_at?: string | null;
+  children: DepartmentNode[];
+}
+
+export interface DepartmentPayload {
+  department_name: string;
+  manager_employee_id?: string | null;
+  parent_department_id?: string | null;
+  department_type_id: string;
+  status: number;
+}
+
+
+export interface EmployeeLite {
+  id: number;
+  employee_id: string;
+  name: string | null;
+  email?: string | null;
+  phone?: string | null;
+}
