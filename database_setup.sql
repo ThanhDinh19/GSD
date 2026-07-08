@@ -179,6 +179,105 @@ BEGIN
 END
 GO
 
+select * from master_status;
+
+
+create table product_categories(
+    id int identity(1, 1) primary key,
+    product_code varchar(50) not null unique,
+    product_name nvarchar(50) not null,
+    status_id tinyint not null default 0,
+    created_at datetime2 not null default sysdatetime(),
+    constraint FK_product_status foreign key (status_id) references master_status(id)
+); 
+
+
+create table product_category_groups(
+    id int identity(1, 1) primary key,
+    category_group_code varchar(50) not null unique,
+    category_group_name nvarchar(50) not null,
+    status_id tinyint not null default 0,
+    created_at datetime2 not null default sysdatetime(),
+    constraint FK_category_group_status foreign key (status_id) references master_status(id)
+);
+
+select * from product_category_groups
+
+
+create table works (
+    id int identity(1, 1) primary key,
+    work_code varchar(32) not null unique,
+    work_name nvarchar(50) not null,
+    status_id tinyint not null default 0,
+    created_at datetime2 not null default sysdatetime(),
+
+    constraint FK_work_status foreign key (status_id) references master_status(id)
+);
+
+
+create table skill_grade(
+    id int identity(1, 1) not null primary key,
+    level int not null,
+    note nvarchar(60) null,
+    status_id tinyint not null default 0,
+    created_at datetime2 not null default sysdatetime(),
+    updated_at datetime2 null,
+    constraint FK_skill_grade_status foreign key (status_id) references master_status(id)
+);
+
+
+create table salary_coefficients(
+    id int identity(1,1) not null primary key,
+    level_id int not null,
+    coefficient decimal(6, 2) not null,
+    status_id tinyint not null default 0,
+    constraint FK_salary_coe foreign key (status_id) references master_status(id)
+);
+
+ALTER TABLE salary_coefficients
+ADD
+    created_at DATETIME2 NOT NULL DEFAULT SYSDATETIME(),
+    updated_at DATETIME2 NULL;
+
+select * from salary_coefficients;
+
+
+MERGE product_categories AS target
+USING (
+    VALUES
+    ('PC001', N'Áo Jacket', 0),
+    ('PC002', N'Áo Polo', 0),
+    ('PC003', N'Áo Thun', 0),
+    ('PC004', N'Quần Dài', 0),
+    ('PC005', N'Quần Short', 0)
+) AS src (
+    product_code,
+    product_name,
+    status_id
+)
+ON target.product_code = src.product_code
+
+WHEN MATCHED THEN
+    UPDATE SET
+        target.product_name = src.product_name,
+        target.status_id = src.status_id
+
+WHEN NOT MATCHED THEN
+    INSERT (
+        product_code,
+        product_name,
+        status_id
+    )
+    VALUES (
+        src.product_code,
+        src.product_name,
+        src.status_id
+    );
+GO
+
+
+select * from works;
+
 use [demo_db]
 
 select  * from master_status;

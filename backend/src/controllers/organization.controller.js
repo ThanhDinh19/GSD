@@ -1,4 +1,5 @@
 const organizationService = require('../services/organization.service');
+const asyncHandler = require('../utils/asyncHandler');
 
 const getDepartmentTypes = async (req, res) => {
   try {
@@ -99,6 +100,66 @@ const getEmployees = async (req, res) => {
   }
 };
 
+// loai phong ban test
+const getDepartmentTypes_test = async (req, res) => {
+  try {
+    const data = await organizationService.getDepartmentTypes_test();
+    res.json(data);
+  } catch (error) {
+    console.error('getDepartmentTypes_test error:', error);
+    res.status(500).json({ message: 'Không lấy được danh mục loại phòng ban' });
+  }
+};
+
+const createDepartmentType_test = asyncHandler(async (req, res) => {
+  const { departmentTypeCode, departmentTypeName, statusId } = req.body;
+
+  if (!departmentTypeCode || !departmentTypeName) {
+    return res.status(400).json({
+      error: 'Mã và Tên là bắt buộc.'
+    });
+  }
+
+  await organizationService.createDepartmentType_test({
+    departmentTypeCode,
+    departmentTypeName,
+    statusId
+  });
+
+  return res.json({
+    message: 'Đã thêm thành công.'
+  });
+});
+
+
+
+const updateDepartmentType_test = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  const { departmentTypeCode, departmentTypeName, statusId } = req.body;
+
+  if (!departmentTypeCode || !departmentTypeName) {
+    return res.status(400).json({
+      error: 'Mã và tên là bắt buộc.'
+    });
+  }
+
+  const updated = await organizationService.updateDepartmentType_test(Number(id), {
+    departmentTypeCode,
+    departmentTypeName,
+    statusId
+  });
+
+  if (!updated) {
+    return res.status(404).json({
+      error: 'Không tìm thấy loại phòng ban.'
+    });
+  }
+
+  return res.json({
+    message: 'Đã cập nhật thành công.'
+  });
+});
+
 module.exports = {
   getDepartmentTypes,
   createDepartmentType,
@@ -109,4 +170,7 @@ module.exports = {
   updateDepartment,
   dissolveDepartment,
   getEmployees, 
+  getDepartmentTypes_test,
+  createDepartmentType_test,
+  updateDepartmentType_test,
 };

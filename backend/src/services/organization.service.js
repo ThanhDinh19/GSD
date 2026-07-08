@@ -153,7 +153,6 @@ const getDepartmentTree = async (includeInactive = false) => {
   return buildTree(result.recordset);
 };
 
-
 const getDepartmentById = async (id) => {
   const pool = await getPool();
 
@@ -290,6 +289,75 @@ const getEmployees = async () => {
   return result.recordset;
 };
 
+// lấy loại phòng ban test
+const getDepartmentTypes_test = async () => {
+  const pool = await getPool();
+
+  const result = await pool.request().query(`
+   select 
+    d.id,
+    d.department_type_code as departmentTypeCode,
+    d.department_type_name as departmentTypeName,
+    d.status_id as statusId,
+    s.status_name as statusName,
+    d.created_at as createdAt
+   from department_types_test d
+   left join master_status s on d.status_id = s.id
+   order by d.id desc
+  `);
+
+  return result.recordset;
+};
+
+const createDepartmentType_test = async (payload) => {
+  const pool = await getPool();
+
+  try {
+    await pool.request()
+      .input('department_type_code', sql.VarChar, String(payload.departmentTypeCode))
+      .input('department_type_name', sql.NVarChar, String(payload.departmentTypeName))
+      .input('status_id', sql.TinyInt, payload.statusId !== undefined ? Number(payload.statusId) : 0)
+      .query(`
+        INSERT INTO department_types_test (department_type_code, department_type_name, status_id)
+        VALUES (@department_type_code, @department_type_name, @status_id)
+      `);
+  } catch (err) {
+    if (
+      err.message.includes('UNIQUE') ||
+      err.message.includes('duplicate') ||
+      err.number === 2627 ||
+      err.number === 2601
+    ) {
+      const duplicateError = new Error('Mã đã tồn tại.');
+      duplicateError.statusCode = 400;
+      throw duplicateError;
+    }
+
+    throw err;
+  }
+};
+
+
+async function updateDepartmentType_test(id, payload) {
+  const pool = getPool();
+
+  const result = await pool.request()
+    .input('id', sql.Int, id)
+    .input('department_type_code', sql.VarChar, String(payload.departmentTypeCode).trim())
+    .input('department_type_name', sql.NVarChar, String(payload.departmentTypeName).trim())
+    .input('status_id', sql.TinyInt, payload.statusId !== undefined ? Number(payload.statusId) : 0)
+    .query(`
+      UPDATE department_types_test
+      SET 
+        department_type_code = @department_type_code,
+        department_type_name = @department_type_name,
+        status_id = @status_id
+      WHERE id = @id
+    `);
+
+  return result.rowsAffected[0] > 0;
+}
+
 module.exports = {
   getDepartmentTypes,
   createDepartmentType,
@@ -300,4 +368,7 @@ module.exports = {
   updateDepartment,
   dissolveDepartment,
   getEmployees,
+  getDepartmentTypes_test,
+  createDepartmentType_test,
+  updateDepartmentType_test,
 };

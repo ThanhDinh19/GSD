@@ -380,6 +380,8 @@ export interface DepartmentType {
   status: number;
 }
 
+
+
 export interface DepartmentNode {
   department_id: string;
   department_name: string;
@@ -402,6 +404,52 @@ export interface DepartmentPayload {
   status: number;
 }
 
+export interface DepartmentNode_test {
+  department_code: string;
+  department_name: string;
+  manager_employee_id?: string | null;
+  manager_name?: string | null;
+  parent_department_code?: string | null;
+  department_type_code: string;
+  department_type_name?: string | null;
+  department_type_sort_order?: number | null;
+  status_id: number;
+  dissolved_at?: string | null;
+  children: DepartmentNode_test[];
+}
+
+export interface DepartmentPayload_test {
+  department_name: string;
+  manager_employee_id?: string | null;
+  parent_department_code?: string | null;
+  department_type_code: string;
+  status_id: number;
+}
+
+
+export interface EmployeeLite_test {
+  id: number;
+  employee_id: string;
+  name: string | null;
+  email?: string | null;
+  phone?: string | null;
+}
+
+
+export interface DepartmentType_test {
+  id: number;
+  departmentTypeCode: string;
+  departmentTypeName: string;
+  statusId: number;
+  statusName?: string;
+  createdAt?: string;
+}
+
+export interface DepartmentTypePayload_test {
+  departmentTypeCode: string;
+  departmentTypeName: string;
+  statusId: number;
+}
 
 export interface EmployeeLite {
   id: number;
@@ -409,4 +457,211 @@ export interface EmployeeLite {
   name: string | null;
   email?: string | null;
   phone?: string | null;
+}
+
+// dinh 07/06/2026
+export interface Work {
+  id: number;
+  workCode: string;
+  workName: string;
+  statusId: number;
+  statusName?: string;
+  createdAt?: string;
+}
+
+export interface WorkPayload {
+  workCode: string;
+  workName: string;
+  statusId: number;
+}
+
+export interface ProductCate {
+  id: number;
+  productCode: string;
+  productName: string;
+  statusId: number;
+  statusName?: string;
+  createdAt?: string;
+}
+
+export interface ProductCatePayload {
+  productCode: string;
+  productName: string;
+  statusId: number;
+}
+
+// dinh 07/07/2026
+export interface ProductCateGroup {
+  id: number;
+  cateGroupCode: string;
+  cateGroupName: string;
+  statusId: number;
+  statusName?: string;
+  createdAt?: string;
+}
+
+export interface ProductCateGroupPayload {
+  cateGroupCode: string;
+  cateGroupName: string;
+  statusId: number;
+}
+
+
+export interface SkillGrade {
+  id: number;
+  level: number;
+  note: string;
+  status_id: number;
+  status_name?: string;
+  created_at?: string;
+}
+
+export interface SkillGradePayload {
+  level: number;
+  note: string;
+  status_id: number;
+}
+
+
+
+// dinh 08/07/2026
+
+export interface SalaryCoefficient {
+  id: number;
+  levelId: number;
+  level?: number;
+  levelNote?: string;
+  coefficient: number;
+  statusId: number;
+  statusName?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SalaryCoefficientPayload {
+  levelId: number;
+  coefficient: number;
+  statusId: number;
+}
+
+
+// dinh 08/07/2026
+
+export interface OperationClusterHeader {
+  id: number;
+  document_code: string;
+
+  work_id: number;
+  work_code?: string;
+  work_name?: string;
+
+  product_category_id: number;
+  product_code?: string;
+  product_name?: string;
+
+  product_category_group_id: number;
+  category_group_code?: string;
+  category_group_name?: string;
+
+  required_efficiency?: number | null;
+  price_method: 'GSD' | 'ADJUSTED';
+  note?: string | null;
+  status_id: number;
+  status_name?: string;
+
+  total_adjusted_sam?: number;
+  total_sam_gsd?: number;
+  total_actions?: number;
+  total_action_seconds?: number;
+  total_manpower?: number;
+
+  created_at?: string;
+  updated_at?: string | null;
+}
+
+export interface GsdOption {
+  gsd_analysis_id: number;
+  operation_code: string;
+  operation_name: string;
+
+  skill_grade_id: number | null;
+  skill_level: number | null;
+  salary_coefficient: number;
+
+  machine_equipment_id: number | null;
+  machine_code: string | null;
+  machine_name: string | null;
+  code_mmtb?: string | null;
+
+  sam_gsd: number;
+  total_action_seconds: number;
+  total_actions: number;
+}
+
+
+export interface OperationClusterOperationPayload {
+  line_no: number;
+  line_balance_no?: number | null;
+
+  gsd_analysis_id?: number | null;
+  operation_code?: string | null;
+  operation_name: string;
+
+  skill_grade_id?: number | null;
+  skill_level?: number | null;
+
+  machine_equipment_id?: number | null;
+  machine_name?: string | null;
+  machine_code?: string | null;
+
+  sam_gsd: number;
+  salary_coefficient?: number;
+  manpower?: number | null;
+  required_efficiency?: number | null;
+
+  total_action_seconds?: number;
+  total_actions?: number;
+  status_id?: number;
+}
+
+export interface OperationClusterGroupPayload {
+  line_no: number;
+  cluster_name: string;
+  operations: OperationClusterOperationPayload[];
+}
+
+export interface CreateOperationClusterPayload {
+  document_code: string;
+  work_id: number;
+  product_category_id: number;
+  product_category_group_id: number;
+  required_efficiency?: number | null;
+  price_method: 'GSD' | 'ADJUSTED';
+  note?: string | null;
+  status_id: number;
+  groups: OperationClusterGroupPayload[];
+}
+
+export interface OperationClusterDetail {
+  header: OperationClusterHeader;
+  groups: any[];
+  operations: any[];
+  dashboard: any;
+}
+
+
+// dinh 09/07/2026
+export interface GsdActionDetail {
+  id: number;
+  analysis_id: number;
+  line_no: number;
+  step_no: number | null;
+  gsd_code_id: number | null;
+  gsd_code: string | null;
+  action_name: string;
+  tmu: number;
+  frequency: number;
+  seconds: number;
+  note?: string | null;
+  is_selected?: boolean;
 }

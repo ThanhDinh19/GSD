@@ -12,6 +12,8 @@ import ExcelEmployeeView from './components/ExcelEmployeeView';
 import MasterDataView from './components/MasterDataView';
 import GsdAnalysisView from './components/GsdAnalysisView';
 import OrganizationChartPage from './pages/OrganizationChartPage';
+import OrganizationChartPage_test from './pages/OrganizationChartPage_test';
+import OperationClusterPage from './pages/OperationClusterPage';
 
 // Import Syncfusion Spreadsheet CSS files
 import "@syncfusion/ej2-base/styles/material.css";
@@ -225,6 +227,38 @@ export default function App() {
             <ul className="space-y-0.5">
               <li>
                 <button
+                  onClick={() => {
+                    setActiveTab('operation-clusters');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'operation-clusters'
+                      ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                      : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
+                  title="Kho cụm công đoạn"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h8M4 18h16"
+                    />
+                  </svg>
+
+                  {!isSidebarCollapsed && (
+                    <span className="whitespace-nowrap">Kho cụm công đoạn</span>
+                  )}
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => { setActiveTab('sam-db'); setMobileMenuOpen(false); }}
                   className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'sam-db' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
                     }`}
@@ -320,8 +354,49 @@ export default function App() {
                     setMobileMenuOpen(false);
                   }}
                   className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'organization-chart'
-                      ? 'bg-[#1e40af] border-r-4 border-white font-bold'
-                      : 'hover:bg-blue-800/40 text-blue-100'
+                    ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                    : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
+                  title="Sơ đồ tổ chức"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 3h12v6H6V3zM6 15h5v6H6v-6zM13 15h5v6h-5v-6zM12 9v3m-3 0h6m-6 0v3m6-3v3"
+                    />
+                  </svg>
+
+                  {!isSidebarCollapsed && (
+                    <span className="whitespace-nowrap">Sơ đồ tổ chức (old)</span>
+                  )}
+                </button>
+              </li>
+            </ul>
+          </div>
+
+
+          <div>
+            <h3 className={`px-5 text-[9px] font-extrabold text-blue-300 uppercase tracking-widest mb-1.5 opacity-50 whitespace-nowrap ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
+              Human Resource Management
+            </h3>
+            <ul className="space-y-0.5">
+              <li>
+                <button
+                  onClick={() => {
+                    setActiveTab('organization-chart-test');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'organization-chart-test'
+                    ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                    : 'hover:bg-blue-800/40 text-blue-100'
                     }`}
                   title="Sơ đồ tổ chức"
                 >
@@ -347,6 +422,7 @@ export default function App() {
               </li>
             </ul>
           </div>
+
 
 
 
@@ -540,12 +616,21 @@ export default function App() {
             <MasterDataView />
           )}
 
-          {activeTab === 'organization-chart' &&(
-            <OrganizationChartPage/>
+          {activeTab === 'organization-chart' && (
+            <OrganizationChartPage />
+          )}
+
+          {activeTab === 'organization-chart-test' && (
+            <OrganizationChartPage_test />
           )}
 
           {activeTab === 'gsd-analysis' && (
             <GsdAnalysisView />
+          )}
+
+          {/*  dinh 07/08/2026 */}
+          {activeTab === 'operation-clusters' && (
+            <OperationClusterPage />
           )}
         </div>
 

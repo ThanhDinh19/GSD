@@ -15,4 +15,8 @@ router.patch('/departments/:id/dissolve', organizationController.dissolveDepartm
 
 router.get('/employees', organizationController.getEmployees);
 
+router.get('/department-types-test', organizationController.getDepartmentTypes_test);
+router.post('/department-types-test', organizationController.createDepartmentType_test);
+router.put('/department-types-test/:id', organizationController.updateDepartmentType_test);
+
 module.exports = router;
