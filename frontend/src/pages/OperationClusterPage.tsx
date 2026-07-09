@@ -960,7 +960,7 @@ export default function OperationClusterPage() {
                     <button
                         type="button"
                         onClick={() => setActivePageTab('form')}
-                        className={`px-4 py-2 rounded-sm text-sm font-bold border ${activePageTab === 'form'
+                        className={`px-4 py-2 rounded-sm text-sm border ${activePageTab === 'form'
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                             }`}
@@ -974,7 +974,7 @@ export default function OperationClusterPage() {
                             setActivePageTab('saved');
                             await loadItems();
                         }}
-                        className={`px-4 py-2 rounded-sm text-sm font-bold border ${activePageTab === 'saved'
+                        className={`px-4 py-2 rounded-sm text-sm border ${activePageTab === 'saved'
                             ? 'bg-blue-600 text-white border-blue-600'
                             : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
                             }`}
@@ -994,7 +994,7 @@ export default function OperationClusterPage() {
                                             Thông tin chứng từ
                                         </h2>
                                         <p className="text-xs text-slate-500 mt-0.5">
-                                            Thông tin chung dùng để phân loại và tính giá cho cụm công đoạn.
+                                            {/* Thông tin chung dùng để phân loại và tính giá cho cụm công đoạn. */}
                                         </p>
                                     </div>
 
@@ -1218,7 +1218,7 @@ export default function OperationClusterPage() {
                                         Dashboard
                                     </h2>
                                     <p className="text-xs text-slate-500 mt-0.5">
-                                        Tính realtime từ danh sách công đoạn đã chọn.
+                                        {/* anh sách công đoạn đã chọn. */}
                                     </p>
                                 </div>
 
@@ -1535,7 +1535,7 @@ export default function OperationClusterPage() {
                                                         <button
                                                             type="button"
                                                             onClick={() => handleOpenOperationActions(op)}
-                                                            className="font-bold text-slate-800 hover:text-blue-700 hover:underline text-left"
+                                                            className="text-slate-800 hover:text-blue-700 hover:underline text-left"
                                                             title="Click để xem danh sách thao tác"
                                                         >
                                                             {op.operation_name}
@@ -1569,7 +1569,7 @@ export default function OperationClusterPage() {
                                                             type="button"
                                                             onClick={(event) => handleOpenCoefficientPopup(event, index)}
                                                             disabled={viewAllGroups}
-                                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-right font-bold text-blue-700 hover:border-blue-400 hover:bg-blue-50 disabled:bg-slate-100 disabled:text-slate-400"
+                                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-right text-blue-700 hover:border-blue-400 hover:bg-blue-50 disabled:bg-slate-100 disabled:text-slate-400"
                                                             title="Click để chọn hệ số lương"
                                                         >
                                                             {toNumber(op.salary_coefficient).toFixed(2)}
@@ -1587,7 +1587,7 @@ export default function OperationClusterPage() {
                                                         />
                                                     </td>
 
-                                                    <td className="p-3 text-right font-black text-slate-800">
+                                                    <td className="p-3 text-right text-slate-800">
                                                         {toNumber(op.standard_price_preview).toFixed(2)}
                                                     </td>
 
@@ -1597,7 +1597,7 @@ export default function OperationClusterPage() {
                                                             : '-'}
                                                     </td>
 
-                                                    <td className="p-3 text-right font-black text-blue-700">
+                                                    <td className="p-3 text-right text-blue-700">
                                                         {toNumber(op.adjusted_sam_preview).toFixed(2)}
                                                     </td>
 
@@ -1614,7 +1614,7 @@ export default function OperationClusterPage() {
                                                             type="button"
                                                             onClick={() => handleRemoveOperation(index)}
                                                             disabled={viewAllGroups}
-                                                            className="px-2 py-1 rounded-lg text-rose-600 font-black hover:bg-rose-50 disabled:opacity-40"
+                                                            className="px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 disabled:opacity-40"
                                                         >
                                                             Xóa
                                                         </button>
@@ -1916,7 +1916,7 @@ export default function OperationClusterPage() {
                                     <div className="text-xs text-slate-500 font-bold uppercase">
                                         Nhóm công việc
                                     </div>
-                                    <div className="text-sm font-bold text-slate-800 mt-1">
+                                    <div className="text-sm text-slate-800 mt-1">
                                         {selectedDetail.header?.work_code || ''} - {selectedDetail.header?.work_name || ''}
                                     </div>
                                 </div>
@@ -1925,7 +1925,7 @@ export default function OperationClusterPage() {
                                     <div className="text-xs text-slate-500 font-bold uppercase">
                                         Chủng loại
                                     </div>
-                                    <div className="text-sm font-bold text-slate-800 mt-1">
+                                    <div className="text-sm text-slate-800 mt-1">
                                         {selectedDetail.header?.product_code || ''} - {selectedDetail.header?.product_name || ''}
                                     </div>
                                 </div>
@@ -1934,7 +1934,7 @@ export default function OperationClusterPage() {
                                     <div className="text-xs text-slate-500 font-bold uppercase">
                                         Nhóm chủng loại
                                     </div>
-                                    <div className="text-sm font-bold text-slate-800 mt-1">
+                                    <div className="text-sm text-slate-800 mt-1">
                                         {selectedDetail.header?.category_group_code || ''} - {selectedDetail.header?.category_group_name || ''}
                                     </div>
                                 </div>
@@ -1943,7 +1943,7 @@ export default function OperationClusterPage() {
                                     <div className="text-xs text-slate-500 font-bold uppercase">
                                         Phương pháp tính
                                     </div>
-                                    <div className="text-sm font-bold text-slate-800 mt-1">
+                                    <div className="text-sm text-slate-800 mt-1">
                                         {selectedDetail.header?.price_method === 'ADJUSTED'
                                             ? 'Theo SAM điều chỉnh'
                                             : 'Theo SAM gốc GSD'}
@@ -2123,7 +2123,7 @@ export default function OperationClusterPage() {
                                                         {op.operation_code || '-'}
                                                     </td>
 
-                                                    <td className="p-3 font-bold text-slate-800">
+                                                    <td className="p-3 text-slate-800">
                                                         {op.operation_name || '-'}
                                                     </td>
 
@@ -2139,11 +2139,11 @@ export default function OperationClusterPage() {
                                                         {Number(op.salary_coefficient || 0).toFixed(2)}
                                                     </td>
 
-                                                    <td className="p-3 text-right font-bold">
+                                                    <td className="p-3 text-right">
                                                         {Number(op.standard_price || 0).toFixed(2)}
                                                     </td>
 
-                                                    <td className="p-3 text-right font-bold text-blue-700">
+                                                    <td className="p-3 text-right text-blue-700">
                                                         {Number(op.adjusted_sam || 0).toFixed(2)}
                                                     </td>
 
@@ -2181,7 +2181,7 @@ export default function OperationClusterPage() {
                     <div className="w-[96vw] h-[90vh] bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden">
                         <div className="px-5 py-3 border-b border-slate-200 flex items-center justify-between">
                             <div>
-                                <h2 className="text-lg font-black text-slate-800">
+                                <h2 className="text-lg font-bold text-slate-800">
                                     Chọn công đoạn từ GSD
                                 </h2>
                                 <p className="text-xs text-slate-500 mt-1">
@@ -2204,7 +2204,7 @@ export default function OperationClusterPage() {
                                 <div className="p-3 border-b border-slate-200 bg-slate-50">
                                     <div className="flex items-center justify-between gap-3">
                                         <div>
-                                            <div className="font-black text-slate-800 text-sm">
+                                            <div className="font-bold text-slate-800 text-sm">
                                                 Danh sách công đoạn
                                             </div>
                                             <div className="text-xs text-slate-500 mt-0.5">
@@ -2231,7 +2231,7 @@ export default function OperationClusterPage() {
                                                 </th>
                                                 <th className="p-2 border-b border-slate-200 text-left w-[150px]">
                                                     Mã
-                                                </th>
+                                                </th>   
                                                 <th className="p-2 border-b border-slate-200 text-left">
                                                     Công đoạn
                                                 </th>
@@ -2279,7 +2279,7 @@ export default function OperationClusterPage() {
                                                         </td>
 
                                                         <td className="p-2 align-top">
-                                                            <div className="font-bold text-slate-800 line-clamp-2">
+                                                            <div className=" text-slate-800 line-clamp-2">
                                                                 {item.operation_name}
                                                             </div>
                                                             <div className="text-[11px] text-slate-400 line-clamp-2 mt-0.5">
@@ -2288,7 +2288,7 @@ export default function OperationClusterPage() {
                                                             </div>
                                                         </td>
 
-                                                        <td className="p-2 text-right align-top font-black text-slate-800">
+                                                        <td className="p-2 text-right align-top text-slate-800">
                                                             {toNumber(item.sam_gsd).toFixed(2)}
                                                         </td>
                                                     </tr>
@@ -2302,7 +2302,7 @@ export default function OperationClusterPage() {
                             {/* Bên phải: Danh sách thao tác theo các công đoạn đã chọn */}
                             <div className="border border-slate-200 rounded-lg overflow-hidden flex flex-col min-h-0">
                                 <div className="p-3 border-b border-slate-200 bg-slate-50">
-                                    <div className="font-black text-slate-800 text-sm">
+                                    <div className="font-bold text-slate-800 text-sm">
                                         Danh sách thao tác
                                     </div>
                                     <div className="text-xs text-slate-500 mt-0.5">
@@ -2330,10 +2330,10 @@ export default function OperationClusterPage() {
                                                 <div className="bg-blue-50 px-3 py-2 border-b border-blue-100">
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div className="min-w-0">
-                                                            <div className="text-xs font-black text-blue-700">
+                                                            <div className="text-xs font-bold text-blue-700">
                                                                 Công đoạn {gsdIndex + 1}: {gsd.operation_code}
                                                             </div>
-                                                            <div className="text-sm font-black text-slate-800 truncate">
+                                                            <div className="text-sm text-slate-800 truncate">
                                                                 {gsd.operation_name}
                                                             </div>
                                                             <div className="text-[11px] text-slate-500 mt-0.5 truncate">
@@ -2346,7 +2346,7 @@ export default function OperationClusterPage() {
                                                             <div className="text-[11px] text-slate-500">
                                                                 SAM GSD
                                                             </div>
-                                                            <div className="text-sm font-black text-blue-700">
+                                                            <div className="text-sm text-blue-700">
                                                                 {toNumber(gsd.sam_gsd).toFixed(2)}
                                                             </div>
                                                         </div>
@@ -2467,7 +2467,7 @@ export default function OperationClusterPage() {
                     onClick={() => setCoefficientPopup(null)}
                 >
                     <div
-                        className="absolute w-[360px] bg-white border border-slate-200 rounded-2xl shadow-2xl overflow-hidden"
+                        className="absolute w-[360px] bg-white border border-slate-200 rounded-sm shadow-2xl overflow-hidden"
                         style={{
                             top: coefficientPopup.y + 8,
                             left: coefficientPopup.x - 300,
@@ -2475,7 +2475,7 @@ export default function OperationClusterPage() {
                         onClick={(event) => event.stopPropagation()}
                     >
                         <div className="p-4 border-b border-slate-100">
-                            <div className="font-black text-slate-800">
+                            <div className="font-bold text-slate-800">
                                 Chọn hệ số lương
                             </div>
 
@@ -2486,7 +2486,7 @@ export default function OperationClusterPage() {
                             <input
                                 value={coefficientSearch}
                                 onChange={(e) => setCoefficientSearch(e.target.value)}
-                                className="w-full mt-3 border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                                className="w-full mt-3 border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
                                 placeholder="Tìm theo level hoặc hệ số..."
                                 autoFocus
                             />
@@ -2526,16 +2526,16 @@ export default function OperationClusterPage() {
                                         >
                                             <div className="flex items-center justify-between gap-3">
                                                 <div>
-                                                    <div className="text-sm font-black text-slate-800">
+                                                    <div className="text-sm text-slate-800">
                                                         Bậc thợ: {getSkillLevelText(item.levelId)}
                                                     </div>
 
-                                                    <div className="text-xs text-slate-500 mt-0.5">
+                                                    {/* <div className="text-xs text-slate-500 mt-0.5">
                                                         salary_coefficients.id = {item.id}
-                                                    </div>
+                                                    </div> */}
                                                 </div>
 
-                                                <div className="text-lg font-black text-blue-700">
+                                                <div className="text-lg text-blue-700">
                                                     {Number(item.coefficient || 0).toFixed(2)}
                                                 </div>
                                             </div>

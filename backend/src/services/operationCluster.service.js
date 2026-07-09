@@ -287,66 +287,66 @@ const getOperationClusterById = async (id) => {
     const operationsResult = await pool.request()
         .input('header_id', sql.Int, id)
         .query(`
-     SELECT
-    o.id,
-    o.header_id,
-    o.group_id,
-    g.cluster_name,
-    g.line_no AS group_line_no_master,
+            SELECT
+                o.id,
+                o.header_id,
+                o.group_id,
+                g.cluster_name,
+                g.line_no AS group_line_no_master,
 
-    o.line_no,
-    o.group_line_no,
-    o.line_balance_no,
+                o.line_no,
+                o.group_line_no,
+                o.line_balance_no,
 
-    o.gsd_analysis_id,
-    gah.analysis_no,
-    gah.operation_name AS gsd_operation_name,
+                o.gsd_analysis_id,
+                gah.analysis_no,
+                gah.operation_name AS gsd_operation_name,
 
-    o.operation_code,
-    o.operation_name,
+                o.operation_code,
+                o.operation_name,
 
-    o.skill_grade_id,
-    sg.level AS skill_level_master,
-    o.skill_level,
+                o.skill_grade_id,
+                sg.level AS skill_level_master,
+                o.skill_level,
 
-    o.machine_equipment_id,
-    m.machine_code AS machine_code_master,
-    m.machine_name AS machine_name_master,
-    m.code_mmtb,
+                o.machine_equipment_id,
+                m.machine_code AS machine_code_master,
+                m.machine_name AS machine_name_master,
+                m.code_mmtb,
 
-    o.machine_code,
-    o.machine_name,
+                o.machine_code,
+                o.machine_name,
 
-    o.sam_gsd,
-    o.salary_coefficient,
-    o.manpower,
-    o.standard_price,
-    o.required_efficiency,
-    o.adjusted_sam,
-    o.utilization_rate,
-    o.total_action_seconds,
-    o.total_actions,
+                o.sam_gsd,
+                o.salary_coefficient,
+                o.manpower,
+                o.standard_price,
+                o.required_efficiency,
+                o.adjusted_sam,
+                o.utilization_rate,
+                o.total_action_seconds,
+                o.total_actions,
 
-    o.status_id,
-    ms.status_code,
-    ms.status_name,
-    o.created_at,
-    o.updated_at
-FROM operation_cluster_operations o
-LEFT JOIN operation_cluster_groups g
-    ON g.id = o.group_id
-LEFT JOIN gsd_analysis_headers gah
-    ON gah.id = o.gsd_analysis_id
-LEFT JOIN skill_grade sg
-    ON sg.id = o.skill_grade_id
-LEFT JOIN machine_equipments_test m
-    ON m.id = o.machine_equipment_id
-LEFT JOIN master_status ms
-    ON ms.id = o.status_id
-WHERE o.header_id = @header_id
-ORDER BY
-    o.group_line_no,
-    o.line_no;
+                o.status_id,
+                ms.status_code,
+                ms.status_name,
+                o.created_at,
+                o.updated_at
+            FROM operation_cluster_operations o
+            LEFT JOIN operation_cluster_groups g
+                ON g.id = o.group_id
+            LEFT JOIN gsd_analysis_headers gah
+                ON gah.id = o.gsd_analysis_id
+            LEFT JOIN skill_grade sg
+                ON sg.id = o.skill_grade_id
+            LEFT JOIN machine_equipments_test m
+                ON m.id = o.machine_equipment_id
+            LEFT JOIN master_status ms
+                ON ms.id = o.status_id
+            WHERE o.header_id = @header_id
+            ORDER BY
+                o.group_line_no,
+                o.line_no;
     `);
 
     const dashboardResult = await pool.request()
