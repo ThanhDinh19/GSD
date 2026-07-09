@@ -59,7 +59,7 @@ export default function App_test() {
     | 'skill-grade'
     | 'salary-coefficient';
 
-  const [isMasterDataTestOpen, setIsMasterDataTestOpen] = useState<boolean>(true);
+  const [isMasterDataTestOpen, setIsMasterDataTestOpen] = useState<boolean>(false);
   const [activeMasterDataTestTab, setActiveMasterDataTestTab] =
     useState<MasterDataTestTabKey>('clusters');
 
@@ -79,6 +79,12 @@ export default function App_test() {
       { key: 'gsd-codes', label: 'Kho thao tác chuẩn' },
       { key: 'source-action-mapping', label: 'Khai báo thao tác' },
     ];
+
+  useEffect(() => {
+    if (activeTab !== 'master-data-test') {
+      setIsMasterDataTestOpen(false);
+    }
+  }, [activeTab]);
 
   const fetchDatabaseData = () => {
     fetch(`${API_BASE_URL}/api/routing`)
