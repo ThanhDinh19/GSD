@@ -2009,7 +2009,7 @@ export default function OperationClusterPage() {
                             </div>
 
                             {/* Danh sách cụm */}
-                            <div className="border border-slate-200 rounded-sm overflow-hidden">
+                            {/* <div className="border border-slate-200 rounded-sm overflow-hidden">
                                 <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
                                     <div className="text-sm font-bold text-slate-800">
                                         Danh sách cụm
@@ -2049,7 +2049,7 @@ export default function OperationClusterPage() {
                                         ))}
                                     </tbody>
                                 </table>
-                            </div>
+                            </div> */}
 
                             {/* Danh sách công đoạn */}
                             <div className="border border-slate-200 rounded-sm overflow-hidden">
