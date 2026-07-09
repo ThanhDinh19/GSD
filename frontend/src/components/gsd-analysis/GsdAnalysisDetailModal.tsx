@@ -79,24 +79,27 @@ export default function GsdAnalysisDetailModal({
           </div>
 
           <div className="border border-slate-200 rounded-lg overflow-x-auto">
-            <table className="min-w-full text-xs">
+            <table className="min-w-full text-xs border-collapse">
               <thead className="bg-slate-50 text-slate-500 uppercase">
                 <tr>
-                  <th className="px-4 py-3 text-left">STT</th>
-                  <th className="px-4 py-3 text-left">Bước</th>
-                  <th className="px-4 py-3 text-left">Code</th>
-                  <th className="px-4 py-3 text-left">Thao tác</th>
-                  <th className="px-4 py-3 text-right">TMU</th>
-                  <th className="px-4 py-3 text-right">Tần suất</th>
-                  <th className="px-4 py-3 text-right">Giây</th>
-                  <th className="px-4 py-3 text-left">Ghi chú</th>
+                  <th className="px-4 py-3 border border-slate-200 text-left">STT</th>
+                  <th className="px-4 py-3 border border-slate-200 text-left">Bước</th>
+                  <th className="px-4 py-3 border border-slate-200 text-left">Code</th>
+                  <th className="px-4 py-3 border border-slate-200 text-left">Thao tác</th>
+                  <th className="px-4 py-3 border border-slate-200 text-right">TMU</th>
+                  <th className="px-4 py-3 border border-slate-200 text-right">Tần suất</th>
+                  <th className="px-4 py-3 border border-slate-200 text-right">Giây</th>
+                  <th className="px-4 py-3 border border-slate-200 text-left">Ghi chú</th>
                 </tr>
               </thead>
 
-              <tbody className="divide-y divide-slate-100">
+              <tbody>
                 {analysis.details.length === 0 && (
                   <tr>
-                    <td colSpan={8} className="px-4 py-6 text-center text-slate-400">
+                    <td
+                      colSpan={8}
+                      className="px-4 py-6 border border-slate-200 text-center text-slate-400"
+                    >
                       Không có chi tiết thao tác.
                     </td>
                   </tr>
@@ -104,35 +107,35 @@ export default function GsdAnalysisDetailModal({
 
                 {analysis.details.map((item, index) => (
                   <tr key={item.id} className="hover:bg-blue-50">
-                    <td className="px-4 py-3 font-mono text-slate-500">
+                    <td className="px-4 py-3 border border-slate-200 font-mono text-slate-500">
                       {index + 1}
                     </td>
 
-                    <td className="px-4 py-3 font-bold text-blue-700">
+                    <td className="px-4 py-3 border border-slate-200 font-bold text-blue-700">
                       {item.stepNo}
                     </td>
 
-                    <td className="px-4 py-3 text-slate-700">
+                    <td className="px-4 py-3 border border-slate-200 text-slate-700">
                       {item.gsdCode}
                     </td>
 
-                    <td className="px-4 py-3 text-slate-700">
+                    <td className="px-4 py-3 border border-slate-200 text-slate-700">
                       {item.actionName}
                     </td>
 
-                    <td className="px-4 py-3 text-right font-bold">
+                    <td className="px-4 py-3 border border-slate-200 text-right font-bold">
                       {formatNumber(item.tmu, 2)}
                     </td>
 
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 border border-slate-200 text-right">
                       {formatNumber(item.frequency, 2)}
                     </td>
 
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 border border-slate-200 text-right">
                       {formatNumber(item.seconds, 4)}
                     </td>
 
-                    <td className="px-4 py-3 text-slate-500">
+                    <td className="px-4 py-3 border border-slate-200 text-slate-500">
                       {item.note || ''}
                     </td>
                   </tr>
@@ -181,13 +184,12 @@ function MetricCard({
   highlight?: boolean;
 }) {
   return (
-    <div className={`border rounded-lg p-3 ${
-      highlight
+    <div className={`border rounded-lg p-3 ${highlight
         ? 'bg-green-50 border-green-100 text-green-800'
         : 'bg-blue-50 border-blue-100 text-blue-800'
-    }`}>
+      }`}>
       <div className="font-semibold">{label}</div>
-      <div className="font-black text-lg mt-1">{value}</div>
+      <div className="text-lg mt-1">{value}</div>
     </div>
   );
 }

@@ -912,20 +912,33 @@ export default function OperationClusterPage() {
         <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto">
             <div className="max-w-[1720px] mx-auto space-y-4">
                 {/* Header */}
-                <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-5 flex items-start justify-between gap-4">
-                    <div>
-                        <div className="text-xs font-bold uppercase tracking-widest text-blue-600">
-                            GSD / Kho cụm công đoạn
-                        </div>
 
-                        <h3 className="text-2xl font-bold text-slate-800 mt-1">
-                            Khai báo cụm công đoạn cho chủng loại hàng
-                        </h3>
+                <div className="bg-white border border-slate-200 rounded-sm shadow-sm px-5 py-3 flex items-center justify-between gap-2">
+                    <div className = "flex items-center gap-2 shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => setActivePageTab('form')}
+                            className={`px-4 py-2 rounded-sm text-sm border  ${activePageTab === 'form'
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                        >
+                            Khai báo cụm công đoạn
+                        </button>
 
-                        {/* <p className="text-sm text-slate-500 mt-1">
-                            Chọn công đoạn GSD, gom vào từng cụm, tính SAM điều chỉnh, hiệu suất sử dụng,
-                            hệ số bậc thợ và đơn giá chuẩn.
-                        </p> */}
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                setActivePageTab('saved');
+                                await loadItems();
+                            }}
+                            className={`px-4 py-2 rounded-sm text-sm border ${activePageTab === 'saved'
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                                }`}
+                        >
+                            Cụm công đoạn đã khai báo
+                        </button>
                     </div>
 
                     <div className="flex items-center gap-2 shrink-0">
@@ -954,33 +967,6 @@ export default function OperationClusterPage() {
                             {saving ? 'Đang lưu...' : 'Lưu chứng từ'}
                         </button>
                     </div>
-                </div>
-
-                <div className="bg-white border border-slate-200 rounded-sm shadow-sm px-5 py-3 flex items-center gap-2">
-                    <button
-                        type="button"
-                        onClick={() => setActivePageTab('form')}
-                        className={`px-4 py-2 rounded-sm text-sm border ${activePageTab === 'form'
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                            }`}
-                    >
-                        Khai báo cụm công đoạn
-                    </button>
-
-                    <button
-                        type="button"
-                        onClick={async () => {
-                            setActivePageTab('saved');
-                            await loadItems();
-                        }}
-                        className={`px-4 py-2 rounded-sm text-sm border ${activePageTab === 'saved'
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                            }`}
-                    >
-                        Cụm công đoạn đã khai báo
-                    </button>
                 </div>
                 {activePageTab === 'form' && (
                     <>
@@ -1281,7 +1267,7 @@ export default function OperationClusterPage() {
                         </div>
 
                         {/* Main content */}
-                        <div className="grid grid-cols-[360px_1fr] gap-4">
+                        <div className="grid grid-cols-[430px_1fr] gap-4">
                             {/* Cụm */}
                             <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-4 min-h-[620px] flex flex-col">
                                 <div className="flex items-center justify-between mb-3">
@@ -1289,9 +1275,9 @@ export default function OperationClusterPage() {
                                         <h2 className="text-base font-bold text-slate-800">
                                             Danh sách cụm
                                         </h2>
-                                        <p className="text-xs text-slate-500">
+                                        {/* <p className="text-xs text-slate-500">
                                             Thêm cụm, chọn cụm để thao tác công đoạn.
-                                        </p>
+                                        </p> */}
                                     </div>
 
                                     <button
@@ -1303,7 +1289,7 @@ export default function OperationClusterPage() {
                                     </button>
                                 </div>
 
-                                <label className="flex items-center gap-2 text-sm text-slate-700 mb-3 cursor-pointer">
+                                {/* <label className="flex items-center gap-2 text-sm text-slate-700 mb-3 cursor-pointer">
                                     <input
                                         type="checkbox"
                                         checked={viewAllGroups}
@@ -1311,25 +1297,25 @@ export default function OperationClusterPage() {
                                         disabled={groups.length === 0}
                                     />
                                     Xem tất cả cụm
-                                </label>
+                                </label> */}
 
-                                <div className="flex-1 min-h-0 overflow-auto border border-slate-200 rounded-sm">
-                                    <table className="w-full text-sm">
+                                <div className="h-[550px] overflow-y-auto no-scrollbar-y border border-slate-200 rounded-sm">
+                                    <table className="w-full table-fixed text-sm border-collapse">
                                         <thead className="bg-slate-50 sticky top-0 z-10">
                                             <tr className="text-xs text-slate-500 uppercase">
-                                                <th className="p-3 border-b border-slate-200 text-center w-[60px]">
+                                                <th className="p-3 border border-slate-200 text-center w-[40px]">
                                                     STT
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-left">
+                                                <th className="p-3 border border-slate-200 text-left">
                                                     Tên cụm
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[90px]">
+                                                <th className="p-3 border border-slate-200 text-right w-[40px]">
                                                     Số CĐ
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[90px]">
+                                                <th className="p-3 border border-slate-200 text-right w-[80px]">
                                                     SAM GSD
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[90px]">
+                                                <th className="p-3 border border-slate-200 text-right w-[80px]">
                                                     TGCN
                                                 </th>
                                             </tr>
@@ -1338,7 +1324,10 @@ export default function OperationClusterPage() {
                                         <tbody>
                                             {enrichedGroups.length === 0 && (
                                                 <tr>
-                                                    <td colSpan={5} className="p-8 text-center text-slate-400">
+                                                    <td
+                                                        colSpan={5}
+                                                        className="p-8 border border-slate-200 text-center text-slate-400"
+                                                    >
                                                         Chưa có cụm. Bấm “+ Cụm” để thêm dòng mới.
                                                     </td>
                                                 </tr>
@@ -1362,36 +1351,34 @@ export default function OperationClusterPage() {
                                                         onContextMenu={(event) =>
                                                             handleOpenGroupContextMenu(event, index)
                                                         }
-                                                        className={`cursor-pointer border-b border-slate-100 ${isActive
-                                                            ? 'bg-blue-50'
-                                                            : 'hover:bg-slate-50'
+                                                        className={`cursor-pointer ${isActive ? 'bg-blue-50' : 'hover:bg-slate-50'
                                                             }`}
                                                     >
-                                                        <td className="p-3 text-center text-slate-500">
+                                                        <td className="p-3 border border-slate-200 text-center text-slate-500">
                                                             {index + 1}
                                                         </td>
 
-                                                        <td className="p-2">
+                                                        <td className="p-2 border border-slate-200">
                                                             <input
                                                                 value={group.cluster_name}
                                                                 onChange={(e) =>
                                                                     handleChangeGroupName(index, e.target.value)
                                                                 }
                                                                 onClick={(e) => e.stopPropagation()}
-                                                                className="w-30 border border-transparent rounded-lg px-2 py-1 outline-none bg-transparent text-slate-400 focus:bg-white focus:border-blue-300"
+                                                                className="w-full border border-transparent rounded-lg px-2 py-1 outline-none bg-transparent text-slate-400 focus:bg-white focus:border-blue-300"
                                                                 placeholder="Nhập tên cụm"
                                                             />
                                                         </td>
 
-                                                        <td className="p-3 text-right text-slate-700">
+                                                        <td className="p-3 border border-slate-200 text-right text-slate-700">
                                                             {group.operations.length}
                                                         </td>
 
-                                                        <td className="p-3 text-right text-slate-700">
+                                                        <td className="p-3 border border-slate-200 text-right text-slate-700">
                                                             {totalSamGsd.toFixed(2)}
                                                         </td>
 
-                                                        <td className="p-3 text-right text-blue-700">
+                                                        <td className="p-3 border border-slate-200 text-right text-blue-700">
                                                             {group.tgcn.toFixed(2)}
                                                         </td>
                                                     </tr>
@@ -1399,10 +1386,6 @@ export default function OperationClusterPage() {
                                             })}
                                         </tbody>
                                     </table>
-                                </div>
-
-                                <div className="text-xs text-slate-400 mt-3">
-                                    Mẹo: Chuột phải vào một dòng cụm để chèn dòng bên dưới hoặc xóa dòng.
                                 </div>
 
                                 {groupContextMenu && (
@@ -1472,157 +1455,158 @@ export default function OperationClusterPage() {
                                     </div>
                                 </div>
 
-                                <div className="flex-1 min-h-0 overflow-auto border border-slate-200 rounded-sm">
-                                    <table className="w-full text-sm min-w-[1500px]">
-                                        <thead className="bg-slate-50 sticky top-0 z-10">
-                                            <tr className="text-xs text-slate-500 uppercase">
-                                                <th className="p-3 border-b border-slate-200 text-left w-[60px]">STT</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[110px]">Xếp chuyền</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[120px]">Mã GSD</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[260px]">Công đoạn</th>
-                                                <th className="p-3 border-b border-slate-200 text-center w-[80px]">Bậc</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[220px]">MMTB</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[100px]">Code</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[100px]">SAM GSD</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[100px]">Hệ số</th>
-                                                <th className="p-3 border-b border-slate-200 text-center w-[90px]">Nhân sự</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[120px]">Đơn giá</th>
-                                                <th className="p-3 border-b border-slate-200 text-center w-[90px]">HS YC</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[120px]">SAM ĐC</th>
-                                                <th className="p-3 border-b border-slate-200 text-center w-[110px]">Hiệu suất</th>
-                                                <th className="p-3 border-b border-slate-200 text-center w-[90px]">Bước GSD</th>
-                                                <th className="p-3 border-b border-slate-200 text-center w-[80px]">Xóa</th>
-                                            </tr>
-                                        </thead>
+                                <div className="border border-slate-200 rounded-sm overflow-x-auto">
+                                    <div className="h-[525px] min-w-[1500px] overflow-y-auto overflow-x-hidden no-scrollbar-y">
+                                        <table className="w-full text-sm border-collapse">
+                                            <thead className="bg-slate-50 sticky top-0 z-10">
+                                                <tr className="text-xs text-slate-500 uppercase">
+                                                    <th className="p-3 border border-slate-200 text-left w-[40px]">STT</th>
+                                                    <th className="p-3 border border-slate-200 text-left w-[110px]">Xếp chuyền</th>
+                                                    <th className="p-3 border border-slate-200 text-left w-[260px]">Công đoạn</th>
+                                                    <th className="p-3 border border-slate-200 text-center w-[30px]">Bậc</th>
+                                                    <th className="p-3 border border-slate-200 text-left w-[220px]">MMTB</th>
+                                                    <th className="p-3 border border-slate-200 text-left w-[100px]">Code</th>
+                                                    <th className="p-3 border border-slate-200 text-right w-[100px]">SAM GSD</th>
+                                                    <th className="p-3 border border-slate-200 text-right w-[100px]">Hệ số</th>
+                                                    <th className="p-3 border border-slate-200 text-center w-[90px]">Nhân sự</th>
+                                                    <th className="p-3 border border-slate-200 text-right w-[120px]">Đơn giá</th>
+                                                    <th className="p-3 border border-slate-200 text-center w-[90px]">HS YC</th>
+                                                    <th className="p-3 border border-slate-200 text-right w-[100px]">SAM ĐC</th>
+                                                    <th className="p-3 border border-slate-200 text-center w-[100px]">Hiệu suất</th>
+                                                    <th className="p-3 border border-slate-200 text-center w-[100px]">Bước GSD</th>
+                                                    <th className="p-3 border border-slate-200 text-center w-[50px]">Xóa</th>
+                                                </tr>
+                                            </thead>
 
-                                        <tbody>
-                                            {visibleOperations.length === 0 && (
-                                                <tr>
-                                                    <td
-                                                        colSpan={16}
-                                                        className="p-10 text-center text-slate-400"
+                                            <tbody>
+                                                {visibleOperations.length === 0 && (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={16}
+                                                            className="p-10 text-center text-slate-400"
+                                                        >
+                                                            Chưa có công đoạn. Chọn công đoạn GSD rồi bấm “+ Thêm”.
+                                                        </td>
+                                                    </tr>
+                                                )}
+
+                                                {visibleOperations.map((op, index) => (
+                                                    <tr
+                                                        key={`${op.gsd_analysis_id}-${index}`}
+                                                        className="border-b border-slate-100 hover:bg-slate-50"
                                                     >
-                                                        Chưa có công đoạn. Chọn công đoạn GSD rồi bấm “+ Thêm”.
-                                                    </td>
-                                                </tr>
-                                            )}
+                                                        <td className="p-3 text-slate-500 border border-slate-200 text-center">
+                                                            {index + 1}
+                                                        </td>
 
-                                            {visibleOperations.map((op, index) => (
-                                                <tr
-                                                    key={`${op.gsd_analysis_id}-${index}`}
-                                                    className="border-b border-slate-100 hover:bg-slate-50"
-                                                >
-                                                    <td className="p-3 font-bold text-slate-500">
-                                                        {index + 1}
-                                                    </td>
+                                                        <td className="p-2 p-3 border border-slate-200 text-center">
+                                                            <input
+                                                                value={op.line_balance_no || ''}
+                                                                onChange={(e) =>
+                                                                    handleChangeLineBalanceNo(index, e.target.value)
+                                                                }
+                                                                disabled={viewAllGroups}
+                                                                className="w-full border border-slate-200 rounded-lg px-2 py-1 text-center outline-none disabled:bg-slate-100"
+                                                            />
+                                                        </td>
+                                                        {/* 
+                                                        <td className="p-3 font-semibold text-blue-700">
+                                                            {op.operation_code || '-'}
+                                                        </td> */}
 
-                                                    <td className="p-2">
-                                                        <input
-                                                            value={op.line_balance_no || ''}
-                                                            onChange={(e) =>
-                                                                handleChangeLineBalanceNo(index, e.target.value)
-                                                            }
-                                                            disabled={viewAllGroups}
-                                                            className="w-full border border-slate-200 rounded-lg px-2 py-1 text-center outline-none disabled:bg-slate-100"
-                                                        />
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-left">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleOpenOperationActions(op)}
+                                                                className="text-slate-800 hover:text-blue-700 hover:underline text-left"
+                                                                title="Click để xem danh sách thao tác"
+                                                            >
+                                                                {op.operation_name}
+                                                            </button>
 
-                                                    <td className="p-3 font-semibold text-blue-700">
-                                                        {op.operation_code || '-'}
-                                                    </td>
+                                                            {viewAllGroups && (
+                                                                <div className="text-xs text-slate-400 mt-0.5">
+                                                                    Cụm: {op.cluster_name}
+                                                                </div>
+                                                            )}
+                                                        </td>
 
-                                                    <td className="p-3">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleOpenOperationActions(op)}
-                                                            className="text-slate-800 hover:text-blue-700 hover:underline text-left"
-                                                            title="Click để xem danh sách thao tác"
-                                                        >
-                                                            {op.operation_name}
-                                                        </button>
+                                                        <td className="p-3 border border-slate-200 text-center">
+                                                            {op.skill_level || '-'}
+                                                        </td>
 
-                                                        {viewAllGroups && (
-                                                            <div className="text-xs text-slate-400 mt-0.5">
-                                                                Cụm: {op.cluster_name}
-                                                            </div>
-                                                        )}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-left">
+                                                            {op.machine_name || '-'}
+                                                        </td>
 
-                                                    <td className="p-3 text-center">
-                                                        {op.skill_level || '-'}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-left">
+                                                            {op.machine_code || '-'}
+                                                        </td>
 
-                                                    <td className="p-3">
-                                                        {op.machine_name || '-'}
-                                                    </td>
+                                                        <td className="p-3 font-semibold border border-slate-200 text-center">
+                                                            {toNumber(op.sam_gsd).toFixed(2)}
+                                                        </td>
 
-                                                    <td className="p-3">
-                                                        {op.machine_code || '-'}
-                                                    </td>
+                                                        <td className="p-2 border border-slate-200 text-center ">
+                                                            <button
+                                                                type="button"
+                                                                onClick={(event) => handleOpenCoefficientPopup(event, index)}
+                                                                disabled={viewAllGroups}
+                                                                className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-right text-blue-700 hover:border-blue-400 hover:bg-blue-50 disabled:bg-slate-100 disabled:text-slate-400"
+                                                                title="Click để chọn hệ số lương"
+                                                            >
+                                                                {toNumber(op.salary_coefficient).toFixed(2)}
+                                                            </button>
+                                                        </td>
 
-                                                    <td className="p-3 text-right font-semibold">
-                                                        {toNumber(op.sam_gsd).toFixed(2)}
-                                                    </td>
+                                                        <td className="p-2 border border-slate-200 text-center">
+                                                            <input
+                                                                value={op.manpower ?? ''}
+                                                                onChange={(e) =>
+                                                                    handleChangeManpower(index, e.target.value)
+                                                                }
+                                                                disabled={viewAllGroups}
+                                                                className="w-full border border-slate-200 rounded-lg px-2 py-1 text-center outline-none disabled:bg-slate-100"
+                                                            />
+                                                        </td>
 
-                                                    <td className="p-2 text-right">
-                                                        <button
-                                                            type="button"
-                                                            onClick={(event) => handleOpenCoefficientPopup(event, index)}
-                                                            disabled={viewAllGroups}
-                                                            className="w-full px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-right text-blue-700 hover:border-blue-400 hover:bg-blue-50 disabled:bg-slate-100 disabled:text-slate-400"
-                                                            title="Click để chọn hệ số lương"
-                                                        >
-                                                            {toNumber(op.salary_coefficient).toFixed(2)}
-                                                        </button>
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-right">
+                                                            {toNumber(op.standard_price_preview).toFixed(2)}
+                                                        </td>
 
-                                                    <td className="p-2">
-                                                        <input
-                                                            value={op.manpower ?? ''}
-                                                            onChange={(e) =>
-                                                                handleChangeManpower(index, e.target.value)
-                                                            }
-                                                            disabled={viewAllGroups}
-                                                            className="w-full border border-slate-200 rounded-lg px-2 py-1 text-center outline-none disabled:bg-slate-100"
-                                                        />
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-center">
+                                                            {requiredEfficiency
+                                                                ? `${(requiredEfficiency * 100).toFixed(0)}%`
+                                                                : '-'}
+                                                        </td>
 
-                                                    <td className="p-3 text-right text-slate-800">
-                                                        {toNumber(op.standard_price_preview).toFixed(2)}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-right">
+                                                            {toNumber(op.adjusted_sam_preview).toFixed(2)}
+                                                        </td>
 
-                                                    <td className="p-3 text-center">
-                                                        {requiredEfficiency
-                                                            ? `${(requiredEfficiency * 100).toFixed(0)}%`
-                                                            : '-'}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-center">
+                                                            {(toNumber(op.utilization_rate_preview) * 100).toFixed(0)}%
+                                                        </td>
 
-                                                    <td className="p-3 text-right text-blue-700">
-                                                        {toNumber(op.adjusted_sam_preview).toFixed(2)}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-center">
+                                                            {op.total_actions || 0}
+                                                        </td>
 
-                                                    <td className="p-3 text-center">
-                                                        {(toNumber(op.utilization_rate_preview) * 100).toFixed(0)}%
-                                                    </td>
-
-                                                    <td className="p-3 text-center">
-                                                        {op.total_actions || 0}
-                                                    </td>
-
-                                                    <td className="p-3 text-center">
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => handleRemoveOperation(index)}
-                                                            disabled={viewAllGroups}
-                                                            className="px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 disabled:opacity-40"
-                                                        >
-                                                            Xóa
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
+                                                        <td className="p-3 border border-slate-200 text-center">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => handleRemoveOperation(index)}
+                                                                disabled={viewAllGroups}
+                                                                className="px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 disabled:opacity-40"
+                                                            >
+                                                                Xóa
+                                                            </button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -1633,9 +1617,9 @@ export default function OperationClusterPage() {
                     <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-5">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <h2 className="text-base font-bold text-slate-800">
+                                {/* <h2 className="text-base font-bold text-slate-800">
                                     Chứng từ đã lưu
-                                </h2>
+                                </h2> */}
                                 <p className="text-xs text-slate-500 mt-0.5">
                                     Danh sách mã chứng từ kho cụm công đoạn đã được lưu.
                                 </p>
@@ -1652,44 +1636,48 @@ export default function OperationClusterPage() {
                             </div>
                         </div>
 
-                        <div className="border border-slate-200 rounded-sm overflow-auto">
-                            <table className="w-full text-sm min-w-[1100px]">
+                        <div className="h-[500px] overflow-auto border border-slate-200 rounded-sm">
+                            <table className="w-full text-sm min-w-[1100px] border-collapse">
                                 <thead className="bg-slate-50 sticky top-0 z-10">
                                     <tr className="text-xs text-slate-500 uppercase">
-                                        <th className="p-3 border-b border-slate-200 text-left w-[70px]">
+                                        <th className="p-3 border border-slate-200 text-left w-[20px]">
                                             STT
                                         </th>
-                                        <th className="p-3 border-b border-slate-200 text-left w-[150px]">
+                                        <th className="p-3 border border-slate-200 text-left w-[115px]">
                                             Mã chứng từ
                                         </th>
-                                        <th className="p-3 border-b border-slate-200 text-left">
+                                        <th className="p-3 border border-slate-200 text-left">
                                             Nhóm công việc
                                         </th>
-                                        <th className="p-3 border-b border-slate-200 text-left">
+                                        <th className="p-3 border border-slate-200 text-left">
                                             Chủng loại
                                         </th>
-                                        <th className="p-3 border-b border-slate-200 text-left">
+                                        <th className="p-3 border border-slate-200 text-left">
                                             Nhóm chủng loại
                                         </th>
-                                        <th className="p-3 border-b border-slate-200 text-right w-[120px]">
+                                        <th className="p-3 border border-slate-200 text-right w-[100px]">
                                             SAM GSD
                                         </th>
-                                        <th className="p-3 border-b border-slate-200 text-right w-[120px]">
+                                        <th className="p-3 border border-slate-200 text-right w-[100px]">
                                             SAM ĐC
                                         </th>
-                                        <th className="p-3 border-b border-slate-200 text-center w-[120px]">
+                                        <th className="p-3 border border-slate-200 text-center w-[135px]">
                                             Trạng thái
                                         </th>
-                                        <th className="p-3 border-b border-slate-200 text-center w-[130px]">
+                                        <th className="p-3 border border-slate-200 text-center w-[100px]">
                                             Thao tác
                                         </th>
                                     </tr>
                                 </thead>
 
+
                                 <tbody>
                                     {loading && (
                                         <tr>
-                                            <td colSpan={9} className="p-8 text-center text-slate-400">
+                                            <td
+                                                colSpan={9}
+                                                className="p-8 border border-slate-200 text-center text-slate-400"
+                                            >
                                                 Đang tải danh sách chứng từ...
                                             </td>
                                         </tr>
@@ -1697,7 +1685,10 @@ export default function OperationClusterPage() {
 
                                     {!loading && items.length === 0 && (
                                         <tr>
-                                            <td colSpan={9} className="p-8 text-center text-slate-400">
+                                            <td
+                                                colSpan={9}
+                                                className="p-8 border border-slate-200 text-center text-slate-400"
+                                            >
                                                 Chưa có chứng từ nào được lưu.
                                             </td>
                                         </tr>
@@ -1705,51 +1696,48 @@ export default function OperationClusterPage() {
 
                                     {!loading &&
                                         items.map((item, index) => (
-                                            <tr
-                                                key={item.id}
-                                                className="border-b border-slate-100 hover:bg-slate-50"
-                                            >
-                                                <td className="p-3 text-slate-500">
+                                            <tr key={item.id} className="hover:bg-slate-50">
+                                                <td className="p-3 border border-slate-200 text-slate-500">
                                                     {index + 1}
                                                 </td>
 
-                                                <td className="p-3">
+                                                <td className="p-3 border border-slate-200">
                                                     <button
                                                         type="button"
                                                         onClick={() => handleViewSavedDocument(item.id)}
-                                                        className="font-bold text-blue-700 hover:underline"
+                                                        className=" text-blue-700 hover:underline"
                                                     >
                                                         {item.document_code}
                                                     </button>
                                                 </td>
 
-                                                <td className="p-3">
+                                                <td className="p-3 border border-slate-200">
                                                     {item.work_code && item.work_name
-                                                        ? `${item.work_code} - ${item.work_name}`
-                                                        : item.work_name || item.work_id}
+                                                        ? `${item.work_name}`
+                                                        : item.work_id}
                                                 </td>
 
-                                                <td className="p-3">
+                                                <td className="p-3 border border-slate-200">
                                                     {item.product_code && item.product_name
                                                         ? `${item.product_code} - ${item.product_name}`
                                                         : item.product_name || item.product_category_id}
                                                 </td>
 
-                                                <td className="p-3">
+                                                <td className="p-3 border border-slate-200">
                                                     {item.category_group_code && item.category_group_name
                                                         ? `${item.category_group_code} - ${item.category_group_name}`
                                                         : item.category_group_name || item.product_category_group_id}
                                                 </td>
 
-                                                <td className="p-3 text-right font-bold">
+                                                <td className="p-3 border border-slate-200 text-right font-bold">
                                                     {Number(item.total_sam_gsd || 0).toFixed(2)}
                                                 </td>
 
-                                                <td className="p-3 text-right font-bold text-blue-700">
+                                                <td className="p-3 border border-slate-200 text-right text-blue-700">
                                                     {Number(item.total_adjusted_sam || 0).toFixed(2)}
                                                 </td>
 
-                                                <td className="p-3 text-center">
+                                                <td className="p-3 border border-slate-200 text-center">
                                                     <span
                                                         className={`px-3 py-1 rounded-full text-xs font-bold ${item.status_id === 0
                                                             ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
@@ -1760,7 +1748,7 @@ export default function OperationClusterPage() {
                                                     </span>
                                                 </td>
 
-                                                <td className="p-3 text-center">
+                                                <td className="p-3 border border-slate-200 text-center">
                                                     <button
                                                         type="button"
                                                         onClick={() => handleViewSavedDocument(item.id)}
@@ -2059,38 +2047,38 @@ export default function OperationClusterPage() {
                                     </div>
                                 </div>
 
-                                <div className="overflow-auto">
-                                    <table className="w-full text-sm min-w-[1300px]">
+                                <div className="overflow-auto border border-slate-200 rounded-sm">
+                                    <table className="w-full text-sm min-w-[1300px] border-collapse">
                                         <thead className="bg-white">
                                             <tr className="text-xs text-slate-500 uppercase">
-                                                <th className="p-3 border-b border-slate-200 text-left w-[70px]">
+                                                <th className="p-3 border border-slate-200 text-left w-[70px]">
                                                     STT
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[120px]">
+                                                <th className="p-3 border border-slate-200 text-left w-[120px]">
                                                     Cụm
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[140px]">
+                                                <th className="p-3 border border-slate-200 text-left w-[140px]">
                                                     Mã GSD
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-left">
+                                                <th className="p-3 border border-slate-200 text-left">
                                                     Công đoạn
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[180px]">
+                                                <th className="p-3 border border-slate-200 text-left w-[180px]">
                                                     MMTB
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[100px]">
+                                                <th className="p-3 border border-slate-200 text-right w-[100px]">
                                                     SAM GSD
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[100px]">
+                                                <th className="p-3 border border-slate-200 text-right w-[100px]">
                                                     Hệ số
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[120px]">
+                                                <th className="p-3 border border-slate-200 text-right w-[120px]">
                                                     Đơn giá
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[120px]">
+                                                <th className="p-3 border border-slate-200 text-right w-[120px]">
                                                     SAM ĐC
                                                 </th>
-                                                <th className="p-3 border-b border-slate-200 text-center w-[100px]">
+                                                <th className="p-3 border border-slate-200 text-center w-[100px]">
                                                     Bước
                                                 </th>
                                             </tr>
@@ -2100,7 +2088,10 @@ export default function OperationClusterPage() {
                                             {(!selectedDetail.operations ||
                                                 selectedDetail.operations.length === 0) && (
                                                     <tr>
-                                                        <td colSpan={10} className="p-8 text-center text-slate-400">
+                                                        <td
+                                                            colSpan={10}
+                                                            className="p-8 border border-slate-200 text-center text-slate-400"
+                                                        >
                                                             Chứng từ này chưa có công đoạn.
                                                         </td>
                                                     </tr>
@@ -2109,45 +2100,45 @@ export default function OperationClusterPage() {
                                             {(selectedDetail.operations || []).map((op: any, index: number) => (
                                                 <tr
                                                     key={op.id || index}
-                                                    className="border-b border-slate-100 hover:bg-slate-50"
+                                                    className="hover:bg-slate-50"
                                                 >
-                                                    <td className="p-3 text-slate-500">
+                                                    <td className="p-3 border border-slate-200 text-slate-500">
                                                         {index + 1}
                                                     </td>
 
-                                                    <td className="p-3">
+                                                    <td className="p-3 border border-slate-200">
                                                         {op.cluster_name || `Cụm ${op.group_line_no || ''}`}
                                                     </td>
 
-                                                    <td className="p-3 font-bold text-blue-700">
+                                                    <td className="p-3 border border-slate-200 text-blue-700">
                                                         {op.operation_code || '-'}
                                                     </td>
 
-                                                    <td className="p-3 text-slate-800">
+                                                    <td className="p-3 border border-slate-200 text-slate-800">
                                                         {op.operation_name || '-'}
                                                     </td>
 
-                                                    <td className="p-3">
+                                                    <td className="p-3 border border-slate-200">
                                                         {op.machine_name || '-'}
                                                     </td>
 
-                                                    <td className="p-3 text-right">
+                                                    <td className="p-3 border border-slate-200 text-right">
                                                         {Number(op.sam_gsd || 0).toFixed(2)}
                                                     </td>
 
-                                                    <td className="p-3 text-right">
+                                                    <td className="p-3 border border-slate-200 text-right">
                                                         {Number(op.salary_coefficient || 0).toFixed(2)}
                                                     </td>
 
-                                                    <td className="p-3 text-right">
+                                                    <td className="p-3 border border-slate-200 text-right">
                                                         {Number(op.standard_price || 0).toFixed(2)}
                                                     </td>
 
-                                                    <td className="p-3 text-right text-blue-700">
+                                                    <td className="p-3 border border-slate-200 text-right text-blue-700">
                                                         {Number(op.adjusted_sam || 0).toFixed(2)}
                                                     </td>
 
-                                                    <td className="p-3 text-center">
+                                                    <td className="p-3 border border-slate-200 text-center">
                                                         {op.total_actions || 0}
                                                     </td>
                                                 </tr>
@@ -2173,8 +2164,6 @@ export default function OperationClusterPage() {
                     </div>
                 </div>
             )}
-
-
 
             {isGsdPopupOpen && (
                 <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-4">
@@ -2231,7 +2220,7 @@ export default function OperationClusterPage() {
                                                 </th>
                                                 <th className="p-2 border-b border-slate-200 text-left w-[150px]">
                                                     Mã
-                                                </th>   
+                                                </th>
                                                 <th className="p-2 border-b border-slate-200 text-left">
                                                     Công đoạn
                                                 </th>
@@ -2553,19 +2542,18 @@ export default function OperationClusterPage() {
                 </div>
             )}
 
-
             {operationActionPopup && (
                 <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-6">
                     <div className="w-[1000px] max-w-[94vw] max-h-[88vh] bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden">
                         <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4">
                             <div>
-                                <h2 className="text-lg font-bold text-slate-800">
+                                <h2 className="text-lg text-slate-800">
                                     Danh sách thao tác công đoạn
                                 </h2>
 
                                 <div className="text-sm text-slate-500 mt-1">
                                     {operationActionPopup.operationCode || '-'} -{' '}
-                                    <span className="font-bold text-slate-700">
+                                    <span className="text-slate-700">
                                         {operationActionPopup.operationName}
                                     </span>
                                 </div>

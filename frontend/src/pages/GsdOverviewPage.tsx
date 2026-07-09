@@ -44,7 +44,7 @@ export default function GsdOverviewPage() {
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
                 <div className="flex items-center justify-between gap-4 mb-5">
                     <div>
-                        <h1 className="text-xl font-black text-slate-800 uppercase tracking-tight">
+                        <h1 className="text-xl font-bold text-slate-800 uppercase tracking-tight">
                             Tổng quan phân tích GSD
                         </h1>
                         <p className="text-xs text-slate-500 mt-1">
@@ -55,7 +55,7 @@ export default function GsdOverviewPage() {
                     <button
                         type="button"
                         onClick={openNewOperationWorkspace}
-                        className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
+                        className="px-4 py-2 bg-blue-700 text-white rounded-sm text-xs hover:bg-blue-800"
                     >
                         + Khai báo công đoạn mới
                     </button>
@@ -66,7 +66,7 @@ export default function GsdOverviewPage() {
                         <div className="text-xs text-blue-600 font-semibold">
                             Tổng công đoạn
                         </div>
-                        <div className="text-2xl font-black text-blue-900 mt-1">
+                        <div className="text-2xl text-blue-900 mt-1">
                             {stats.totalAnalysis}
                         </div>
                     </div>
@@ -75,7 +75,7 @@ export default function GsdOverviewPage() {
                         <div className="text-xs text-green-600 font-semibold">
                             SMV trung bình
                         </div>
-                        <div className="text-2xl font-black text-green-900 mt-1">
+                        <div className="text-2xl text-green-900 mt-1">
                             {stats.averageSmv.toFixed(2)}
                         </div>
                     </div>
@@ -84,7 +84,7 @@ export default function GsdOverviewPage() {
                         <div className="text-xs text-indigo-600 font-semibold">
                             Tổng TMU
                         </div>
-                        <div className="text-2xl font-black text-indigo-900 mt-1">
+                        <div className="text-2xl text-indigo-900 mt-1">
                             {stats.totalTmu.toFixed(2)}
                         </div>
                     </div>
@@ -93,7 +93,7 @@ export default function GsdOverviewPage() {
                         <div className="text-xs text-orange-600 font-semibold">
                             Số máy đã dùng
                         </div>
-                        <div className="text-2xl font-black text-orange-900 mt-1">
+                        <div className="text-2xl text-orange-900 mt-1">
                             {stats.machineCount}
                         </div>
                     </div>
@@ -114,7 +114,7 @@ export default function GsdOverviewPage() {
                     <div className="px-5 pt-5">
                         <div className="flex items-center justify-between gap-4 mb-4">
                             <div>
-                                <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
+                                <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
                                     Khai báo công đoạn mới
                                 </h2>
                                 <p className="text-xs text-slate-500 mt-1">

@@ -16,13 +16,14 @@ const calculateOperationValues = ({
     const efficiency = toNumber(requiredEfficiency, 0);
     const coefficient = toNumber(salaryCoefficient, 0);
 
-    const adjustedSam = efficiency > 0 ? sam / efficiency : sam;
-    const utilizationRate = sam > 0 ? adjustedSam / sam : null;
+    const adjustedSam = efficiency > 0 ? sam / efficiency : sam; // tính sam điều chỉnh
+    const utilizationRate = sam > 0 ? adjustedSam / sam : null; // tính hiệu suất sử dụng
 
+    // tính đơn giá chuẩn
     const standardPrice =
         priceMethod === 'ADJUSTED'
             ? adjustedSam * coefficient
-            : sam * coefficient;
+            : sam * coefficient; 
 
     return {
         adjustedSam,
@@ -207,7 +208,6 @@ const getGsdActions = async (gsdAnalysisId) => {
 
     return result.recordset;
 };
-
 
 const getOperationClusterById = async (id) => {
     const pool = await getPool();
@@ -420,7 +420,7 @@ const createOperationCluster = async (payload) => {
         }
 
         const priceMethod = payload.price_method || 'GSD';
-        const headerEfficiency = payload.required_efficiency ?? null;
+        const headerEfficiency = payload.required_efficiency ?? null; 
 
         const headerRequest = new sql.Request(transaction);
 

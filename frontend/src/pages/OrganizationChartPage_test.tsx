@@ -155,6 +155,7 @@ export default function OrganizationChartPage() {
             status_id: 0,
         });
     };
+    
     const handleCreateRoot = () => {
         setFormMode('create-child');
         setSelectedDepartment(null);

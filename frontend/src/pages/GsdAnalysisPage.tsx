@@ -176,7 +176,7 @@ export default function GsdAnalysisPage() {
             <div className="bg-white rounded-xl border-slate-200 p-5">
                 <div className="flex items-center justify-between gap-4 mb-5">
                     <div>
-                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
+                        <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
                             Phân tích công đoạn
                         </h2>
                         <p className="text-xs text-slate-500 mt-1">
@@ -352,7 +352,7 @@ export default function GsdAnalysisPage() {
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-                            <div className="text-slate-500">Số mũi chỉ</div> 
+                            <div className="text-slate-500">Số mũi chỉ</div>
                             <div className="font-bold text-slate-800">{selectedMachine_test.stitchCount ?? 0}</div>
                         </div>
 
@@ -429,68 +429,72 @@ export default function GsdAnalysisPage() {
                 </div>
 
                 <div className="overflow-x-auto border border-slate-200 rounded-lg">
-                    <table className="min-w-full text-xs">
+                    <table className="min-w-full text-xs border-collapse">
                         <thead className="bg-slate-50 text-slate-500 uppercase">
                             <tr>
-                                <th className="px-4 py-3 text-left">STT</th>
-                                <th className="px-4 py-3 text-left">Source</th>
-                                <th className="px-4 py-3 text-left">Các bước</th>
-                                <th className="px-4 py-3 text-left">Mã GSD (Code)</th>
-                                <th className="px-4 py-3 text-left">Thao tác</th>
-                                <th className="px-4 py-3 text-right">Điểm TMU</th>
-                                <th className="px-4 py-3 text-right">Số lần lặp lại</th>
-                                <th className="px-4 py-3 text-right">Thời gian (Giây)</th>
-                                <th className="px-4 py-3 text-left">Ghi chú</th>
+                                <th className="px-4 py-3 border border-slate-200 text-left">STT</th>
+                                <th className="px-4 py-3 border border-slate-200 text-left">Source</th>
+                                <th className="px-4 py-3 border border-slate-200 text-left">Các bước</th>
+                                <th className="px-4 py-3 border border-slate-200 text-left">Mã GSD (Code)</th>
+                                <th className="px-4 py-3 border border-slate-200 text-left">Thao tác</th>
+                                <th className="px-4 py-3 border border-slate-200 text-right">Điểm TMU</th>
+                                <th className="px-4 py-3 border border-slate-200 text-right">Số lần lặp lại</th>
+                                <th className="px-4 py-3 border border-slate-200 text-right">Thời gian (Giây)</th>
+                                <th className="px-4 py-3 border border-slate-200 text-left">Ghi chú</th>
                             </tr>
                         </thead>
 
-                        <tbody className="divide-y divide-slate-100">
+                        <tbody>
                             {analysisRows.length === 0 && (
                                 <tr>
-                                    <td colSpan={9} className="px-4 py-6 text-center text-slate-400">
+                                    <td
+                                        colSpan={9}
+                                        className="px-4 py-6 border border-slate-200 text-center text-slate-400"
+                                    >
                                         Chưa có thao tác. Bấm “Lấy thao tác” để chọn thao tác từ source.
                                     </td>
                                 </tr>
                             )}
 
                             {analysisRows.map((row, index) => {
-                                const seconds = (Number(row.tmu || 0) * Number(row.frequency || 0)) / 27.8;
+                                const seconds =
+                                    (Number(row.tmu || 0) * Number(row.frequency || 0)) / 27.8;
 
                                 return (
                                     <tr key={`${row.sourceId}-${row.sourceActionDetailId}-${index}`}>
-                                        <td className="px-4 py-3 font-mono text-slate-500">
+                                        <td className="px-4 py-3 border border-slate-200 font-mono text-slate-500 text-sm">
                                             {index + 1}
                                         </td>
 
-                                        <td className="px-4 py-3 text-slate-700">
+                                        <td className="px-4 py-3 border border-slate-200 text-slate-700 text-sm">
                                             {row.sourceCode}
                                         </td>
 
-                                        <td className="px-4 py-3 font-bold text-blue-700">
+                                        <td className="px-4 py-3 border border-slate-200 text-blue-700 text-sm">
                                             {row.stepNo}
                                         </td>
 
-                                        <td className="px-4 py-3 text-slate-700">
+                                        <td className="px-4 py-3 border border-slate-200 text-slate-700 text-sm">
                                             {row.gsdCode}
                                         </td>
 
-                                        <td className="px-4 py-3 text-slate-700">
+                                        <td className="px-4 py-3 border border-slate-200 text-slate-700 text-sm">
                                             {row.actionName}
                                         </td>
 
-                                        <td className="px-4 py-3 text-right font-bold">
+                                        <td className="px-4 py-3 border border-slate-200 text-right text-sm">
                                             {row.tmu}
                                         </td>
 
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="px-4 py-3 border border-slate-200 text-right text-sm">
                                             {row.frequency}
                                         </td>
 
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="px-4 py-3 border border-slate-200 text-right text-sm">
                                             {formatNumber(seconds, 4)}
                                         </td>
 
-                                        <td className="px-4 py-3 text-slate-500">
+                                        <td className="px-4 py-3 border border-slate-200 text-slate-500 text-sm">
                                             {row.note}
                                         </td>
                                     </tr>

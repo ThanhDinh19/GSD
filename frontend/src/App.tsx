@@ -228,10 +228,10 @@ export default function App() {
               <li>
                 <button
                   onClick={() => {
-                    setActiveTab('operation-clusters');
+                    setActiveTab('Khai báo cụm công đoạn cho chủng loại hàng');
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'operation-clusters'
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng'
                       ? 'bg-[#1e40af] border-r-4 border-white font-bold'
                       : 'hover:bg-blue-800/40 text-blue-100'
                     }`}
@@ -629,7 +629,7 @@ export default function App() {
           )}
 
           {/*  dinh 07/08/2026 */}
-          {activeTab === 'operation-clusters' && (
+          {activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng' && (
             <OperationClusterPage />
           )}
         </div>
