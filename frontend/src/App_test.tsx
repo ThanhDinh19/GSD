@@ -35,7 +35,7 @@ const getBackendUrl = () => {
 };
 const API_BASE_URL = getBackendUrl();
 
-export default function App() {
+export default function App_test() {
   // Initialize state with assigned workers
   const [appState, setAppState] = useState<{ styles: Style[]; workers: Worker[] }>(() => {
     return initializeAssignments(defaultStyles, defaultWorkers);
@@ -45,6 +45,40 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('gsd-routing');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+
+  type MasterDataTestTabKey =
+    | 'clusters'
+    | 'gsd-codes'
+    | 'machine-equipments'
+    | 'sources'
+    | 'source-action-mapping'
+    | 'works'
+    | 'product-category'
+    | 'product-category-group'
+    | 'department-type'
+    | 'skill-grade'
+    | 'salary-coefficient';
+
+  const [isMasterDataTestOpen, setIsMasterDataTestOpen] = useState<boolean>(true);
+  const [activeMasterDataTestTab, setActiveMasterDataTestTab] =
+    useState<MasterDataTestTabKey>('clusters');
+
+  const masterDataTestTabs: {
+    key: MasterDataTestTabKey;
+    label: string;
+  }[] = [
+      { key: 'department-type', label: 'Danh mục Phòng Phân xưởng' },
+      { key: 'clusters', label: 'Danh mục công đoạn' },
+      { key: 'machine-equipments', label: 'Danh mục MMTB' },
+      { key: 'skill-grade', label: 'Danh mục bậc thợ' },
+      { key: 'salary-coefficient', label: 'Danh mục hệ số lương' },
+      { key: 'sources', label: 'Danh mục Source' },
+      { key: 'works', label: 'Danh mục công việc' },
+      { key: 'product-category', label: 'Danh mục chủng loại' },
+      { key: 'product-category-group', label: 'Danh mục nhóm chủng loại' },
+      { key: 'gsd-codes', label: 'Kho thao tác chuẩn' },
+      { key: 'source-action-mapping', label: 'Khai báo thao tác' },
+    ];
 
   const fetchDatabaseData = () => {
     fetch(`${API_BASE_URL}/api/routing`)
@@ -348,7 +382,90 @@ export default function App() {
                   )}
                 </button>
               </li>
-             
+
+
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMasterDataTestOpen((prev) => !prev);
+                    setActiveTab('master-data-test');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'master-data-test'
+                    ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                    : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
+                  title="Danh mục test"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
+                  </svg>
+
+                  {!isSidebarCollapsed && (
+                    <>
+                      <span className="whitespace-nowrap flex-1">Danh mục (test)</span>
+
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className={`h-4 w-4 transition-transform duration-200 ${isMasterDataTestOpen ? 'rotate-90' : ''
+                          }`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M9 5l7 7-7 7"
+                        />
+                      </svg>
+                    </>
+                  )}
+                </button>
+
+                {!isSidebarCollapsed && isMasterDataTestOpen && (
+                  <div className="mt-1 ml-8 space-y-0.5">
+                    {masterDataTestTabs.map((tab) => {
+                      const isActive =
+                        activeTab === 'master-data-test' &&
+                        activeMasterDataTestTab === tab.key;
+
+                      return (
+                        <button
+                          key={tab.key}
+                          type="button"
+                          onClick={() => {
+                            setActiveTab('master-data-test');
+                            setActiveMasterDataTestTab(tab.key);
+                            setMobileMenuOpen(false);
+                          }}
+                          className={`w-full text-left px-3 py-2 rounded-md text-[12px] transition-all ${isActive
+                            ? 'bg-blue-900/60 text-white font-bold'
+                            : 'text-blue-100 hover:bg-blue-800/40 hover:text-white'
+                            }`}
+                          title={tab.label}
+                        >
+                          {tab.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </li>
+
               {/* <li>
                 <button
                   onClick={() => {
@@ -616,6 +733,10 @@ export default function App() {
 
           {activeTab === 'master-data' && (
             <MasterDataView />
+          )}
+
+          {activeTab === 'master-data-test' && (
+            <MasterDataPage_test activeMasterTab={activeMasterDataTestTab} />
           )}
 
           {activeTab === 'organization-chart' && (
