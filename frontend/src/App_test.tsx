@@ -267,7 +267,8 @@ export default function App_test() {
               IE Module
             </h3>
             <ul className="space-y-0.5">
-              <li>
+
+              {/* <li>
                 <button
                   onClick={() => {
                     setActiveTab('Khai báo cụm công đoạn cho chủng loại hàng');
@@ -298,7 +299,7 @@ export default function App_test() {
                     <span className="whitespace-nowrap">Kho cụm công đoạn</span>
                   )}
                 </button>
-              </li>
+              </li> */}
 
 
               <li>
@@ -329,7 +330,7 @@ export default function App_test() {
                   </svg>
 
                   {!isSidebarCollapsed && (
-                    <span className="whitespace-nowrap">Kho cụm công đoạn (test)</span>
+                    <span className="whitespace-nowrap">Kho cụm công đoạn</span>
                   )}
                 </button>
               </li>

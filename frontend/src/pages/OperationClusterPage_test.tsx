@@ -1068,7 +1068,7 @@ export default function OperationClusterPage_test() {
 
                                             <div className="rounded-sm border border-emerald-100 bg-emerald-50 px-3 py-2">
                                                 <div className="text-[11px] font-bold text-emerald-500 uppercase">
-                                                    Tổng SAM GSD
+                                                    Tổng SMV
                                                 </div>
                                                 <div className="text-xl text-emerald-700 mt-1">
                                                     {dashboard.totalSamGsd.toFixed(2)}
@@ -1337,7 +1337,7 @@ export default function OperationClusterPage_test() {
                                             <div className="flex items-center justify-between mb-3">
                                                 <div>
                                                     <h2 className="text-base font-bold text-slate-800">
-                                                        Danh sách cụm
+                                                        Danh sách cụm công đoạn
                                                     </h2>
                                                     {/* <p className="text-xs text-slate-500">
                                                     Thêm cụm, chọn cụm để thao tác công đoạn.
@@ -1377,7 +1377,7 @@ export default function OperationClusterPage_test() {
                                                                 Số CĐ
                                                             </th>
                                                             <th className="p-3 border border-slate-200 text-right w-[80px]">
-                                                                SAM GSD
+                                                                SMV
                                                             </th>
                                                             <th className="p-3 border border-slate-200 text-right w-[80px]">
                                                                 TGCN
@@ -1538,12 +1538,12 @@ export default function OperationClusterPage_test() {
                                                                 <th className="p-3 border border-slate-200 text-center w-[30px]">Bậc</th>
                                                                 <th className="p-3 border border-slate-200 text-left w-[220px]">MMTB</th>
                                                                 <th className="p-3 border border-slate-200 text-left w-[100px]">Code</th>
-                                                                <th className="p-3 border border-slate-200 text-right w-[100px]">SAM GSD</th>
+                                                                <th className="p-3 border border-slate-200 text-right w-[100px]">SMV</th>
                                                                 <th className="p-3 border border-slate-200 text-right w-[100px]">Hệ số</th>
                                                                 <th className="p-3 border border-slate-200 text-center w-[90px]">Nhân sự</th>
                                                                 <th className="p-3 border border-slate-200 text-right w-[120px]">Đơn giá</th>
                                                                 <th className="p-3 border border-slate-200 text-center w-[90px]">HS YC</th>
-                                                                <th className="p-3 border border-slate-200 text-right w-[100px]">SAM ĐC</th>
+                                                                <th className="p-3 border border-slate-200 text-right w-[100px]">SMV ĐC</th>
                                                                 <th className="p-3 border border-slate-200 text-center w-[100px]">Hiệu suất</th>
                                                                 <th className="p-3 border border-slate-200 text-center w-[100px]">Bước GSD</th>
                                                                 <th className="p-3 border border-slate-200 text-center w-[50px]">Xóa</th>
@@ -1728,7 +1728,7 @@ export default function OperationClusterPage_test() {
                         </div>
                     </div>
 
-                    <div className="h-[500px] overflow-auto border border-slate-200 rounded-sm">
+                    <div className="h-[630px] overflow-auto border border-slate-200 rounded-sm">
                         <table className="w-full text-sm min-w-[1100px] border-collapse">
                             <thead className="bg-slate-50 sticky top-0 z-10">
                                 <tr className="text-xs text-slate-500 uppercase">
@@ -1748,10 +1748,10 @@ export default function OperationClusterPage_test() {
                                         Nhóm chủng loại
                                     </th>
                                     <th className="p-3 border border-slate-200 text-right w-[100px]">
-                                        SAM GSD
+                                        SMV
                                     </th>
                                     <th className="p-3 border border-slate-200 text-right w-[100px]">
-                                        SAM ĐC
+                                        SMV ĐC
                                     </th>
                                     <th className="p-3 border border-slate-200 text-center w-[135px]">
                                         Trạng thái
@@ -2044,7 +2044,7 @@ export default function OperationClusterPage_test() {
 
                                 <div className="border border-emerald-100 bg-emerald-50 rounded-sm p-3">
                                     <div className="text-xs font-bold text-emerald-600 uppercase">
-                                        SAM GSD
+                                        SMV
                                     </div>
                                     <div className="text-xl text-emerald-700 mt-1">
                                         {Number(selectedDetail.dashboard?.total_sam_gsd || 0).toFixed(2)}
@@ -2139,12 +2139,15 @@ export default function OperationClusterPage_test() {
                                     </div>
                                 </div>
 
-                                <div className="overflow-auto border border-slate-200 rounded-sm">
+                                <div className="overflow-auto border border-slate-200 rounded-sm ">
                                     <table className="w-full text-sm min-w-[1300px] border-collapse">
                                         <thead className="bg-white">
                                             <tr className="text-xs text-slate-500 uppercase">
                                                 <th className="p-3 border border-slate-200 text-left w-[70px]">
                                                     STT
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-center w-[100px]">
+                                                    Xếp chuyền
                                                 </th>
                                                 <th className="p-3 border border-slate-200 text-left w-[120px]">
                                                     Cụm
@@ -2152,14 +2155,20 @@ export default function OperationClusterPage_test() {
                                                 {/* <th className="p-3 border border-slate-200 text-left w-[140px]">
                                                     Mã GSD
                                                 </th> */}
-                                                <th className="p-3 border border-slate-200 text-left">
+                                                <th className="p-3 border border-slate-200 text-left w-[340px]">
                                                     Công đoạn
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-left">
+                                                    Bậc
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-left w-[180px]">
+                                                    MMTB code
                                                 </th>
                                                 <th className="p-3 border border-slate-200 text-left w-[180px]">
                                                     MMTB
                                                 </th>
                                                 <th className="p-3 border border-slate-200 text-right w-[100px]">
-                                                    SAM GSD
+                                                    SMV
                                                 </th>
                                                 <th className="p-3 border border-slate-200 text-right w-[100px]">
                                                     Hệ số
@@ -2168,7 +2177,10 @@ export default function OperationClusterPage_test() {
                                                     Đơn giá
                                                 </th>
                                                 <th className="p-3 border border-slate-200 text-right w-[120px]">
-                                                    SAM ĐC
+                                                    SMV ĐC
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-right w-[120px]">
+                                                    Hiệu suất sử dụng
                                                 </th>
                                                 <th className="p-3 border border-slate-200 text-center w-[100px]">
                                                     Bước
@@ -2181,7 +2193,7 @@ export default function OperationClusterPage_test() {
                                                 selectedDetail.operations.length === 0) && (
                                                     <tr>
                                                         <td
-                                                            colSpan={10}
+                                                            colSpan={13}
                                                             className="p-8 border border-slate-200 text-center text-slate-400"
                                                         >
                                                             Chứng từ này chưa có công đoạn.
@@ -2198,6 +2210,10 @@ export default function OperationClusterPage_test() {
                                                         {index + 1}
                                                     </td>
 
+                                                    <td className="p-3 border border-slate-200 text-center">
+                                                        {op.line_balance_no || '-'}
+                                                    </td>
+
                                                     <td className="p-3 border border-slate-200">
                                                         {op.cluster_name || `Cụm ${op.group_line_no || ''}`}
                                                     </td>
@@ -2208,6 +2224,14 @@ export default function OperationClusterPage_test() {
 
                                                     <td className="p-3 border border-slate-200 text-slate-800">
                                                         {op.operation_name || '-'}
+                                                    </td>
+
+                                                    <td className="p-3 border border-slate-200">
+                                                        {op.skill_level || '-'}
+                                                    </td>
+
+                                                    <td className="p-3 border border-slate-200">
+                                                        {op.machine_code || '-'}
                                                     </td>
 
                                                     <td className="p-3 border border-slate-200">
@@ -2228,6 +2252,11 @@ export default function OperationClusterPage_test() {
 
                                                     <td className="p-3 border border-slate-200 text-right text-blue-700">
                                                         {Number(op.adjusted_sam || 0).toFixed(2)}
+                                                    </td>
+
+
+                                                    <td className="p-3 border border-slate-200 text-right text-blue-700">
+                                                        {(toNumber(op.utilization_rate, 0) * 100).toFixed(0)}%
                                                     </td>
 
                                                     <td className="p-3 border border-slate-200 text-center">
@@ -2425,7 +2454,7 @@ export default function OperationClusterPage_test() {
 
                                                         <div className="shrink-0 text-right">
                                                             <div className="text-[15px] text-slate-500">
-                                                                SAM GSD
+                                                                SMV
                                                             </div>
                                                             <div className="text-sm text-blue-700">
                                                                 {toNumber(gsd.sam_gsd).toFixed(2)}
@@ -2544,15 +2573,11 @@ export default function OperationClusterPage_test() {
 
             {coefficientPopup && (
                 <div
-                    className="fixed inset-0 z-50"
+                    className="fixed inset-0 z-[100] bg-slate-900/20 flex items-center justify-center p-4"
                     onClick={() => setCoefficientPopup(null)}
                 >
                     <div
-                        className="absolute w-[360px] bg-white border border-slate-200 rounded-sm shadow-2xl overflow-hidden"
-                        style={{
-                            top: coefficientPopup.y + 8,
-                            left: coefficientPopup.x - 300,
-                        }}
+                        className="w-[420px] max-w-[92vw] bg-white border border-slate-200 rounded-sm shadow-2xl overflow-hidden"
                         onClick={(event) => event.stopPropagation()}
                     >
                         <div className="p-4 border-b border-slate-100">
@@ -2885,8 +2910,8 @@ export default function OperationClusterPage_test() {
 
                                                     <div className="text-xs text-slate-500 mt-1">
                                                         {group.operations.length} công đoạn
-                                                        {' '}• SAM GSD: {totalSamGsd.toFixed(2)}
-                                                        {' '}• SAM ĐC/TGCN: {totalAdjustedSam.toFixed(2)}
+                                                        {' '}• SMV: {totalSamGsd.toFixed(2)}
+                                                        {' '}• SMV ĐC/TGCN: {totalAdjustedSam.toFixed(2)}
                                                         {' '}• Bước GSD: {totalActions}
                                                         {' '}• Nhân sự: {totalManpower.toFixed(2)}
                                                     </div>
@@ -2904,7 +2929,7 @@ export default function OperationClusterPage_test() {
 
                                                     <div>
                                                         <div className="text-[10px] text-slate-500 uppercase">
-                                                            SAM GSD
+                                                            SMV
                                                         </div>
                                                         <div className="text-sm font-bold text-slate-800">
                                                             {totalSamGsd.toFixed(2)}
@@ -2956,7 +2981,7 @@ export default function OperationClusterPage_test() {
                                                             Code
                                                         </th>
                                                         <th className="p-3 border border-slate-100 text-right w-[100px]">
-                                                            SAM GSD
+                                                            SMV
                                                         </th>
                                                         <th className="p-3 border border-slate-100 text-right w-[100px]">
                                                             Hệ số
@@ -2971,7 +2996,7 @@ export default function OperationClusterPage_test() {
                                                             HS YC
                                                         </th>
                                                         <th className="p-3 border border-slate-100 text-right w-[110px]">
-                                                            SAM ĐC
+                                                            SMV ĐC
                                                         </th>
                                                         <th className="p-3 border border-slate-100 text-center w-[100px]">
                                                             Hiệu suất
@@ -3028,7 +3053,7 @@ export default function OperationClusterPage_test() {
                                                             </td>
 
                                                             <td className="p-3 border border-slate-100 text-right">
-                                                                {toNumber(op.salary_coefficient, 0).toFixed(2)}
+                                                                {toNumber(op.salary_coefficient, 0).toFixed(2) ?? 0}
                                                             </td>
 
                                                             <td className="p-3 border border-slate-100 text-center">
@@ -3079,6 +3104,8 @@ export default function OperationClusterPage_test() {
                     </div>
                 </div>
             )}
+
+
         </div>
     );
 }
