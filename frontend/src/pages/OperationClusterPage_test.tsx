@@ -2346,7 +2346,7 @@ export default function OperationClusterPage_test() {
                                                     Công đoạn
                                                 </th>
                                                 <th className="p-2 border-b border-slate-200 text-right w-[75px]">
-                                                    SAM
+                                                    SMV
                                                 </th>
                                             </tr>
                                         </thead>
