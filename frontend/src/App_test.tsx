@@ -15,6 +15,7 @@ import OrganizationChartPage from './pages/OrganizationChartPage';
 import OrganizationChartPage_test from './pages/OrganizationChartPage_test';
 import OperationClusterPage from './pages/OperationClusterPage';
 import MasterDataPage_test from './pages/MasterDataPage_test';
+import OperationClusterPage_test from './pages/OperationClusterPage_test';
 
 // Import Syncfusion Spreadsheet CSS files
 import "@syncfusion/ej2-base/styles/material.css";
@@ -298,6 +299,41 @@ export default function App_test() {
                   )}
                 </button>
               </li>
+
+
+              <li>
+                <button
+                  onClick={() => {
+                    setActiveTab('Khai báo cụm công đoạn cho chủng loại hàng test');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng test'
+                    ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                    : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
+                  title="Kho cụm công đoạn test"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h8M4 18h16"
+                    />
+                  </svg>
+
+                  {!isSidebarCollapsed && (
+                    <span className="whitespace-nowrap">Kho cụm công đoạn (test)</span>
+                  )}
+                </button>
+              </li>
+
               <li>
                 <button
                   onClick={() => { setActiveTab('sam-db'); setMobileMenuOpen(false); }}
@@ -761,6 +797,11 @@ export default function App_test() {
           {activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng' && (
             <OperationClusterPage />
           )}
+
+          {activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng test' && (
+            <OperationClusterPage_test />
+          )}
+
         </div>
 
         {/* Footer info brand elements */}

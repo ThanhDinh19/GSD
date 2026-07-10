@@ -1,3 +1,5 @@
+use [demo_db]
+
 CREATE TABLE operation_cluster_headers (
     id INT IDENTITY(1,1) NOT NULL PRIMARY KEY,
 

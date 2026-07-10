@@ -13,14 +13,14 @@ export default function ProductCateTable({
   onRowClick,
 }: ProductCateTableProps) {
   return (
-    <div className="overflow-x-auto border border-slate-200 rounded-lg">
-      <table className="min-w-full text-xs">
-        <thead className="bg-slate-50 text-slate-500 uppercase">
+    <div className="w-[600px] border border-slate-200 rounded-sm">
+      <table className="w-[600px] border text-xs " >
+        <thead className="bg-slate-50 text-slate-500 uppercase rounded-sm border border-slate-200 ">
           <tr>
-            <th className="px-4 py-3 text-left">STT</th>
-            <th className="px-4 py-3 text-left">Mã chủng loại</th>
-            <th className="px-4 py-3 text-left">Tên chủng loại</th>
-            <th className="px-4 py-3 text-left">Trạng thái</th>
+            <th className="px-3 py-2 text-left text-base">STT</th>
+            <th className="px-3 py-2 text-left text-base">Mã chủng loại</th>
+            <th className="px-3 py-2 text-left text-base">Tên chủng loại</th>
+            <th className="px-3 py-2 text-left text-base">Trạng thái</th>
           </tr>
         </thead>
 
@@ -48,19 +48,19 @@ export default function ProductCateTable({
               className="hover:bg-blue-50 cursor-pointer transition-colors"
               title="Click để cập nhật"
             >
-              <td className="px-4 py-3 font-mono text-slate-500">
+              <td className="px-4 py-3 font-mono text-slate-500 text-base border border-slate-200 ">
                 {index + 1}
               </td>
 
-              <td className="px-4 py-3 font-bold text-slate-700">
+              <td className="px-4 py-3 font-bold text-slate-700 text-base border border-slate-200 ">
                 {item.productCode}
               </td>
 
-              <td className="px-4 py-3 text-slate-700">
+              <td className="px-4 py-3 text-slate-700 text-base border border-slate-200 ">
                 {item.productName}
               </td>
 
-              <td className="px-4 py-3">
+              <td className="px-4 py-3 text-base border border-slate-200 ">
                 <StatusBadge
                   statusId={item.statusId}
                   statusName={item.statusName}

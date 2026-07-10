@@ -16,6 +16,7 @@ import OrganizationChartPage_test from './pages/OrganizationChartPage_test';
 import OperationClusterPage from './pages/OperationClusterPage';
 import MasterDataPage_test from './pages/MasterDataPage_test';
 
+
 // Import Syncfusion Spreadsheet CSS files
 import "@syncfusion/ej2-base/styles/material.css";
 import "@syncfusion/ej2-inputs/styles/material.css";
@@ -258,6 +259,10 @@ export default function App() {
                   )}
                 </button>
               </li>
+
+
+              
+
               <li>
                 <button
                   onClick={() => { setActiveTab('sam-db'); setMobileMenuOpen(false); }}
@@ -348,7 +353,7 @@ export default function App() {
                   )}
                 </button>
               </li>
-             
+
               {/* <li>
                 <button
                   onClick={() => {
@@ -634,6 +639,8 @@ export default function App() {
           {activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng' && (
             <OperationClusterPage />
           )}
+
+        
         </div>
 
         {/* Footer info brand elements */}
