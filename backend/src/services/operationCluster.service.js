@@ -2,43 +2,43 @@ const sql = require('mssql');
 const { getPool } = require('../database/connection');
 
 const toNumber = (value, defaultValue = 0) => {
-    const num = Number(value);
-    return Number.isFinite(num) ? num : defaultValue;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : defaultValue;
 };
 
 const calculateOperationValues = ({
-    samGsd,
-    requiredEfficiency,
-    salaryCoefficient,
-    priceMethod,
+  samGsd,
+  requiredEfficiency,
+  salaryCoefficient,
+  priceMethod,
 }) => {
-    const sam = toNumber(samGsd, 0);
-    const efficiency = toNumber(requiredEfficiency, 0);
-    const coefficient = toNumber(salaryCoefficient, 0);
+  const sam = toNumber(samGsd, 0);
+  const efficiency = toNumber(requiredEfficiency, 0);
+  const coefficient = toNumber(salaryCoefficient, 0);
 
-    const adjustedSam = efficiency > 0 ? sam / efficiency : sam; // tính sam điều chỉnh
-    const utilizationRate = sam > 0 ? adjustedSam / sam : null; // tính hiệu suất sử dụng
+  const adjustedSam = efficiency > 0 ? sam / efficiency : sam; // tính sam điều chỉnh
+  const utilizationRate = sam > 0 ? adjustedSam / sam : null; // tính hiệu suất sử dụng
 
-    // tính đơn giá chuẩn
-    const standardPrice =
-        priceMethod === 'ADJUSTED'
-            ? adjustedSam * coefficient
-            : sam * coefficient; 
+  // tính đơn giá chuẩn
+  const standardPrice =
+    priceMethod === 'ADJUSTED'
+      ? adjustedSam * coefficient
+      : sam * coefficient;
 
-    return {
-        adjustedSam,
-        utilizationRate,
-        standardPrice,
-    };
+  return {
+    adjustedSam,
+    utilizationRate,
+    standardPrice,
+  };
 };
 
 
 const getSalaryCoefficient = async (transaction, skillGradeId) => {
-    if (!skillGradeId) return 0;
+  if (!skillGradeId) return 0;
 
-    const result = await new sql.Request(transaction)
-        .input('skill_grade_id', sql.Int, skillGradeId)
-        .query(`
+  const result = await new sql.Request(transaction)
+    .input('skill_grade_id', sql.Int, skillGradeId)
+    .query(`
       SELECT TOP 1
         coefficient
       FROM salary_coefficients
@@ -47,13 +47,13 @@ const getSalaryCoefficient = async (transaction, skillGradeId) => {
       ORDER BY id DESC
     `);
 
-    return Number(result.recordset[0]?.coefficient || 0);
+  return Number(result.recordset[0]?.coefficient || 0);
 };
 
 const getOperationClusterHeaders = async () => {
-    const pool = await getPool();
+  const pool = await getPool();
 
-    const result = await pool.request().query(`
+  const result = await pool.request().query(`
     SELECT
       h.id,
       h.document_code,
@@ -122,70 +122,65 @@ const getOperationClusterHeaders = async () => {
     ORDER BY h.id DESC
   `);
 
-    return result.recordset;
+  return result.recordset;
 };
 
 const getGsdOptions = async () => {
-    const pool = await getPool();
+  const pool = await getPool();
 
-    const result = await pool.request().query(`
-    SELECT
-      h.id AS gsd_analysis_id,
-      h.analysis_no AS operation_code,
-      h.operation_name,
+  const result = await pool.request().query(`
+     SELECT
+   h.id AS gsd_analysis_id,
+   h.analysis_no AS operation_code,
+   h.operation_name,
 
-      sg.id AS skill_grade_id,
-      TRY_CAST(h.skill_grade AS INT) AS skill_level,
-      ISNULL(sc.coefficient, 0) AS salary_coefficient,
+   TRY_CAST(h.skill_grade AS INT) AS skill_level,
 
-      h.machine_id AS machine_equipment_id,
-      m.machine_code,
-      m.machine_name,
-      m.code_mmtb,
+   h.machine_id AS machine_equipment_id,
+   m.machine_code,
+   m.machine_name,
+   m.code_mmtb,
+   h.total_tmu,
 
-      CAST(ISNULL(h.final_smv, 0) AS DECIMAL(10,2)) AS sam_gsd,
+   CAST(ISNULL(h.final_smv, 0) AS DECIMAL(10,2)) AS sam_gsd,
 
-      CAST(
-        ISNULL(SUM((ISNULL(d.tmu, 0) * ISNULL(d.frequency, 1)) / 27.8), 0)
-        AS DECIMAL(18,2)
-      ) AS total_action_seconds,
+   CAST(
+     ISNULL(SUM((ISNULL(d.tmu, 0) * ISNULL(d.frequency, 1)) / 27.8), 0)
+     AS DECIMAL(18,2)
+   ) AS total_action_seconds,
 
-      COUNT(d.id) AS total_actions
-    FROM gsd_analysis_headers h
-    LEFT JOIN gsd_analysis_details d
-      ON d.analysis_id = h.id
-    LEFT JOIN machine_equipments_test m
-      ON m.id = h.machine_id
-    LEFT JOIN skill_grade sg
-      ON sg.level = TRY_CAST(h.skill_grade AS INT)
-    LEFT JOIN salary_coefficients sc
-      ON sc.level_id = sg.id
-      AND sc.status_id = 0
-    GROUP BY
-      h.id,
-      h.analysis_no,
-      h.operation_name,
-      h.skill_grade,
-      sg.id,
-      sc.coefficient,
-      h.machine_id,
-      m.machine_code,
-      m.machine_name,
-      m.code_mmtb,
-      h.final_smv
-    ORDER BY h.id DESC
+   COUNT(d.id) AS total_actions
+
+ FROM gsd_analysis_headers h
+ LEFT JOIN gsd_analysis_details d
+   ON d.analysis_id = h.id
+ LEFT JOIN machine_equipments_test m
+   ON m.id = h.machine_id
+ GROUP BY
+   h.id,
+   h.analysis_no,
+   h.operation_name,
+   h.skill_grade,
+   h.machine_id,
+   m.machine_code,
+   m.machine_name,
+   m.code_mmtb,
+   h.final_smv,
+   h.total_tmu
+ ORDER BY h.id DESC
+
   `);
 
-    return result.recordset;
+  return result.recordset;
 };
 
 
 const getGsdActions = async (gsdAnalysisId) => {
-    const pool = await getPool();
+  const pool = await getPool();
 
-    const result = await pool.request()
-        .input('analysis_id', sql.Int, gsdAnalysisId)
-        .query(`
+  const result = await pool.request()
+    .input('analysis_id', sql.Int, gsdAnalysisId)
+    .query(`
       SELECT
         d.id,
         d.analysis_id,
@@ -206,15 +201,15 @@ const getGsdActions = async (gsdAnalysisId) => {
         d.id
     `);
 
-    return result.recordset;
+  return result.recordset;
 };
 
 const getOperationClusterById = async (id) => {
-    const pool = await getPool();
+  const pool = await getPool();
 
-    const headerResult = await pool.request()
-        .input('id', sql.Int, id)
-        .query(`
+  const headerResult = await pool.request()
+    .input('id', sql.Int, id)
+    .query(`
       SELECT
         h.id,
         h.document_code,
@@ -251,13 +246,13 @@ const getOperationClusterById = async (id) => {
       WHERE h.id = @id
     `);
 
-    const header = headerResult.recordset[0];
+  const header = headerResult.recordset[0];
 
-    if (!header) return null;
+  if (!header) return null;
 
-    const groupsResult = await pool.request()
-        .input('header_id', sql.Int, id)
-        .query(`
+  const groupsResult = await pool.request()
+    .input('header_id', sql.Int, id)
+    .query(`
       SELECT
         g.id,
         g.header_id,
@@ -284,9 +279,9 @@ const getOperationClusterById = async (id) => {
       ORDER BY g.line_no
     `);
 
-    const operationsResult = await pool.request()
-        .input('header_id', sql.Int, id)
-        .query(`
+  const operationsResult = await pool.request()
+    .input('header_id', sql.Int, id)
+    .query(`
             SELECT
                 o.id,
                 o.header_id,
@@ -349,9 +344,9 @@ const getOperationClusterById = async (id) => {
                 o.line_no;
     `);
 
-    const dashboardResult = await pool.request()
-        .input('header_id', sql.Int, id)
-        .query(`
+  const dashboardResult = await pool.request()
+    .input('header_id', sql.Int, id)
+    .query(`
       WITH ClusterTgcn AS (
         SELECT
           group_id,
@@ -374,66 +369,66 @@ const getOperationClusterById = async (id) => {
       WHERE o.header_id = @header_id
     `);
 
-    return {
-        header,
-        groups: groupsResult.recordset,
-        operations: operationsResult.recordset,
-        dashboard: dashboardResult.recordset[0],
-    };
+  return {
+    header,
+    groups: groupsResult.recordset,
+    operations: operationsResult.recordset,
+    dashboard: dashboardResult.recordset[0],
+  };
 };
 
 const createOperationCluster = async (payload) => {
-    const pool = await getPool();
-    const transaction = new sql.Transaction(pool);
+  const pool = await getPool();
+  const transaction = new sql.Transaction(pool);
 
-    await transaction.begin();
+  await transaction.begin();
 
-    try {
-        if (!payload.document_code) {
-            throw new Error('Vui lòng nhập mã chứng từ');
-        }
+  try {
+    if (!payload.document_code) {
+      throw new Error('Vui lòng nhập mã chứng từ');
+    }
 
-        const documentCode = payload.document_code.trim();
+    const documentCode = payload.document_code.trim();
 
-        const duplicateResult = await new sql.Request(transaction)
-            .input('document_code', sql.VarChar(16), documentCode)
-            .query(`
+    const duplicateResult = await new sql.Request(transaction)
+      .input('document_code', sql.VarChar(16), documentCode)
+      .query(`
             SELECT TOP 1 id
             FROM operation_cluster_headers
             WHERE document_code = @document_code
       `);
 
-        if (duplicateResult.recordset.length > 0) {
-            throw new Error(`Mã chứng từ "${documentCode}" đã tồn tại`);
-        }
+    if (duplicateResult.recordset.length > 0) {
+      throw new Error(`Mã chứng từ "${documentCode}" đã tồn tại`);
+    }
 
-        if (!payload.work_id) {
-            throw new Error('Vui lòng chọn công việc');
-        }
+    if (!payload.work_id) {
+      throw new Error('Vui lòng chọn công việc');
+    }
 
-        if (!payload.product_category_id) {
-            throw new Error('Vui lòng chọn chủng loại hàng');
-        }
+    if (!payload.product_category_id) {
+      throw new Error('Vui lòng chọn chủng loại hàng');
+    }
 
-        if (!payload.product_category_group_id) {
-            throw new Error('Vui lòng chọn nhóm chủng loại hàng');
-        }
+    if (!payload.product_category_group_id) {
+      throw new Error('Vui lòng chọn nhóm chủng loại hàng');
+    }
 
-        const priceMethod = payload.price_method || 'GSD';
-        const headerEfficiency = payload.required_efficiency ?? null; 
+    const priceMethod = payload.price_method || 'GSD';
+    const headerEfficiency = payload.required_efficiency ?? null;
 
-        const headerRequest = new sql.Request(transaction);
+    const headerRequest = new sql.Request(transaction);
 
-        const headerResult = await headerRequest
-            .input('document_code', sql.VarChar(16), documentCode)
-            .input('work_id', sql.Int, payload.work_id)
-            .input('product_category_id', sql.Int, payload.product_category_id)
-            .input('product_category_group_id', sql.Int, payload.product_category_group_id)
-            .input('required_efficiency', sql.Decimal(10, 4), headerEfficiency)
-            .input('price_method', sql.VarChar(20), priceMethod)
-            .input('note', sql.NVarChar(500), payload.note || null)
-            .input('status_id', sql.TinyInt, payload.status_id ?? 0)
-            .query(`
+    const headerResult = await headerRequest
+      .input('document_code', sql.VarChar(16), documentCode)
+      .input('work_id', sql.Int, payload.work_id)
+      .input('product_category_id', sql.Int, payload.product_category_id)
+      .input('product_category_group_id', sql.Int, payload.product_category_group_id)
+      .input('required_efficiency', sql.Decimal(10, 4), headerEfficiency)
+      .input('price_method', sql.VarChar(20), priceMethod)
+      .input('note', sql.NVarChar(500), payload.note || null)
+      .input('status_id', sql.TinyInt, payload.status_id ?? 0)
+      .query(`
         INSERT INTO operation_cluster_headers (
           document_code,
           work_id,
@@ -457,24 +452,24 @@ const createOperationCluster = async (payload) => {
         )
       `);
 
-        const header = headerResult.recordset[0];
-        const groups = Array.isArray(payload.groups) ? payload.groups : [];
+    const header = headerResult.recordset[0];
+    const groups = Array.isArray(payload.groups) ? payload.groups : [];
 
-        for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
-            const group = groups[groupIndex];
-            const groupLineNo = group.line_no || groupIndex + 1;
+    for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
+      const group = groups[groupIndex];
+      const groupLineNo = group.line_no || groupIndex + 1;
 
-            if (!group.cluster_name) {
-                throw new Error(`Vui lòng nhập tên cụm ở dòng ${groupLineNo}`);
-            }
+      if (!group.cluster_name) {
+        throw new Error(`Vui lòng nhập tên cụm ở dòng ${groupLineNo}`);
+      }
 
-            const groupRequest = new sql.Request(transaction);
+      const groupRequest = new sql.Request(transaction);
 
-            const groupResult = await groupRequest
-                .input('header_id', sql.Int, header.id)
-                .input('line_no', sql.Int, groupLineNo)
-                .input('cluster_name', sql.NVarChar(100), group.cluster_name)
-                .query(`
+      const groupResult = await groupRequest
+        .input('header_id', sql.Int, header.id)
+        .input('line_no', sql.Int, groupLineNo)
+        .input('cluster_name', sql.NVarChar(100), group.cluster_name)
+        .query(`
           INSERT INTO operation_cluster_groups (
             header_id,
             line_no,
@@ -488,72 +483,72 @@ const createOperationCluster = async (payload) => {
           )
         `);
 
-            const savedGroup = groupResult.recordset[0];
-            const operations = Array.isArray(group.operations) ? group.operations : [];
+      const savedGroup = groupResult.recordset[0];
+      const operations = Array.isArray(group.operations) ? group.operations : [];
 
-            for (let operationIndex = 0; operationIndex < operations.length; operationIndex += 1) {
-                const operation = operations[operationIndex];
+      for (let operationIndex = 0; operationIndex < operations.length; operationIndex += 1) {
+        const operation = operations[operationIndex];
 
-                if (!operation.operation_name) {
-                    throw new Error(`Vui lòng nhập tên công đoạn ở cụm ${groupLineNo}, dòng ${operationIndex + 1}`);
-                }
+        if (!operation.operation_name) {
+          throw new Error(`Vui lòng nhập tên công đoạn ở cụm ${groupLineNo}, dòng ${operationIndex + 1}`);
+        }
 
-                const effectiveEfficiency =
-                    operation.required_efficiency ?? headerEfficiency ?? null;
+        const effectiveEfficiency =
+          operation.required_efficiency ?? headerEfficiency ?? null;
 
-                const salaryCoefficientFromPayload = toNumber(operation.salary_coefficient, 0);
+        const salaryCoefficientFromPayload = toNumber(operation.salary_coefficient, 0);
 
-                const salaryCoefficientFromDb = await getSalaryCoefficient(
-                    transaction,
-                    operation.skill_grade_id
-                );
+        const salaryCoefficientFromDb = await getSalaryCoefficient(
+          transaction,
+          operation.skill_grade_id
+        );
 
-                const salaryCoefficient =
-                    salaryCoefficientFromPayload > 0
-                        ? salaryCoefficientFromPayload
-                        : salaryCoefficientFromDb;
+        const salaryCoefficient =
+          salaryCoefficientFromPayload > 0
+            ? salaryCoefficientFromPayload
+            : salaryCoefficientFromDb;
 
-                const calculated = calculateOperationValues({
-                    samGsd: operation.sam_gsd,
-                    requiredEfficiency: effectiveEfficiency,
-                    salaryCoefficient,
-                    priceMethod,
-                });
+        const calculated = calculateOperationValues({
+          samGsd: operation.sam_gsd,
+          requiredEfficiency: effectiveEfficiency,
+          salaryCoefficient,
+          priceMethod,
+        });
 
-                const operationRequest = new sql.Request(transaction);
+        const operationRequest = new sql.Request(transaction);
 
-                await operationRequest
-                    .input('header_id', sql.Int, header.id)
-                    .input('group_id', sql.Int, savedGroup.id)
-                    .input('line_no', sql.Int, operation.line_no || operationIndex + 1)
-                    .input('group_line_no', sql.Int, groupLineNo)
-                    .input('line_balance_no', sql.Int, operation.line_balance_no || null)
+        await operationRequest
+          .input('header_id', sql.Int, header.id)
+          .input('group_id', sql.Int, savedGroup.id)
+          .input('line_no', sql.Int, operation.line_no || operationIndex + 1)
+          .input('group_line_no', sql.Int, groupLineNo)
+          .input('line_balance_no', sql.Int, operation.line_balance_no || null)
 
-                    .input('gsd_analysis_id', sql.Int, operation.gsd_analysis_id || null)
-                    .input('operation_code', sql.VarChar(32), operation.operation_code || null)
-                    .input('operation_name', sql.NVarChar(200), operation.operation_name)
+          .input('gsd_analysis_id', sql.Int, operation.gsd_analysis_id || null)
+          .input('operation_code', sql.VarChar(32), operation.operation_code || null)
+          .input('operation_name', sql.NVarChar(200), operation.operation_name)
 
-                    .input('skill_grade_id', sql.Int, operation.skill_grade_id || null)
-                    .input('skill_level', sql.Int, operation.skill_level || null)
+          .input('skill_grade_id', sql.Int, operation.skill_grade_id || null)
+          .input('skill_level', sql.Int, operation.skill_level || null)
 
-                    .input('machine_equipment_id', sql.Int, operation.machine_equipment_id || null)
-                    .input('machine_name', sql.NVarChar(200), operation.machine_name || null)
-                    .input('machine_code', sql.VarChar(32), operation.machine_code || null)
+          .input('machine_equipment_id', sql.Int, operation.machine_equipment_id || null)
+          .input('machine_name', sql.NVarChar(200), operation.machine_name || null)
+          .input('machine_code', sql.VarChar(32), operation.machine_code || null)
 
-                    .input('sam_gsd', sql.Decimal(10, 2), toNumber(operation.sam_gsd, 0))
-                    // .input('salary_coefficient', sql.Decimal(10, 2), toNumber(operation.salary_coefficient, 0))
-                    .input('salary_coefficient', sql.Decimal(10, 2), salaryCoefficient)
-                    .input('manpower', sql.Decimal(10, 2), operation.manpower ?? null)
+          .input('sam_gsd', sql.Decimal(10, 2), toNumber(operation.sam_gsd, 0))
+          // .input('salary_coefficient', sql.Decimal(10, 2), toNumber(operation.salary_coefficient, 0))
+          .input('salary_coefficient', sql.Decimal(10, 2), salaryCoefficient)
+          .input('manpower', sql.Decimal(10, 2), operation.manpower ?? null)
 
-                    .input('standard_price', sql.Decimal(18, 2), calculated.standardPrice)
-                    .input('required_efficiency', sql.Decimal(10, 4), effectiveEfficiency)
-                    .input('adjusted_sam', sql.Decimal(10, 2), calculated.adjustedSam)
-                    .input('utilization_rate', sql.Decimal(10, 4), calculated.utilizationRate)
+          .input('standard_price', sql.Decimal(18, 2), calculated.standardPrice)
+          .input('required_efficiency', sql.Decimal(10, 4), effectiveEfficiency)
+          .input('adjusted_sam', sql.Decimal(10, 2), calculated.adjustedSam)
+          .input('utilization_rate', sql.Decimal(10, 4), calculated.utilizationRate)
 
-                    .input('total_action_seconds', sql.Decimal(18, 2), toNumber(operation.total_action_seconds, 0))
-                    .input('total_actions', sql.Int, toNumber(operation.total_actions, 0))
-                    .input('status_id', sql.TinyInt, operation.status_id ?? 0)
-                    .query(`
+          .input('total_action_seconds', sql.Decimal(18, 2), toNumber(operation.total_action_seconds, 0))
+          .input('total_actions', sql.Int, toNumber(operation.total_actions, 0))
+          .input('status_id', sql.TinyInt, operation.status_id ?? 0)
+          .query(`
             INSERT INTO operation_cluster_operations (
               header_id,
               group_id,
@@ -617,22 +612,22 @@ const createOperationCluster = async (payload) => {
               @status_id
             )
           `);
-            }
-        }
-
-        await transaction.commit();
-
-        return getOperationClusterById(header.id);
-    } catch (error) {
-        await transaction.rollback();
-        throw error;
+      }
     }
+
+    await transaction.commit();
+
+    return getOperationClusterById(header.id);
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
 };
 
 module.exports = {
-    getOperationClusterHeaders,
-    getGsdOptions,
-    getGsdActions,
-    getOperationClusterById,
-    createOperationCluster,
+  getOperationClusterHeaders,
+  getGsdOptions,
+  getGsdActions,
+  getOperationClusterById,
+  createOperationCluster,
 };

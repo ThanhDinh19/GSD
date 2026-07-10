@@ -579,19 +579,22 @@ export interface OperationClusterHeader {
   updated_at?: string | null;
 }
 
+
+
 export interface GsdOption {
   gsd_analysis_id: number;
   operation_code: string;
   operation_name: string;
 
-  skill_grade_id: number | null;
+  skill_grade_id: number | null; // bậc thợ trong danh mục
   skill_level: number | null;
-  salary_coefficient: number;
+  // salary_coefficient: number;
 
   machine_equipment_id: number | null;
   machine_code: string | null;
   machine_name: string | null;
   code_mmtb?: string | null;
+  total_tmu?: number | null;
 
   sam_gsd: number;
   total_action_seconds: number;
