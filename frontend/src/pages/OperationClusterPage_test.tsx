@@ -1059,7 +1059,7 @@ export default function OperationClusterPage_test() {
                                         <div className="grid grid-cols-6 gap-2">
                                             <div className="rounded-sm border border-blue-100 bg-blue-50 px-3 py-2">
                                                 <div className="text-[11px] font-bold text-blue-500 uppercase">
-                                                    Tổng SAM điều chỉnh
+                                                    Tổng SMV điều chỉnh
                                                 </div>
                                                 <div className="text-xl text-blue-700 mt-1">
                                                     {dashboard.totalAdjustedSam.toFixed(2)}
@@ -1291,7 +1291,7 @@ export default function OperationClusterPage_test() {
                                                                 }))
                                                             }
                                                         />
-                                                        Theo SAM gốc GSD
+                                                        Theo SMV gốc GSD
                                                     </label>
 
                                                     <label className="flex items-center gap-2 cursor-pointer">
@@ -1305,7 +1305,7 @@ export default function OperationClusterPage_test() {
                                                                 }))
                                                             }
                                                         />
-                                                        Theo SAM điều chỉnh
+                                                        Theo SMV điều chỉnh
                                                     </label>
                                                 </div>
                                             </div>
@@ -2025,8 +2025,8 @@ export default function OperationClusterPage_test() {
                                     </div>
                                     <div className="text-sm text-slate-800 mt-1">
                                         {selectedDetail.header?.price_method === 'ADJUSTED'
-                                            ? 'Theo SAM điều chỉnh'
-                                            : 'Theo SAM gốc GSD'}
+                                            ? 'Theo SMV điều chỉnh'
+                                            : 'Theo SMV gốc GSD'}
                                     </div>
                                 </div>
                             </div>
@@ -2035,7 +2035,7 @@ export default function OperationClusterPage_test() {
                             <div className="grid grid-cols-6 gap-3">
                                 <div className="border border-blue-100 bg-blue-50 rounded-sm p-3">
                                     <div className="text-xs font-bold text-blue-600 uppercase">
-                                        SAM điều chỉnh
+                                        SMV điều chỉnh
                                     </div>
                                     <div className="text-xl text-blue-700 mt-1">
                                         {Number(selectedDetail.dashboard?.total_adjusted_sam || 0).toFixed(2)}
