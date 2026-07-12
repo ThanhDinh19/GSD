@@ -8,4 +8,6 @@ router.get('/gsd-options', operationClusterController.getGsdOptions);
 router.get('/gsd-options/:id/actions', operationClusterController.getGsdActions);
 router.get('/:id', operationClusterController.getOperationClusterById);
 router.post('/', operationClusterController.createOperationCluster);
+router.put('/:id', operationClusterController.updateOperationCluster);
+router.post('/copy', operationClusterController.copyOperationCluster);
 module.exports = router;

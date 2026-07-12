@@ -580,6 +580,13 @@ export interface OperationClusterHeader {
 }
 
 
+export interface OperationClusterDetail {
+  header: OperationClusterHeader;
+  groups: any[];
+  operations: any[];
+  dashboard: any;
+}
+
 
 export interface GsdOption {
   gsd_analysis_id: number;
@@ -616,11 +623,12 @@ export interface OperationClusterOperationPayload {
   machine_equipment_id?: number | null;
   machine_name?: string | null;
   machine_code?: string | null;
+  code_mmtb?: string | null;
 
   sam_gsd: number;
   salary_coefficient?: number;
   manpower?: number | null;
-  required_efficiency?: number | null;
+  required_efficiency?: number | string | null;
 
   total_action_seconds?: number;
   total_actions?: number;
@@ -645,12 +653,7 @@ export interface CreateOperationClusterPayload {
   groups: OperationClusterGroupPayload[];
 }
 
-export interface OperationClusterDetail {
-  header: OperationClusterHeader;
-  groups: any[];
-  operations: any[];
-  dashboard: any;
-}
+
 
 
 // dinh 09/07/2026

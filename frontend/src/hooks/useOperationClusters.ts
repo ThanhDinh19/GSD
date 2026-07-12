@@ -65,6 +65,29 @@ export function useOperationClusters() {
     }
   };
 
+  const updateItem = async (
+    id: number,
+    payload: CreateOperationClusterPayload
+  ) => {
+    setSaving(true);
+
+    try {
+      return await operationClusterService.update(id, payload);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const copyItem = async (payload: CreateOperationClusterPayload) => {
+    setSaving(true);
+
+    try {
+      return await operationClusterService.copy(payload);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => {
     loadItems();
     loadGsdOptions();
@@ -82,5 +105,7 @@ export function useOperationClusters() {
     loadGsdOptions,
     loadDetail,
     createItem,
+    updateItem,
+    copyItem,
   };
 }

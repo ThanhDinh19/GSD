@@ -52,4 +52,19 @@ export const operationClusterService = {
             body: JSON.stringify(payload),
         });
     },
+
+    update(id: number, payload: CreateOperationClusterPayload) {
+        return request(`/api/operation-clusters/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(payload),
+        });
+    },
+
+    copy(payload: CreateOperationClusterPayload) {
+        return request('/api/operation-clusters/copy', {
+            method: 'POST',
+            body: JSON.stringify(payload),
+        });
+    }
 };
+

@@ -12,6 +12,8 @@ import { useProductCates } from '../hooks/useProductCate';
 import { useProductCateGroups } from '../hooks/useProductCateGroup';
 import { useSalaryCoefficients } from '../hooks/useSalaryCoefficient';
 
+
+// form thông tin chứng từ
 type FormState = {
     document_code: string;
     work_id: string;
@@ -99,6 +101,8 @@ export default function OperationClusterPage_test() {
         gsdOptions,
         saving,
         createItem,
+        copyItem,
+        updateItem,
         loadItems,
         loadDetail,
         selectedDetail,
@@ -150,6 +154,14 @@ export default function OperationClusterPage_test() {
     const [isGroupOverviewOpen, setIsGroupOverviewOpen] = useState(false);
     const [overviewGroupIndex, setOverviewGroupIndex] = useState(0);
 
+    type FormMode = 'create' | 'edit' | 'copy';
+
+    const [formMode, setFormMode] = useState<FormMode>('create');
+
+    // edit
+    const [selectedSavedId, setSelectedSavedId] = useState<number | null>(null);
+    const [editingId, setEditingId] = useState<number | null>(null);
+
     const resetCreateData = () => {
         localStorage.removeItem(OPERATION_CLUSTER_DRAFT_KEY);
 
@@ -169,9 +181,14 @@ export default function OperationClusterPage_test() {
 
         setIsGroupOverviewOpen(false);
         setOverviewGroupIndex(0);
+
+        setEditingId(null);
     };
 
     const handleOpenCreateModal = () => {
+        resetCreateData();
+        setEditingId(null);
+        setFormMode('create');
         setIsCreateModalOpen(true);
     };
 
@@ -208,21 +225,6 @@ export default function OperationClusterPage_test() {
             setLoadingOperationActions(false);
         }
     };
-
-    // const handleOpenGroupOverview = () => {
-    //     if (enrichedGroups.length === 0) {
-    //         alert('Chưa có cụm để xem tổng quan');
-    //         return;
-    //     }
-
-    //     const safeIndex =
-    //         activeGroupIndex >= 0 && activeGroupIndex < enrichedGroups.length
-    //             ? activeGroupIndex
-    //             : 0;
-
-    //     setOverviewGroupIndex(safeIndex);
-    //     setIsGroupOverviewOpen(true);
-    // };
 
     const handleOpenGroupOverview = () => {
         if (enrichedGroups.length === 0) {
@@ -329,6 +331,7 @@ export default function OperationClusterPage_test() {
                         machine_equipment_id: gsd.machine_equipment_id,
                         machine_name: gsd.machine_name,
                         machine_code: gsd.machine_code,
+                        code_mmtb: gsd.code_mmtb,
 
                         sam_gsd: toNumber(gsd.sam_gsd, 0),
                         salary_coefficient: 0,
@@ -496,7 +499,7 @@ export default function OperationClusterPage_test() {
     };
 
 
-    const handleSelectSalaryCoefficient = (coefficient: number) => {
+    const handleSelectSalaryCoefficient = (coefficient: number, skill_grade_id: number) => {
         if (!coefficientPopup) return;
 
         setGroups((prev) =>
@@ -511,6 +514,7 @@ export default function OperationClusterPage_test() {
                         return {
                             ...op,
                             salary_coefficient: coefficient,
+                            skill_grade_id: skill_grade_id,
                         };
                     }),
                 };
@@ -529,8 +533,23 @@ export default function OperationClusterPage_test() {
             const operations = group.operations.map((op) => {
                 const samGsd = toNumber(op.sam_gsd, 0);
                 const salaryCoefficient = toNumber(op.salary_coefficient, 0);
-                const adjustedSam = calcAdjustedSam(samGsd, requiredEfficiency);
+
+                // HS yêu cầu riêng theo từng công đoạn.
+                // Nếu dòng chưa có thì dùng HS yêu cầu chung trên form.
+
+                const rawEfficiency =
+                    op.required_efficiency !== null &&
+                        op.required_efficiency !== undefined &&
+                        String(op.required_efficiency).trim() !== '' &&
+                        String(op.required_efficiency).trim() !== '.'
+                        ? op.required_efficiency
+                        : form.required_efficiency;
+
+                const operationEfficiency = toNumber(rawEfficiency, requiredEfficiency);
+
+                const adjustedSam = calcAdjustedSam(samGsd, operationEfficiency);
                 const utilizationRate = samGsd > 0 ? adjustedSam / samGsd : 0;
+
                 const standardPrice = calcStandardPrice(
                     samGsd,
                     adjustedSam,
@@ -540,6 +559,7 @@ export default function OperationClusterPage_test() {
 
                 return {
                     ...op,
+                    required_efficiency_preview: operationEfficiency,
                     adjusted_sam_preview: adjustedSam,
                     utilization_rate_preview: utilizationRate,
                     standard_price_preview: standardPrice,
@@ -655,7 +675,6 @@ export default function OperationClusterPage_test() {
         });
     };
 
-
     const handleInsertGroupBelow = (groupIndex: number) => {
         setGroups((prev) => {
             const next = [...prev];
@@ -746,6 +765,7 @@ export default function OperationClusterPage_test() {
                     machine_equipment_id: gsd.machine_equipment_id,
                     machine_name: gsd.machine_name,
                     machine_code: gsd.machine_code,
+                    code_mmtb: gsd.code_mmtb,
 
                     sam_gsd: toNumber(gsd.sam_gsd, 0),
                     salary_coefficient: 0,
@@ -834,9 +854,120 @@ export default function OperationClusterPage_test() {
         );
     };
 
+    const normalizeDecimalInput = (value: string) => {
+        const nextValue = value.replace(',', '.');
+
+        // Cho phép nhập: "", ".", "0.", "0.8", "1", "1.25"
+        if (!/^\d*\.?\d*$/.test(nextValue)) {
+            return null;
+        }
+
+        return nextValue;
+    };
+
+    /**
+ * Sửa HS yêu cầu riêng cho từng công đoạn.
+ * Ví dụ nhập 0.8 nghĩa là 80%.
+ */
+    /**
+ * Sửa HS yêu cầu riêng cho từng công đoạn.
+ * Lưu dạng string khi nhập để user gõ được số thập phân như 0.8, 0.75.
+ */
+    /**
+ * Sửa HS yêu cầu riêng cho từng dòng công đoạn.
+ * Chỉ ảnh hưởng đến dòng đang sửa, không đổi các dòng khác.
+ */
+    const handleChangeOperationEfficiency = (
+        operationIndex: number,
+        value: string
+    ) => {
+        if (viewAllGroups) return;
+
+        const nextValue = normalizeDecimalInput(value);
+
+        if (nextValue === null) return;
+
+        setGroups((prev) =>
+            prev.map((group, groupIndex) => {
+                if (groupIndex !== activeGroupIndex) return group;
+
+                return {
+                    ...group,
+                    operations: group.operations.map((op, index) =>
+                        index === operationIndex
+                            ? {
+                                ...op,
+                                required_efficiency: nextValue,
+                            }
+                            : op
+                    ),
+                };
+            })
+        );
+    };
+
+    /**
+ * Sửa HS yêu cầu dùng chung ở phần Thông tin chứng từ.
+ * Khi thay đổi giá trị này, toàn bộ công đoạn trong table cũng được cập nhật theo.
+ */
+    const handleChangeHeaderEfficiency = (value: string) => {
+        const nextValue = normalizeDecimalInput(value);
+
+        if (nextValue === null) return;
+
+        setForm((prev) => ({
+            ...prev,
+            required_efficiency: nextValue,
+        }));
+
+        setGroups((prev) =>
+            prev.map((group) => ({
+                ...group,
+                operations: group.operations.map((op) => ({
+                    ...op,
+                    required_efficiency: nextValue,
+                })),
+            }))
+        );
+    };
+
     const handleExportExcel = () => {
-        alert('Tính năng này sẽ làm sau, log vào file issue log giúp');
+        alert('Do you have a boyfriend ?');
     }
+
+    /**
+ * Mở popup sửa chứng từ đã lưu.
+ * User phải click chọn 1 dòng trước, sau đó bấm Sửa.
+ */
+    const handleEdit = async () => {
+        if (!selectedSavedId) {
+            alert('Vui lòng chọn một chứng từ cần sửa');
+            return;
+        }
+
+        try {
+            const detail = await loadDetail(selectedSavedId);
+
+            if (!detail || !detail.header) {
+                alert('Không lấy được dữ liệu chứng từ cần sửa');
+                return;
+            }
+
+            fillEditFormFromDetail(detail);
+
+            setEditingId(selectedSavedId);
+            setFormMode('edit');
+            setIsCreateModalOpen(true);
+        } catch (error) {
+            console.error('Load chứng từ để sửa lỗi:', error);
+
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : 'Không mở được chứng từ để sửa'
+            );
+        }
+    };
 
     const handleSave = async () => {
         try {
@@ -868,7 +999,8 @@ export default function OperationClusterPage_test() {
                     operations: group.operations.map((op, opIndex) => ({
                         ...op,
                         line_no: opIndex + 1,
-                        required_efficiency: requiredEfficiency || null,
+                        required_efficiency:
+                            toNumber(op.required_efficiency, requiredEfficiency) || null,
                     })),
                 }));
 
@@ -893,14 +1025,37 @@ export default function OperationClusterPage_test() {
                 groups: validGroups,
             };
 
-            await createItem(payload);
+            // if (editingId) {
+            //     await updateItem(editingId, payload);
+            // } else {
+            //     await createItem(payload);
+            // }
+
+            const currentMode = formMode;
+
+            if (currentMode === 'edit') {
+                if (!editingId) {
+                    alert('Không xác định được chứng từ cần cập nhật');
+                    return;
+                }
+
+                await updateItem(editingId, payload);
+            } else if (currentMode === 'copy') {
+                await copyItem(payload);
+            } else {
+                await createItem(payload);
+            }
 
             await loadItems();
 
             resetCreateData();
             setIsCreateModalOpen(false);
+            setSelectedSavedId(null);
 
-            alert('Lưu chứng từ thành công');
+            setIsSavedDetailOpen(false);
+            setSelectedDetail(null);
+
+            alert(editingId ? 'Cập nhật chứng từ thành công' : 'Lưu chứng từ thành công');
         } catch (error) {
             console.error('Lưu kho cụm lỗi:', error);
 
@@ -908,6 +1063,50 @@ export default function OperationClusterPage_test() {
                 error instanceof Error
                     ? error.message
                     : 'Không lưu được chứng từ'
+            );
+        }
+    };
+
+
+    /**
+ * Mở popup sao chép chứng từ.
+ * Load detail chứng từ đang chọn, đổ vào form, nhưng không giữ editingId.
+ */
+    const handleCopy = async () => {
+        if (!selectedSavedId) {
+            alert('Vui lòng chọn một chứng từ cần sao chép');
+            return;
+        }
+
+        try {
+            const detail = await loadDetail(selectedSavedId);
+
+            if (!detail || !detail.header) {
+                alert('Không lấy được dữ liệu chứng từ cần sao chép');
+                return;
+            }
+
+            fillEditFormFromDetail(detail);
+
+            const oldDocumentCode = detail.header.document_code || '';
+
+            // Gợi ý mã mới. User có thể sửa lại trước khi lưu.
+            setForm((prev) => ({
+                ...prev,
+                document_code: `${oldDocumentCode}_COPY`,
+                note: prev.note || `Sao chép từ ${oldDocumentCode}`,
+            }));
+
+            setEditingId(null);
+            setFormMode('copy');
+            setIsCreateModalOpen(true);
+        } catch (error) {
+            console.error('Load chứng từ để sao chép lỗi:', error);
+
+            alert(
+                error instanceof Error
+                    ? error.message
+                    : 'Không mở được chứng từ để sao chép'
             );
         }
     };
@@ -946,54 +1145,405 @@ export default function OperationClusterPage_test() {
         setIsCreateModalOpen(false);
     };
 
+
+    /**
+ * Đổ dữ liệu chi tiết chứng từ đã lưu vào form khai báo.
+ * Dùng khi bấm nút Sửa.
+ */
+    const fillEditFormFromDetail = (detail: any) => {
+        const header = detail.header;
+
+        setForm({
+            document_code: header.document_code || '',
+            work_id: header.work_id ? String(header.work_id) : '',
+            product_category_id: header.product_category_id
+                ? String(header.product_category_id)
+                : '',
+            product_category_group_id: header.product_category_group_id
+                ? String(header.product_category_group_id)
+                : '',
+            required_efficiency:
+                header.required_efficiency !== null &&
+                    header.required_efficiency !== undefined
+                    ? String(header.required_efficiency)
+                    : '0.8',
+            price_method: header.price_method === 'ADJUSTED' ? 'ADJUSTED' : 'GSD',
+            status_id: Number(header.status_id ?? 0),
+            note: header.note || '',
+        });
+
+        const detailGroups = detail.groups || [];
+        const detailOperations = detail.operations || [];
+
+        const mappedGroups: OperationClusterGroupPayload[] = detailGroups.map(
+            (group: any, groupIndex: number) => {
+                const operations = detailOperations
+                    .filter((op: any) => Number(op.group_id) === Number(group.id))
+                    .sort((a: any, b: any) => {
+                        const aLine = Number(a.line_no || 0);
+                        const bLine = Number(b.line_no || 0);
+                        return aLine - bLine;
+                    })
+                    .map((op: any, opIndex: number) => ({
+                        line_no: opIndex + 1,
+                        line_balance_no: op.line_balance_no ?? null,
+
+                        gsd_analysis_id: op.gsd_analysis_id ?? null,
+                        operation_code: op.operation_code || op.analysis_no || null,
+                        operation_name: op.operation_name || op.gsd_operation_name || '',
+
+                        skill_grade_id: op.skill_grade_id ?? null,
+                        skill_level: op.skill_level ?? op.skill_level_master ?? null,
+
+                        machine_equipment_id: op.machine_equipment_id ?? null,
+                        machine_name: op.machine_name || op.machine_name_master || null,
+                        machine_code: op.machine_code || op.machine_code_master || null,
+
+                        sam_gsd: Number(op.sam_gsd || 0),
+                        salary_coefficient: Number(op.salary_coefficient || 0),
+                        manpower:
+                            op.manpower !== null && op.manpower !== undefined
+                                ? Number(op.manpower)
+                                : 1,
+
+                        standard_price: Number(op.standard_price || 0),
+                        required_efficiency:
+                            op.required_efficiency !== null &&
+                                op.required_efficiency !== undefined
+                                ? String(op.required_efficiency)
+                                : null,
+
+                        adjusted_sam: Number(op.adjusted_sam || 0),
+                        utilization_rate:
+                            op.utilization_rate !== null && op.utilization_rate !== undefined
+                                ? Number(op.utilization_rate)
+                                : null,
+
+                        total_action_seconds: Number(op.total_action_seconds || 0),
+                        total_actions: Number(op.total_actions || 0),
+
+                        status_id: Number(op.status_id ?? 0),
+                    }));
+
+                return {
+                    line_no: group.line_no || groupIndex + 1,
+                    cluster_name: group.cluster_name || '',
+                    operations,
+                };
+            }
+        );
+
+        setGroups(mappedGroups);
+        setActiveGroupIndex(0);
+        setViewAllGroups(false);
+        setCheckedGsdIds([]);
+        setGsdActionsMap({});
+        setLoadingActionIds([]);
+    };
+
     return (
         <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto">
             <div className="max-w-[1720px] mx-auto space-y-4">
-                {/* Header */}
-
-                {/* <div className="bg-white border border-slate-200 rounded-sm shadow-sm px-5 py-3 flex items-center justify-between gap-4">
-                    <div>
-                        <div className="text-xs font-bold uppercase tracking-widest text-blue-600">
-                            GSD / Kho cụm công đoạn
+                {/* màn hình chính  */}
+                <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-5">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            {/* <h2 className="text-base font-bold text-slate-800">
+                                    Chứng từ đã lưu
+                                </h2> */}
+                            <p className="text-xs text-slate-500 mt-0.5">
+                                Danh sách mã chứng từ kho cụm công đoạn đã được lưu.
+                            </p>
                         </div>
 
-                        <h3 className="text-xl font-bold text-slate-800 mt-1">
-                            Cụm công đoạn đã khai báo
-                        </h3>
+                        <div className="flex items-center gap-2">
 
-                        <p className="text-xs text-slate-500 mt-0.5">
-                            Danh sách mã chứng từ kho cụm công đoạn đã được lưu.
-                        </p>
+                            <button
+                                type="button"
+                                onClick={loadItems}
+                                className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm hover:bg-slate-50"
+                            >
+                                Tải lại
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleExportExcel}
+                                className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm text-slate-700 hover:bg-slate-50"
+                            >
+                                Xuất Excel
+                            </button>
+
+
+                            <button
+                                type="button"
+                                onClick={handleCopy}
+                                className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm hover:bg-slate-50"
+                            >
+                                Sao chép
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleEdit}
+                                className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm hover:bg-slate-50"
+                            >
+                                Sửa
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleOpenCreateModal}
+                                className="px-5 py-2 rounded-sm bg-blue-600 text-white text-sm hover:bg-blue-700"
+                            >
+                                + Khai báo cụm công đoạn
+                            </button>
+
+
+                        </div>
                     </div>
 
-                    <div className="flex items-center gap-2 shrink-0">
-                        <button
-                            type="button"
-                            onClick={loadItems}
-                            className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm text-slate-700 hover:bg-slate-50"
-                        >
-                            Tải lại
-                        </button>
+                    <div className="h-[630px] overflow-auto border border-slate-200 rounded-sm">
+                        <table className="w-full text-sm min-w-[1100px] border-collapse">
+                            <thead className="bg-slate-50 sticky top-0 z-10">
+                                <tr className="text-xs text-slate-500 uppercase">
+                                    <th className="p-3 border border-slate-200 text-left w-[20px]">
+                                        STT
+                                    </th>
+                                    <th className="p-3 border border-slate-200 text-left w-[115px]">
+                                        Mã chứng từ
+                                    </th>
+                                    <th className="p-3 border border-slate-200 text-left">
+                                        Nhóm công việc
+                                    </th>
+                                    <th className="p-3 border border-slate-200 text-left">
+                                        Chủng loại
+                                    </th>
+                                    <th className="p-3 border border-slate-200 text-left">
+                                        Nhóm chủng loại
+                                    </th>
+                                    <th className="p-3 border border-slate-200 text-right w-[100px]">
+                                        SMV
+                                    </th>
+                                    <th className="p-3 border border-slate-200 text-right w-[100px]">
+                                        SMV ĐC
+                                    </th>
+                                    <th className="p-3 border border-slate-200 text-center w-[140px]">
+                                        Trạng thái
+                                    </th>
+                                    {/* <th className="p-3 border border-slate-200 text-center w-[100px]">
+                                        Thao tác
+                                    </th> */}
+                                </tr>
+                            </thead>
 
-                        <button
-                            type="button"
-                            onClick={handleExportExcel}
-                            className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm text-slate-700 hover:bg-slate-50"
-                        >
-                            Xuất Excel
-                        </button>
+                            <tbody>
+                                {loading && (
+                                    <tr>
+                                        <td
+                                            colSpan={9}
+                                            className="p-8 border border-slate-200 text-center text-slate-400"
+                                        >
+                                            Đang tải danh sách chứng từ...
+                                        </td>
+                                    </tr>
+                                )}
 
-                        <button
-                            type="button"
-                            onClick={handleOpenCreateModal}
-                            className="px-5 py-2 rounded-sm bg-blue-600 text-white text-sm hover:bg-blue-700"
-                        >
-                            + Khai báo cụm công đoạn
-                        </button>
+                                {!loading && items.length === 0 && (
+                                    <tr>
+                                        <td
+                                            colSpan={9}
+                                            className="p-8 border border-slate-200 text-center text-slate-400"
+                                        >
+                                            Chưa có chứng từ nào được lưu.
+                                        </td>
+                                    </tr>
+                                )}
+
+                                {!loading &&
+                                    items.map((item, index) => (
+                                        <tr
+                                            key={item.id}
+                                            onClick={() => setSelectedSavedId(item.id)}
+                                            className={`cursor-pointer hover:bg-blue-100 ${selectedSavedId === item.id ? 'bg-blue-100' : ''
+                                                }`}
+                                        >
+                                            <td className="p-3 border border-slate-200 text-slate-500">
+                                                {index + 1}
+                                            </td>
+
+                                            <td className="p-3 border border-slate-200">
+                                                <button
+                                                    type="button"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        setSelectedSavedId(item.id)
+                                                        handleViewSavedDocument(item.id);
+                                                    }}
+                                                    className=" text-blue-700 hover:underline"
+                                                >
+                                                    {item.document_code}
+                                                </button>
+                                            </td>
+
+                                            <td className="p-3 border border-slate-200">
+                                                {item.work_code && item.work_name
+                                                    ? `${item.work_name}`
+                                                    : item.work_id}
+                                            </td>
+
+                                            <td className="p-3 border border-slate-200">
+                                                {item.product_code && item.product_name
+                                                    ? `${item.product_code} - ${item.product_name}`
+                                                    : item.product_name || item.product_category_id}
+                                            </td>
+
+                                            <td className="p-3 border border-slate-200">
+                                                {item.category_group_code && item.category_group_name
+                                                    ? `${item.category_group_code} - ${item.category_group_name}`
+                                                    : item.category_group_name || item.product_category_group_id}
+                                            </td>
+
+                                            <td className="p-3 border border-slate-200 text-right font-bold">
+                                                {Number(item.total_sam_gsd || 0).toFixed(2)}
+                                            </td>
+
+                                            <td className="p-3 border border-slate-200 text-right text-blue-700">
+                                                {Number(item.total_adjusted_sam || 0).toFixed(2)}
+                                            </td>
+
+                                            <td className="p-3 border border-slate-200 text-center">
+                                                <span
+                                                    className={`px-3 py-1 rounded-full text-xs font-bold ${item.status_id === 0
+                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                                        : 'bg-slate-100 text-slate-500 border border-slate-200'
+                                                        }`}
+                                                >
+                                                    {item.status_id === 0 ? 'Đang sử dụng' : 'Không sử dụng'}
+                                                </span>
+                                            </td>
+
+                                            {/* <td className="p-3 border border-slate-200 text-center">
+                                                <button
+                                                    type="button"
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+                                                        handleViewSavedDocument(item.id)
+                                                    }}
+                                                    className="px-3 py-1.5 rounded-sm border border-slate-300 bg-white text-xs hover:bg-slate-50"
+                                                >
+                                                    Xem
+                                                </button>
+                                            </td> */}
+                                        </tr>
+                                    ))}
+                            </tbody>
+                        </table>
                     </div>
-                </div> */}
 
 
+
+                    {/* {selectedDetail && (
+                            <div className="mt-5 border border-slate-200 rounded-sm overflow-hidden">
+                                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                                    <div>
+                                        <div className="text-sm font-bold text-slate-800">
+                                            Chi tiết chứng từ: {selectedDetail.header?.document_code || '-'}
+                                        </div>
+                                        <div className="text-xs text-slate-500 mt-0.5">
+                                            Danh sách cụm và công đoạn đã lưu.
+                                        </div>
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setSelectedDetail(null)}
+                                        className="text-sm text-slate-500 hover:text-rose-600"
+                                    >
+                                        Đóng
+                                    </button>
+                                </div>
+
+                                <div className="overflow-auto">
+                                    <table className="w-full text-sm min-w-[1300px]">
+                                        <thead className="bg-white">
+                                            <tr className="text-xs text-slate-500 uppercase">
+                                                <th className="p-3 border-b border-slate-200 text-left w-[70px]">STT</th>
+                                                <th className="p-3 border-b border-slate-200 text-left w-[120px]">Cụm</th>
+                                                <th className="p-3 border-b border-slate-200 text-left w-[140px]">Mã GSD</th>
+                                                <th className="p-3 border-b border-slate-200 text-left">Công đoạn</th>
+                                                <th className="p-3 border-b border-slate-200 text-left w-[180px]">MMTB</th>
+                                                <th className="p-3 border-b border-slate-200 text-right w-[100px]">SAM GSD</th>
+                                                <th className="p-3 border-b border-slate-200 text-right w-[100px]">Hệ số</th>
+                                                <th className="p-3 border-b border-slate-200 text-right w-[120px]">Đơn giá</th>
+                                                <th className="p-3 border-b border-slate-200 text-right w-[120px]">SAM ĐC</th>
+                                                <th className="p-3 border-b border-slate-200 text-center w-[100px]">Bước</th>
+                                            </tr>
+                                        </thead>
+
+                                        <tbody>
+                                            {(!selectedDetail.operations || selectedDetail.operations.length === 0) && (
+                                                <tr>
+                                                    <td colSpan={10} className="p-8 text-center text-slate-400">
+                                                        Chứng từ này chưa có công đoạn hoặc API chưa trả operations.
+                                                    </td>
+                                                </tr>
+                                            )}
+
+                                            {(selectedDetail.operations || []).map((op: any, index: number) => (
+                                                <tr
+                                                    key={op.id || index}
+                                                    className="border-b border-slate-100 hover:bg-slate-50"
+                                                >
+                                                    <td className="p-3 text-slate-500">
+                                                        {index + 1}
+                                                    </td>
+
+                                                    <td className="p-3">
+                                                        {op.cluster_name || `Cụm ${op.group_line_no || ''}`}
+                                                    </td>
+
+                                                    <td className="p-3 font-bold text-blue-700">
+                                                        {op.operation_code || '-'}
+                                                    </td>
+
+                                                    <td className="p-3 font-bold text-slate-800">
+                                                        {op.operation_name || '-'}
+                                                    </td>
+
+                                                    <td className="p-3">
+                                                        {op.machine_name || '-'}
+                                                    </td>
+
+                                                    <td className="p-3 text-right">
+                                                        {Number(op.sam_gsd || 0).toFixed(2)}
+                                                    </td>
+
+                                                    <td className="p-3 text-right">
+                                                        {Number(op.salary_coefficient || 0).toFixed(2)}
+                                                    </td>
+
+                                                    <td className="p-3 text-right font-bold">
+                                                        {Number(op.standard_price || 0).toFixed(2)}
+                                                    </td>
+
+                                                    <td className="p-3 text-right font-bold text-blue-700">
+                                                        {Number(op.adjusted_sam || 0).toFixed(2)}
+                                                    </td>
+
+                                                    <td className="p-3 text-center">
+                                                        {op.total_actions || 0}
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        )} */}
+                </div>
+
+                {/* khai báo cụm công đoạn */}
                 {isCreateModalOpen && (
                     <div className="fixed inset-0 z-[80] bg-slate-900/40 flex items-center justify-center p-3">
                         <div className="w-[98vw] h-[94vh] bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden">
@@ -1001,7 +1551,7 @@ export default function OperationClusterPage_test() {
                             <div className="px-5 py-3 border-b border-slate-200 bg-white flex items-center justify-between gap-4 shrink-0">
                                 <div>
                                     <h2 className="text-lg font-bold text-slate-800">
-                                        Khai báo cụm công đoạn
+                                        {editingId ? 'Sửa cụm công đoạn' : 'Khai báo cụm công đoạn'}
                                     </h2>
 
                                     <p className="text-xs text-slate-500 mt-0.5">
@@ -1024,7 +1574,11 @@ export default function OperationClusterPage_test() {
                                         disabled={saving}
                                         className="px-5 py-2 rounded-sm bg-blue-600 text-white text-sm hover:bg-blue-700 disabled:opacity-50"
                                     >
-                                        {saving ? 'Đang lưu...' : 'Lưu chứng từ'}
+                                        {saving
+                                            ? 'Đang lưu...'
+                                            : editingId
+                                                ? 'Cập nhật chứng từ' 
+                                                : 'Lưu chứng từ'}
                                     </button>
 
                                     <button
@@ -1036,8 +1590,6 @@ export default function OperationClusterPage_test() {
                                     </button>
                                 </div>
                             </div>
-
-
 
                             {/* Body popup */}
                             <div className="flex-1 min-h-0 bg-slate-50 p-3 overflow-hidden">
@@ -1241,13 +1793,10 @@ export default function OperationClusterPage_test() {
                                                 </label>
 
                                                 <input
+                                                    type="text"
+                                                    inputMode="decimal"
                                                     value={form.required_efficiency}
-                                                    onChange={(e) =>
-                                                        setForm((prev) => ({
-                                                            ...prev,
-                                                            required_efficiency: e.target.value,
-                                                        }))
-                                                    }
+                                                    onChange={(e) => handleChangeHeaderEfficiency(e.target.value)}
                                                     className="w-full h-8 border border-slate-300 rounded-sm px-2 text-xs outline-none focus:border-blue-400 focus:ring-2 focus:ring-blue-100 text-right"
                                                     placeholder="0.8"
                                                 />
@@ -1536,7 +2085,7 @@ export default function OperationClusterPage_test() {
                                                                 <th className="p-3 border border-slate-200 text-left w-[260px]">Công đoạn</th>
                                                                 <th className="p-3 border border-slate-200 text-center w-[30px]">Bậc</th>
                                                                 <th className="p-3 border border-slate-200 text-left w-[220px]">MMTB</th>
-                                                                <th className="p-3 border border-slate-200 text-left w-[100px]">Code</th>
+                                                                <th className="p-3 border border-slate-200 text-left w-[100px]">MMTB Code</th>
                                                                 <th className="p-3 border border-slate-200 text-right w-[100px]">SMV</th>
                                                                 <th className="p-3 border border-slate-200 text-right w-[100px]">Hệ số</th>
                                                                 <th className="p-3 border border-slate-200 text-center w-[90px]">Nhân sự</th>
@@ -1611,7 +2160,7 @@ export default function OperationClusterPage_test() {
                                                                     </td>
 
                                                                     <td className="p-3 border border-slate-200 text-left">
-                                                                        {op.machine_code || '-'}
+                                                                        {op.code_mmtb || '-'}
                                                                     </td>
 
                                                                     <td className="p-3 font-semibold border border-slate-200 text-center">
@@ -1645,12 +2194,40 @@ export default function OperationClusterPage_test() {
                                                                         {toNumber(op.standard_price_preview).toFixed(2)}
                                                                     </td>
 
-                                                                    <td className="p-3 border border-slate-200 text-center">
-                                                                        {requiredEfficiency
-                                                                            ? `${(requiredEfficiency * 100).toFixed(0)}%`
-                                                                            : '-'}
-                                                                    </td>
+                                                                    <td className="p-2 border border-slate-200 text-center">
+                                                                        <input
+                                                                            type="text"
+                                                                            inputMode="decimal"
+                                                                            value={
+                                                                                op.required_efficiency !== null &&
+                                                                                    op.required_efficiency !== undefined
+                                                                                    ? String(op.required_efficiency)
+                                                                                    : String(form.required_efficiency || '')
+                                                                            }
+                                                                            onChange={(e) =>
+                                                                                handleChangeOperationEfficiency(index, e.target.value)
+                                                                            }
+                                                                            disabled={viewAllGroups}
+                                                                            className="w-full border border-slate-200 rounded-lg px-2 py-1 text-center outline-none disabled:bg-slate-100"
+                                                                            placeholder="0.8"
+                                                                        />
 
+                                                                        <div className="text-[10px] text-slate-400 mt-1">
+                                                                            {(() => {
+                                                                                const rawValue =
+                                                                                    op.required_efficiency !== null &&
+                                                                                        op.required_efficiency !== undefined
+                                                                                        ? String(op.required_efficiency)
+                                                                                        : String(form.required_efficiency || '');
+
+                                                                                if (!rawValue || rawValue === '.') return '-';
+
+                                                                                const value = toNumber(rawValue, 0);
+
+                                                                                return value > 0 ? `${(value * 100).toFixed(0)}%` : '-';
+                                                                            })()}
+                                                                        </div>
+                                                                    </td>
                                                                     <td className="p-3 border border-slate-200 text-right">
                                                                         {toNumber(op.adjusted_sam_preview).toFixed(2)}
                                                                     </td>
@@ -1686,265 +2263,288 @@ export default function OperationClusterPage_test() {
                         </div>
                     </div>
                 )}
+            </div>
 
-                <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            {/* <h2 className="text-base font-bold text-slate-800">
-                                    Chứng từ đã lưu
-                                </h2> */}
-                            <p className="text-xs text-slate-500 mt-0.5">
-                                Danh sách mã chứng từ kho cụm công đoạn đã được lưu.
-                            </p>
-                        </div>
+            {/* pop up show chi tiết mã chứng từ */}
+            {isSavedDetailOpen && selectedDetail && (
+                <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-6">
+                    <div className="w-[1350px] max-w-[96vw] max-h-[95vh] bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden">
+                        <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4">
+                            <div className="flex items-start justify-between gap-4">
+                                <div>
+                                    <h2 className="text-lg font-bold text-slate-800">
+                                        Chi tiết chứng từ
+                                    </h2>
 
-                        <div className="flex items-center gap-2">
-
-                            <button
-                                type="button"
-                                onClick={loadItems}
-                                className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm hover:bg-slate-50"
-                            >
-                                Tải lại
-                            </button>
-                            <button
-                                type="button"
-                                onClick={handleExportExcel}
-                                className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm text-slate-700 hover:bg-slate-50"
-                            >
-                                Xuất Excel
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={handleOpenCreateModal}
-                                className="px-5 py-2 rounded-sm bg-blue-600 text-white text-sm hover:bg-blue-700"
-                            >
-                                + Khai báo cụm công đoạn
-                            </button>
-
-
-                        </div>
-                    </div>
-
-                    <div className="h-[630px] overflow-auto border border-slate-200 rounded-sm">
-                        <table className="w-full text-sm min-w-[1100px] border-collapse">
-                            <thead className="bg-slate-50 sticky top-0 z-10">
-                                <tr className="text-xs text-slate-500 uppercase">
-                                    <th className="p-3 border border-slate-200 text-left w-[20px]">
-                                        STT
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-left w-[115px]">
-                                        Mã chứng từ
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-left">
-                                        Nhóm công việc
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-left">
-                                        Chủng loại
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-left">
-                                        Nhóm chủng loại
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-right w-[100px]">
-                                        SMV
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-right w-[100px]">
-                                        SMV ĐC
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-center w-[135px]">
-                                        Trạng thái
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-center w-[100px]">
-                                        Thao tác
-                                    </th>
-                                </tr>
-                            </thead>
-
-
-                            <tbody>
-                                {loading && (
-                                    <tr>
-                                        <td
-                                            colSpan={9}
-                                            className="p-8 border border-slate-200 text-center text-slate-400"
-                                        >
-                                            Đang tải danh sách chứng từ...
-                                        </td>
-                                    </tr>
-                                )}
-
-                                {!loading && items.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan={9}
-                                            className="p-8 border border-slate-200 text-center text-slate-400"
-                                        >
-                                            Chưa có chứng từ nào được lưu.
-                                        </td>
-                                    </tr>
-                                )}
-
-                                {!loading &&
-                                    items.map((item, index) => (
-                                        <tr key={item.id} className="hover:bg-slate-50">
-                                            <td className="p-3 border border-slate-200 text-slate-500">
-                                                {index + 1}
-                                            </td>
-
-                                            <td className="p-3 border border-slate-200">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleViewSavedDocument(item.id)}
-                                                    className=" text-blue-700 hover:underline"
-                                                >
-                                                    {item.document_code}
-                                                </button>
-                                            </td>
-
-                                            <td className="p-3 border border-slate-200">
-                                                {item.work_code && item.work_name
-                                                    ? `${item.work_name}`
-                                                    : item.work_id}
-                                            </td>
-
-                                            <td className="p-3 border border-slate-200">
-                                                {item.product_code && item.product_name
-                                                    ? `${item.product_code} - ${item.product_name}`
-                                                    : item.product_name || item.product_category_id}
-                                            </td>
-
-                                            <td className="p-3 border border-slate-200">
-                                                {item.category_group_code && item.category_group_name
-                                                    ? `${item.category_group_code} - ${item.category_group_name}`
-                                                    : item.category_group_name || item.product_category_group_id}
-                                            </td>
-
-                                            <td className="p-3 border border-slate-200 text-right font-bold">
-                                                {Number(item.total_sam_gsd || 0).toFixed(2)}
-                                            </td>
-
-                                            <td className="p-3 border border-slate-200 text-right text-blue-700">
-                                                {Number(item.total_adjusted_sam || 0).toFixed(2)}
-                                            </td>
-
-                                            <td className="p-3 border border-slate-200 text-center">
-                                                <span
-                                                    className={`px-3 py-1 rounded-full text-xs font-bold ${item.status_id === 0
-                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                                                        : 'bg-slate-100 text-slate-500 border border-slate-200'
-                                                        }`}
-                                                >
-                                                    {item.status_id === 0 ? 'Đang sử dụng' : 'Không sử dụng'}
-                                                </span>
-                                            </td>
-
-                                            <td className="p-3 border border-slate-200 text-center">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleViewSavedDocument(item.id)}
-                                                    className="px-3 py-1.5 rounded-sm border border-slate-300 bg-white text-xs hover:bg-slate-50"
-                                                >
-                                                    Xem
-                                                </button>
-                                            </td>
-                                        </tr>
-                                    ))}
-                            </tbody>
-                        </table>
-                    </div>
-
-
-
-                    {/* {selectedDetail && (
-                            <div className="mt-5 border border-slate-200 rounded-sm overflow-hidden">
-                                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                                    <div>
-                                        <div className="text-sm font-bold text-slate-800">
-                                            Chi tiết chứng từ: {selectedDetail.header?.document_code || '-'}
-                                        </div>
-                                        <div className="text-xs text-slate-500 mt-0.5">
-                                            Danh sách cụm và công đoạn đã lưu.
-                                        </div>
+                                    <div className="text-sm text-slate-500 mt-1">
+                                        Mã chứng từ:{" "}
+                                        <span className="font-bold text-blue-700">
+                                            {selectedDetail.header?.document_code || "-"}
+                                        </span>
                                     </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedDetail(null)}
-                                        className="text-sm text-slate-500 hover:text-rose-600"
-                                    >
-                                        Đóng
-                                    </button>
                                 </div>
 
-                                <div className="overflow-auto">
-                                    <table className="w-full text-sm min-w-[1300px]">
-                                        <thead className="bg-white">
+                                <button
+                                    type="button"
+                                    onClick={handleEdit}
+                                    className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm hover:bg-slate-50"
+                                >
+                                    Sửa
+                                </button>
+                            </div>
+
+
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setIsSavedDetailOpen(false);
+                                    setSelectedDetail(null);
+                                    setSelectedSavedId(null);
+                                }}
+                                className="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500 font-black"
+                            >
+                                ✕
+                            </button>
+
+                        </div>
+
+                        <div className="p-5 flex-1 min-h-0 overflow-hidden flex flex-col gap-4">
+                            {/* Thông tin chung */}
+                            <div className="grid grid-cols-4 gap-3">
+                                <div className="border border-slate-200 rounded-sm p-3 bg-slate-50">
+                                    <div className="text-xs text-slate-500 font-bold uppercase">
+                                        Nhóm công việc
+                                    </div>
+                                    <div className="text-sm text-slate-800 mt-1">
+                                        {selectedDetail.header?.work_code || ''} - {selectedDetail.header?.work_name || ''}
+                                    </div>
+                                </div>
+
+                                <div className="border border-slate-200 rounded-sm p-3 bg-slate-50">
+                                    <div className="text-xs text-slate-500 font-bold uppercase">
+                                        Chủng loại
+                                    </div>
+                                    <div className="text-sm text-slate-800 mt-1">
+                                        {selectedDetail.header?.product_code || ''} - {selectedDetail.header?.product_name || ''}
+                                    </div>
+                                </div>
+
+                                <div className="border border-slate-200 rounded-sm p-3 bg-slate-50">
+                                    <div className="text-xs text-slate-500 font-bold uppercase">
+                                        Nhóm chủng loại
+                                    </div>
+                                    <div className="text-sm text-slate-800 mt-1">
+                                        {selectedDetail.header?.category_group_code || ''} - {selectedDetail.header?.category_group_name || ''}
+                                    </div>
+                                </div>
+
+                                <div className="border border-slate-200 rounded-sm p-3 bg-slate-50">
+                                    <div className="text-xs text-slate-500 font-bold uppercase">
+                                        Phương pháp tính
+                                    </div>
+                                    <div className="text-sm text-slate-800 mt-1">
+                                        {selectedDetail.header?.price_method === 'ADJUSTED'
+                                            ? 'Theo SMV điều chỉnh'
+                                            : 'Theo SMV gốc GSD'}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Dashboard */}
+                            <div className="grid grid-cols-6 gap-3">
+                                <div className="border border-blue-100 bg-blue-50 rounded-sm p-3">
+                                    <div className="text-xs font-bold text-blue-600 uppercase">
+                                        SMV điều chỉnh
+                                    </div>
+                                    <div className="text-xl text-blue-700 mt-1">
+                                        {Number(selectedDetail.dashboard?.total_adjusted_sam || 0).toFixed(2)}
+                                    </div>
+                                </div>
+
+                                <div className="border border-emerald-100 bg-emerald-50 rounded-sm p-3">
+                                    <div className="text-xs font-bold text-emerald-600 uppercase">
+                                        SMV
+                                    </div>
+                                    <div className="text-xl text-emerald-700 mt-1">
+                                        {Number(selectedDetail.dashboard?.total_sam_gsd || 0).toFixed(2)}
+                                    </div>
+                                </div>
+
+                                <div className="border border-orange-100 bg-orange-50 rounded-sm p-3">
+                                    <div className="text-xs font-bold text-orange-600 uppercase">
+                                        Tổng bước
+                                    </div>
+                                    <div className="text-xl text-orange-700 mt-1">
+                                        {Number(selectedDetail.dashboard?.total_actions || 0)}
+                                    </div>
+                                </div>
+
+                                <div className="border border-amber-100 bg-amber-50 rounded-sm p-3">
+                                    <div className="text-xs font-bold text-amber-600 uppercase">
+                                        Tổng giây
+                                    </div>
+                                    <div className="text-xl text-amber-700 mt-1">
+                                        {Number(selectedDetail.dashboard?.total_action_seconds || 0).toFixed(2)}
+                                    </div>
+                                </div>
+
+                                <div className="border border-violet-100 bg-violet-50 rounded-sm p-3">
+                                    <div className="text-xs font-bold text-violet-600 uppercase">
+                                        Định mức LĐ
+                                    </div>
+                                    <div className="text-xl text-violet-700 mt-1">
+                                        {Number(selectedDetail.dashboard?.total_manpower || 0).toFixed(2)}
+                                    </div>
+                                </div>
+
+                                <div className="border border-slate-200 bg-slate-50 rounded-sm p-3">
+                                    <div className="text-xs font-bold text-slate-600 uppercase">
+                                        Tổng đơn giá
+                                    </div>
+                                    <div className="text-xl text-slate-700 mt-1">
+                                        {Number(selectedDetail.dashboard?.total_standard_price || 0).toFixed(2)}
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            {/* Danh sách công đoạn */}
+                            <div className="border border-slate-200 rounded-sm overflow-hidden flex flex-col flex-1 min-h-0">
+                                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
+                                    <div className="text-sm font-bold text-slate-800">
+                                        Danh sách công đoạn
+                                    </div>
+                                </div>
+
+                                <div className="flex-1 min-h-0 overflow-auto">
+                                    <table className="w-max min-w-[1300px] text-sm border-collapse">
+                                        <thead className="bg-white sticky top-0 z-10">
                                             <tr className="text-xs text-slate-500 uppercase">
-                                                <th className="p-3 border-b border-slate-200 text-left w-[70px]">STT</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[120px]">Cụm</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[140px]">Mã GSD</th>
-                                                <th className="p-3 border-b border-slate-200 text-left">Công đoạn</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[180px]">MMTB</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[100px]">SAM GSD</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[100px]">Hệ số</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[120px]">Đơn giá</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[120px]">SAM ĐC</th>
-                                                <th className="p-3 border-b border-slate-200 text-center w-[100px]">Bước</th>
+                                                <th className="p-3 border border-slate-200 text-left w-[70px]">
+                                                    STT
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-center w-[100px]">
+                                                    Xếp chuyền
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-left w-[120px]">
+                                                    Cụm
+                                                </th>
+                                                {/* <th className="p-3 border border-slate-200 text-left w-[140px]">
+                                                Mã GSD
+                                            </th> */}
+                                                <th className="p-3 border border-slate-200 text-left w-[340px]">
+                                                    Công đoạn
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-left">
+                                                    Bậc
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-left w-[180px]">
+                                                    MMTB code
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-left w-[180px]">
+                                                    MMTB
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-right w-[100px]">
+                                                    SMV
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-right w-[100px]">
+                                                    Hệ số lương
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-right w-[100px]">
+                                                    Hệ số yêu cầu
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-right w-[120px]">
+                                                    Đơn giá
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-right w-[120px]">
+                                                    SMV ĐC
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-right w-[120px]">
+                                                    Hiệu suất sử dụng
+                                                </th>
+                                                <th className="p-3 border border-slate-200 text-center w-[100px]">
+                                                    Bước
+                                                </th>
                                             </tr>
                                         </thead>
 
                                         <tbody>
-                                            {(!selectedDetail.operations || selectedDetail.operations.length === 0) && (
-                                                <tr>
-                                                    <td colSpan={10} className="p-8 text-center text-slate-400">
-                                                        Chứng từ này chưa có công đoạn hoặc API chưa trả operations.
-                                                    </td>
-                                                </tr>
-                                            )}
+                                            {(!selectedDetail.operations ||
+                                                selectedDetail.operations.length === 0) && (
+                                                    <tr>
+                                                        <td
+                                                            colSpan={13}
+                                                            className="p-8 border border-slate-200 text-center text-slate-400"
+                                                        >
+                                                            Chứng từ này chưa có công đoạn.
+                                                        </td>
+                                                    </tr>
+                                                )}
 
                                             {(selectedDetail.operations || []).map((op: any, index: number) => (
                                                 <tr
                                                     key={op.id || index}
-                                                    className="border-b border-slate-100 hover:bg-slate-50"
+                                                    className="hover:bg-slate-50"
                                                 >
-                                                    <td className="p-3 text-slate-500">
+                                                    <td className="p-3 border border-slate-200 text-slate-500">
                                                         {index + 1}
                                                     </td>
 
-                                                    <td className="p-3">
+                                                    <td className="p-3 border border-slate-200 text-center">
+                                                        {op.line_balance_no || '-'}
+                                                    </td>
+
+                                                    <td className="p-3 border border-slate-200">
                                                         {op.cluster_name || `Cụm ${op.group_line_no || ''}`}
                                                     </td>
 
-                                                    <td className="p-3 font-bold text-blue-700">
-                                                        {op.operation_code || '-'}
-                                                    </td>
+                                                    {/* <td className="p-3 border border-slate-200 text-blue-700">
+                                                    {op.operation_code || '-'}
+                                                </td> */}
 
-                                                    <td className="p-3 font-bold text-slate-800">
+                                                    <td className="p-3 border border-slate-200 text-slate-800">
                                                         {op.operation_name || '-'}
                                                     </td>
 
-                                                    <td className="p-3">
+                                                    <td className="p-3 border border-slate-200">
+                                                        {op.skill_level || '-'}
+                                                    </td>
+
+                                                    <td className="p-3 border border-slate-200">
+                                                        {op.code_mmtb || '-'}
+                                                    </td>
+
+                                                    <td className="p-3 border border-slate-200">
                                                         {op.machine_name || '-'}
                                                     </td>
 
-                                                    <td className="p-3 text-right">
+                                                    <td className="p-3 border border-slate-200 text-right">
                                                         {Number(op.sam_gsd || 0).toFixed(2)}
                                                     </td>
 
-                                                    <td className="p-3 text-right">
+                                                    <td className="p-3 border border-slate-200 text-right">
                                                         {Number(op.salary_coefficient || 0).toFixed(2)}
                                                     </td>
 
-                                                    <td className="p-3 text-right font-bold">
+                                                    <td className="p-3 border border-slate-200 text-right">
+                                                        {Number(op.required_efficiency || 0).toFixed(2)}
+                                                    </td>
+
+                                                    <td className="p-3 border border-slate-200 text-right">
                                                         {Number(op.standard_price || 0).toFixed(2)}
                                                     </td>
 
-                                                    <td className="p-3 text-right font-bold text-blue-700">
+                                                    <td className="p-3 border border-slate-200 text-right text-blue-700">
                                                         {Number(op.adjusted_sam || 0).toFixed(2)}
                                                     </td>
 
-                                                    <td className="p-3 text-center">
+
+                                                    <td className="p-3 border border-slate-200 text-right text-blue-700">
+                                                        {(toNumber(op.utilization_rate, 0) * 100).toFixed(0)}%
+                                                    </td>
+
+                                                    <td className="p-3 border border-slate-200 text-center">
                                                         {op.total_actions || 0}
                                                     </td>
                                                 </tr>
@@ -1953,299 +2553,24 @@ export default function OperationClusterPage_test() {
                                     </table>
                                 </div>
                             </div>
-                        )} */}
-                </div>
-
-            </div>
-
-            {/* // pop up show chi tiết mã chứng từ */}
-            {
-                isSavedDetailOpen && selectedDetail && (
-                    <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-6">
-                        <div className="w-[1350px] max-w-[96vw] max-h-[95vh] bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden">
-                            <div className="px-6 py-4 border-b border-slate-200 flex items-start justify-between gap-4">
-                                <div>
-                                    <h2 className="text-lg font-bold text-slate-800">
-                                        Chi tiết chứng từ
-                                    </h2>
-
-                                    <div className="text-sm text-slate-500 mt-1">
-                                        Mã chứng từ:{' '}
-                                        <span className="font-bold text-blue-700">
-                                            {selectedDetail.header?.document_code || '-'}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        setIsSavedDetailOpen(false);
-                                        setSelectedDetail(null);
-                                    }}
-                                    className="w-9 h-9 rounded-full hover:bg-slate-100 text-slate-500 font-black"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-
-                            <div className="p-5 flex-1 min-h-0 overflow-hidden flex flex-col gap-4">
-                                {/* Thông tin chung */}
-                                <div className="grid grid-cols-4 gap-3">
-                                    <div className="border border-slate-200 rounded-sm p-3 bg-slate-50">
-                                        <div className="text-xs text-slate-500 font-bold uppercase">
-                                            Nhóm công việc
-                                        </div>
-                                        <div className="text-sm text-slate-800 mt-1">
-                                            {selectedDetail.header?.work_code || ''} - {selectedDetail.header?.work_name || ''}
-                                        </div>
-                                    </div>
-
-                                    <div className="border border-slate-200 rounded-sm p-3 bg-slate-50">
-                                        <div className="text-xs text-slate-500 font-bold uppercase">
-                                            Chủng loại
-                                        </div>
-                                        <div className="text-sm text-slate-800 mt-1">
-                                            {selectedDetail.header?.product_code || ''} - {selectedDetail.header?.product_name || ''}
-                                        </div>
-                                    </div>
-
-                                    <div className="border border-slate-200 rounded-sm p-3 bg-slate-50">
-                                        <div className="text-xs text-slate-500 font-bold uppercase">
-                                            Nhóm chủng loại
-                                        </div>
-                                        <div className="text-sm text-slate-800 mt-1">
-                                            {selectedDetail.header?.category_group_code || ''} - {selectedDetail.header?.category_group_name || ''}
-                                        </div>
-                                    </div>
-
-                                    <div className="border border-slate-200 rounded-sm p-3 bg-slate-50">
-                                        <div className="text-xs text-slate-500 font-bold uppercase">
-                                            Phương pháp tính
-                                        </div>
-                                        <div className="text-sm text-slate-800 mt-1">
-                                            {selectedDetail.header?.price_method === 'ADJUSTED'
-                                                ? 'Theo SMV điều chỉnh'
-                                                : 'Theo SMV gốc GSD'}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                {/* Dashboard */}
-                                <div className="grid grid-cols-6 gap-3">
-                                    <div className="border border-blue-100 bg-blue-50 rounded-sm p-3">
-                                        <div className="text-xs font-bold text-blue-600 uppercase">
-                                            SMV điều chỉnh
-                                        </div>
-                                        <div className="text-xl text-blue-700 mt-1">
-                                            {Number(selectedDetail.dashboard?.total_adjusted_sam || 0).toFixed(2)}
-                                        </div>
-                                    </div>
-
-                                    <div className="border border-emerald-100 bg-emerald-50 rounded-sm p-3">
-                                        <div className="text-xs font-bold text-emerald-600 uppercase">
-                                            SMV
-                                        </div>
-                                        <div className="text-xl text-emerald-700 mt-1">
-                                            {Number(selectedDetail.dashboard?.total_sam_gsd || 0).toFixed(2)}
-                                        </div>
-                                    </div>
-
-                                    <div className="border border-orange-100 bg-orange-50 rounded-sm p-3">
-                                        <div className="text-xs font-bold text-orange-600 uppercase">
-                                            Tổng bước
-                                        </div>
-                                        <div className="text-xl text-orange-700 mt-1">
-                                            {Number(selectedDetail.dashboard?.total_actions || 0)}
-                                        </div>
-                                    </div>
-
-                                    <div className="border border-amber-100 bg-amber-50 rounded-sm p-3">
-                                        <div className="text-xs font-bold text-amber-600 uppercase">
-                                            Tổng giây
-                                        </div>
-                                        <div className="text-xl text-amber-700 mt-1">
-                                            {Number(selectedDetail.dashboard?.total_action_seconds || 0).toFixed(2)}
-                                        </div>
-                                    </div>
-
-                                    <div className="border border-violet-100 bg-violet-50 rounded-sm p-3">
-                                        <div className="text-xs font-bold text-violet-600 uppercase">
-                                            Định mức LĐ
-                                        </div>
-                                        <div className="text-xl text-violet-700 mt-1">
-                                            {Number(selectedDetail.dashboard?.total_manpower || 0).toFixed(2)}
-                                        </div>
-                                    </div>
-
-                                    <div className="border border-slate-200 bg-slate-50 rounded-sm p-3">
-                                        <div className="text-xs font-bold text-slate-600 uppercase">
-                                            Tổng đơn giá
-                                        </div>
-                                        <div className="text-xl text-slate-700 mt-1">
-                                            {Number(selectedDetail.dashboard?.total_standard_price || 0).toFixed(2)}
-                                        </div>
-                                    </div>
-                                </div>
-
-
-                                {/* Danh sách công đoạn */}
-                                <div className="border border-slate-200 rounded-sm overflow-hidden flex flex-col flex-1 min-h-0">
-                                    <div className="bg-slate-50 px-4 py-3 border-b border-slate-200">
-                                        <div className="text-sm font-bold text-slate-800">
-                                            Danh sách công đoạn
-                                        </div>
-                                    </div>
-
-                                    <div className="flex-1 min-h-0 overflow-auto">
-                                        <table className="w-max min-w-[1300px] text-sm border-collapse">
-                                            <thead className="bg-white sticky top-0 z-10">
-                                                <tr className="text-xs text-slate-500 uppercase">
-                                                    <th className="p-3 border border-slate-200 text-left w-[70px]">
-                                                        STT
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-center w-[100px]">
-                                                        Xếp chuyền
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-left w-[120px]">
-                                                        Cụm
-                                                    </th>
-                                                    {/* <th className="p-3 border border-slate-200 text-left w-[140px]">
-                                                    Mã GSD
-                                                </th> */}
-                                                    <th className="p-3 border border-slate-200 text-left w-[340px]">
-                                                        Công đoạn
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-left">
-                                                        Bậc
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-left w-[180px]">
-                                                        MMTB code
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-left w-[180px]">
-                                                        MMTB
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-right w-[100px]">
-                                                        SMV
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-right w-[100px]">
-                                                        Hệ số
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-right w-[120px]">
-                                                        Đơn giá
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-right w-[120px]">
-                                                        SMV ĐC
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-right w-[120px]">
-                                                        Hiệu suất sử dụng
-                                                    </th>
-                                                    <th className="p-3 border border-slate-200 text-center w-[100px]">
-                                                        Bước
-                                                    </th>
-                                                </tr>
-                                            </thead>
-
-                                            <tbody>
-                                                {(!selectedDetail.operations ||
-                                                    selectedDetail.operations.length === 0) && (
-                                                        <tr>
-                                                            <td
-                                                                colSpan={13}
-                                                                className="p-8 border border-slate-200 text-center text-slate-400"
-                                                            >
-                                                                Chứng từ này chưa có công đoạn.
-                                                            </td>
-                                                        </tr>
-                                                    )}
-
-                                                {(selectedDetail.operations || []).map((op: any, index: number) => (
-                                                    <tr
-                                                        key={op.id || index}
-                                                        className="hover:bg-slate-50"
-                                                    >
-                                                        <td className="p-3 border border-slate-200 text-slate-500">
-                                                            {index + 1}
-                                                        </td>
-
-                                                        <td className="p-3 border border-slate-200 text-center">
-                                                            {op.line_balance_no || '-'}
-                                                        </td>
-
-                                                        <td className="p-3 border border-slate-200">
-                                                            {op.cluster_name || `Cụm ${op.group_line_no || ''}`}
-                                                        </td>
-
-                                                        {/* <td className="p-3 border border-slate-200 text-blue-700">
-                                                        {op.operation_code || '-'}
-                                                    </td> */}
-
-                                                        <td className="p-3 border border-slate-200 text-slate-800">
-                                                            {op.operation_name || '-'}
-                                                        </td>
-
-                                                        <td className="p-3 border border-slate-200">
-                                                            {op.skill_level || '-'}
-                                                        </td>
-
-                                                        <td className="p-3 border border-slate-200">
-                                                            {op.machine_code || '-'}
-                                                        </td>
-
-                                                        <td className="p-3 border border-slate-200">
-                                                            {op.machine_name || '-'}
-                                                        </td>
-
-                                                        <td className="p-3 border border-slate-200 text-right">
-                                                            {Number(op.sam_gsd || 0).toFixed(2)}
-                                                        </td>
-
-                                                        <td className="p-3 border border-slate-200 text-right">
-                                                            {Number(op.salary_coefficient || 0).toFixed(2)}
-                                                        </td>
-
-                                                        <td className="p-3 border border-slate-200 text-right">
-                                                            {Number(op.standard_price || 0).toFixed(2)}
-                                                        </td>
-
-                                                        <td className="p-3 border border-slate-200 text-right text-blue-700">
-                                                            {Number(op.adjusted_sam || 0).toFixed(2)}
-                                                        </td>
-
-
-                                                        <td className="p-3 border border-slate-200 text-right text-blue-700">
-                                                            {(toNumber(op.utilization_rate, 0) * 100).toFixed(0)}%
-                                                        </td>
-
-                                                        <td className="p-3 border border-slate-200 text-center">
-                                                            {op.total_actions || 0}
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end">
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    setIsSavedDetailOpen(false);
-                                    setSelectedDetail(null);
-                                }}
-                                className="px-5 py-2 rounded-sm border border-slate-300 bg-white text-sm hover:bg-slate-50"
-                            >
-                                Đóng
-                            </button>
-                        </div> */}
                         </div>
+
+                        {/* <div className="px-6 py-4 border-t border-slate-200 bg-slate-50 flex justify-end">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsSavedDetailOpen(false);
+                                setSelectedDetail(null);
+                            }}
+                            className="px-5 py-2 rounded-sm border border-slate-300 bg-white text-sm hover:bg-slate-50"
+                        >
+                            Đóng
+                        </button>
+                    </div> */}
                     </div>
-                )
-            }
-
-
+                </div>
+            )}
+            {/* chọn công đoạn từ gsd */}
             {isGsdPopupOpen && (
                 <div className="fixed inset-0 z-800 bg-slate-900/40 flex items-center justify-center p-4">
                     <div className="w-[96vw] h-[90vh] bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden">
@@ -2370,7 +2695,7 @@ export default function OperationClusterPage_test() {
                                                         </td>
 
                                                         <td className="p-2 text-right align-top text-slate-800">
-                                                            {item.machine_code}
+                                                            {item.code_mmtb}
                                                         </td>
 
                                                         <td className="p-2 text-right align-top text-slate-800">
@@ -2424,14 +2749,12 @@ export default function OperationClusterPage_test() {
                                                     <div className="flex items-start justify-between gap-3">
                                                         <div className="min-w-0">
                                                             <div className="text-[15px] font-bold text-blue-700">
-                                                                Công đoạn {gsdIndex + 1}: {gsd.operation_code}
+                                                                Công đoạn {gsdIndex + 1}: {gsd.operation_name}
                                                             </div>
-                                                            <div className="text-[15px] text-slate-800 truncate">
-                                                                {gsd.operation_name}
-                                                            </div>
+
                                                             <div className="text-[11px] text-slate-500 mt-0.5 truncate">
                                                                 MMTB: {gsd.machine_name || '-'}
-                                                                {gsd.machine_code ? ` • ${gsd.machine_code}` : ''}
+                                                                {gsd.machine_code ? ` • ${gsd.code_mmtb}` : ''}
                                                             </div>
                                                         </div>
 
@@ -2553,7 +2876,7 @@ export default function OperationClusterPage_test() {
                     </div>
                 </div>
             )}
-
+            {/* chọn hệ số lương */}
             {coefficientPopup && (
                 <div
                     className="fixed inset-0 z-[100] bg-slate-900/20 flex items-center justify-center p-4"
@@ -2609,7 +2932,7 @@ export default function OperationClusterPage_test() {
                                             key={item.id}
                                             type="button"
                                             onClick={() =>
-                                                handleSelectSalaryCoefficient(Number(item.coefficient || 0))
+                                                handleSelectSalaryCoefficient(Number(item.coefficient || 0), Number(item.levelId || 0))
                                             }
                                             className="w-full text-left p-3 rounded-xl hover:bg-blue-50 border border-transparent hover:border-blue-100"
                                         >
@@ -2641,7 +2964,7 @@ export default function OperationClusterPage_test() {
                     </div>
                 </div>
             )}
-
+            {/* danh sách các thao tác khi nhấn chọn vào tên công đoạn */}
             {operationActionPopup && (
                 <div className="fixed inset-0 z-500 bg-slate-900/40 flex items-center justify-center p-6">
                     <div className="w-[1000px] max-w-[94vw] max-h-[88vh] bg-white rounded-lg shadow-2xl flex flex-col overflow-hidden">
@@ -2763,8 +3086,6 @@ export default function OperationClusterPage_test() {
                     </div>
                 </div>
             )}
-
-
             {/* view all cụm */}
             {isGroupOverviewOpen && (
                 <div className="fixed inset-0 z-[95] bg-slate-900/40 flex items-center justify-center p-4">
@@ -3087,8 +3408,6 @@ export default function OperationClusterPage_test() {
                     </div>
                 </div>
             )}
-
-
         </div>
     );
 }
