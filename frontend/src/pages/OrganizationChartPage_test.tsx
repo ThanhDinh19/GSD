@@ -314,7 +314,7 @@ export default function OrganizationChartPage() {
                         <h2 className="font-bold text-slate-700">
                             {formMode === 'view' ? 'Thông tin phòng ban' : 'Nhập thông tin phòng ban'}
                         </h2>
-
+{/* 
                         {formMode !== 'view' && (
                             <button
                                 type="button"
@@ -323,7 +323,7 @@ export default function OrganizationChartPage() {
                             >
                                 Hủy
                             </button>
-                        )}
+                        )} */}
                     </div>
 
                     {formMode !== 'view' ? (
@@ -349,7 +349,7 @@ export default function OrganizationChartPage() {
                                     onChange={(e) =>
                                         setForm((prev) => ({ ...prev, department_name: e.target.value }))
                                     }
-                                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                                    className="w-[400px] border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                                     placeholder="Nhập tên phòng ban"
                                 />
                             </div>
@@ -363,7 +363,7 @@ export default function OrganizationChartPage() {
                                     onChange={(e) =>
                                         setForm((prev) => ({ ...prev, manager_employee_id: e.target.value }))
                                     }
-                                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                                    className="w-[400px] border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                                 >
                                     <option value="">-- Chọn trưởng phòng --</option>
                                     {employees.map((employee) => (
@@ -381,7 +381,7 @@ export default function OrganizationChartPage() {
                                 <input
                                     value={form.parent_department_code || 'Không có - cấp gốc'}
                                     disabled
-                                    className="w-full border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm text-slate-500"
+                                    className="w-[400px] border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm text-slate-500"
                                 />
                             </div>
 
@@ -397,7 +397,7 @@ export default function OrganizationChartPage() {
                                             department_type_code: e.target.value,
                                         }))
                                     }
-                                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                                    className="w-[400px] border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                                 >
                                     <option value="">-- Chọn loại phòng ban --</option>
                                     {departmentTypes

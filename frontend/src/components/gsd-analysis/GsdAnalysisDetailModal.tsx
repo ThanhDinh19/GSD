@@ -52,7 +52,7 @@ export default function GsdAnalysisDetailModal({
             <InfoCard label="Ngày tạo" value={formatDateTime(analysis.createdAt || analysis.analysisDate)} />
             <InfoCard label="Bậc tay nghề" value={analysis.skillGrade ?? '-'} />
 
-            <InfoCard label="Source" value={analysis.sourceCode || '-'} />
+            <InfoCard label="Source" value={analysis.sourceName || '-'} />
             <InfoCard label="Loại máy / MMTB" value={analysis.machineName || '-'} />
             <InfoCard label="Code MMTB" value={analysis.codeMMTB || '-'} />
             <InfoCard label="Mức độ phức tạp" value={`${formatNumber(analysis.difficultyPercent, 0)}%`} />

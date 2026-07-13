@@ -41,7 +41,7 @@ export default function SourceActionPickerModal({
 
     const filteredSources = keyword.trim() 
         ? sources.filter((item) => {
-            return item.sourceCode.toLowerCase().includes(keyword.toLowerCase()) || item.sourceName?.toLowerCase().includes(keyword.toLowerCase());
+            return item.note?.toLowerCase().includes(keyword.toLowerCase()) || item.sourceName?.toLowerCase().includes(keyword.toLowerCase());
         }) : sources;
 
      
@@ -81,7 +81,7 @@ export default function SourceActionPickerModal({
                                     <div className="text-sm font-bold text-slate-700">Tìm kiếm</div>
                                     <input 
                                         type="text"
-                                        placeholder='Nhập mã, tên source...'
+                                        placeholder='Nhập tên source, ghi chú'
                                         value={keyword}
                                         onChange={(e) => {
                                             setKeyword(e.target.value),
@@ -114,14 +114,14 @@ export default function SourceActionPickerModal({
                                                             }`}
                                                     >
                                                         <div className="font-semibold">
-                                                            {source.sourceCode}
+                                                            {source.sourceName}
                                                         </div>
-                                                        {source.sourceName && (
+                                                        {source.note && (
                                                             <div
                                                                 className={`text-xs mt-1 ${isActive ? 'text-blue-100' : 'text-slate-400'
                                                                     }`}
                                                             >
-                                                                {source.sourceName}
+                                                                {source.note}
                                                             </div>
                                                         )}
                                                     </button>

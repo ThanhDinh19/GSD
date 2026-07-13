@@ -60,7 +60,7 @@ export default function DepartmentTypeFormModal({
                 <form onSubmit={handleSubmit} className="p-5 space-y-4">
                     <div>
                         <label className="block text-xs font-bold text-slate-600 mb-1">
-                            Mã chủng loại<span className="text-red-500">*</span>
+                            Mã loại phòng ban<span className="text-red-500">*</span>
                         </label>
                         <input
                             value={form.departmentTypeCode}
@@ -74,7 +74,7 @@ export default function DepartmentTypeFormModal({
 
                     <div>
                         <label className="block text-xs font-bold text-slate-600 mb-1">
-                            Tên chủng loại <span className="text-red-500">*</span>
+                            Tên loại phòng ban <span className="text-red-500">*</span>
                         </label>
                         <input
                             value={form.departmentTypeName}
