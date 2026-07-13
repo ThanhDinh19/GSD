@@ -467,7 +467,7 @@ export default function GsdAnalysisPage() {
                                         </td>
 
                                         <td className="px-4 py-3 border border-slate-200 text-slate-700 text-sm">
-                                            {row.sourceCode}
+                                            {row.sourceName}
                                         </td>
 
                                         <td className="px-4 py-3 border border-slate-200 text-blue-700 text-sm">

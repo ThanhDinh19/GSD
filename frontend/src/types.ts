@@ -275,6 +275,7 @@ export interface GsdAnalysisCalculateResult {
     id: number;
     machineCode: string;
     machineName: string;
+    codeMMTB: string;
     stitchCount?: number | null;
     machineSpeed?: number | null;
     allowance?: number | null;

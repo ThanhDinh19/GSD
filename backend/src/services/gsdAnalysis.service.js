@@ -73,6 +73,7 @@ async function calculateAnalysis(payload) {
           id,
           machine_code AS [machineCode],
           machine_name AS [machineName],
+          code_mmtb AS [codeMMTB],
           stitch_count AS [stitchCount],
           machine_speed AS [machineSpeed],
           attached_action_time AS [attachedActionTime],
