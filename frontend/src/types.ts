@@ -300,6 +300,7 @@ export interface GsdAnalysisSummary {
   sourceCode?: string | null;
   machineCode?: string | null;
   machineName?: string | null;
+  codeMMTB?: string | null;
 
   totalTmu: number;
   totalManualSeconds: number;
@@ -312,26 +313,27 @@ export interface GsdAnalysisSummary {
   createdAt?: string;
 }
 
-export interface GsdAnalysisSummary {
-  id: number;
-  analysisNo: string;
-  analysisDate?: string;
-  operationName: string;
+// export interface GsdAnalysisSummary {
+//   id: number;
+//   analysisNo: string;
+//   analysisDate?: string;
+//   operationName: string;
 
-  sourceCode?: string | null;
-  machineCode?: string | null;
-  machineName?: string | null;
+//   sourceCode?: string | null;
+//   machineCode?: string | null;
+//   machineName?: string | null;
+//   codeMMTB?: string | null;
 
-  totalTmu: number;
-  totalManualSeconds: number;
-  machineSeconds: number;
-  totalSmvBeforeDifficulty: number;
-  difficultySeconds: number;
-  finalSmv: number;
-  skillGrade?: number | null;
+//   totalTmu: number;
+//   totalManualSeconds: number;
+//   machineSeconds: number;
+//   totalSmvBeforeDifficulty: number;
+//   difficultySeconds: number;
+//   finalSmv: number;
+//   skillGrade?: number | null;
 
-  createdAt?: string;
-}
+//   createdAt?: string;
+// }
 
 
 export interface GsdAnalysisDetailRow {

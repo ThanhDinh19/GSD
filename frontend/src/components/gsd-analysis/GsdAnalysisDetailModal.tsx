@@ -54,7 +54,7 @@ export default function GsdAnalysisDetailModal({
 
             <InfoCard label="Source" value={analysis.sourceCode || '-'} />
             <InfoCard label="Loại máy / MMTB" value={analysis.machineName || '-'} />
-            <InfoCard label="Code MMTB" value={analysis.machineCode || '-'} />
+            <InfoCard label="Code MMTB" value={analysis.codeMMTB || '-'} />
             <InfoCard label="Mức độ phức tạp" value={`${formatNumber(analysis.difficultyPercent, 0)}%`} />
 
             <InfoCard label="Đường may" value={formatNumber(analysis.seamLength, 2)} />

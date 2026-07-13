@@ -256,7 +256,7 @@ export default function GsdAnalysisPage() {
                             <option value="">-- Chọn máy --</option>
                             {machines_test.map((machine) => (
                                 <option key={machine.id} value={machine.id}>
-                                    {machine.machineCode} - {machine.machineName}
+                                    {machine.codeMmtb} - {machine.machineName}
                                 </option>
                             ))}
                         </select>

@@ -381,6 +381,7 @@ async function getAnalyses() {
       s.source_code AS [sourceCode],
       m.machine_code AS [machineCode],
       m.machine_name AS [machineName],
+      m.code_mmtb AS [codeMMTB],
 
       a.total_tmu AS [totalTmu],
       a.total_manual_seconds AS [totalManualSeconds],
@@ -419,6 +420,7 @@ async function getAnalysisById(id) {
         a.machine_id AS [machineId],
         m.machine_code AS [machineCode],
         m.machine_name AS [machineName],
+        m.code_mmtb AS [codeMMTB],
 
         a.seam_length AS [seamLength],
         a.attached_action_time AS [attachedActionTime],

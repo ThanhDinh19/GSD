@@ -64,9 +64,9 @@ export default function GsdProcessTable({
                             <th className="px-4 py-3 border border-slate-200 text-left">Bước công việc</th>
                             <th className="px-4 py-3 border border-slate-200 text-right">Bậc thợ</th>
                             <th className="px-4 py-3 border border-slate-200 text-left">Nhu cầu CC+DC, MMTB</th>
-                            <th className="px-4 py-3 border border-slate-200 text-left">Code MMTB</th>
+                            <th className="px-4 py-3 border border-slate-200 text-left">MMTB Code</th>
                             <th className="px-4 py-3 border border-slate-200 text-right">Thời gian chuẩn</th>
-                            <th className="px-4 py-3 border border-slate-200 text-left">Mã phân tích</th>
+                            {/* <th className="px-4 py-3 border border-slate-200 text-left">Mã phân tích</th> */}
                             <th className="px-4 py-3 border border-slate-200 text-left">Ngày tạo</th>
                         </tr>
                     </thead>
@@ -119,16 +119,17 @@ export default function GsdProcessTable({
                                     </td>
 
                                     <td className="px-4 py-3 border border-slate-200 text-slate-700 text-sm">
-                                        {item.machineCode || '-'}
+                                        {item.codeMMTB || '-'}
                                     </td>
 
                                     <td className="px-4 py-3 border border-slate-200 text-right text-green-700 text-sm">
                                         {Number(item.finalSmv || 0).toFixed(0)}
                                     </td>
-
+                                    
+                                    {/* 
                                     <td className="px-4 py-3 border border-slate-200 text-slate-500 text-sm">
                                         {item.analysisNo}
-                                    </td>
+                                    </td> */}
 
                                     <td className="px-4 py-3 border border-slate-200 text-slate-500 text-sm">
                                         {formatDateTime(item.createdAt || item.analysisDate)}
