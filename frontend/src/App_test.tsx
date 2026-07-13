@@ -509,7 +509,7 @@ export default function App_test() {
                 )}
               </li>
 
-              {/* <li>
+              <li>
                 <button
                   onClick={() => {
                     setActiveTab('organization-chart');
@@ -540,7 +540,7 @@ export default function App_test() {
                     <span className="whitespace-nowrap">Sơ đồ tổ chức (old)</span>
                   )}
                 </button>
-              </li> */}
+              </li>
             </ul>
           </div>
 
