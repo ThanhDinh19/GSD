@@ -133,46 +133,55 @@ const getGsdOptions = async () => {
   // *note*: total_manual_seconds (tổng giây thao tác) = sum(tmu * số lần lặp / 27.8)
 
   const result = await pool.request().query(`
-     SELECT
-   h.id AS gsd_analysis_id,
-   h.analysis_no AS operation_code,
-   h.operation_name,
+    SELECT
+      h.id AS gsd_analysis_id,
+      h.analysis_no AS operation_code,
+      h.operation_name,
 
-   TRY_CAST(h.skill_grade AS INT) AS skill_level,
+      TRY_CAST(h.skill_grade AS INT) AS skill_level, 
+      sg.level,
+      sc.level_id as level_coe,
+      sc.coefficient as salary_coefficient,
 
-   h.machine_id AS machine_equipment_id,
-   m.machine_code,
-   m.machine_name,
-   m.code_mmtb,
-   h.total_tmu,
+      h.machine_id AS machine_equipment_id,
+      m.machine_code,
+      m.machine_name,
+      m.code_mmtb,
+      h.total_tmu,
 
-   CAST(ISNULL(h.final_smv, 0) AS DECIMAL(10,2)) AS sam_gsd,
+      CAST(ISNULL(h.final_smv, 0) AS DECIMAL(10,2)) AS sam_gsd,
 
-   CAST(
-     ISNULL(SUM((ISNULL(d.tmu, 0) * ISNULL(d.frequency, 1)) / 27.8), 0)
-     AS DECIMAL(18,2)
-   ) AS total_action_seconds,  
+      CAST(
+        ISNULL(SUM((ISNULL(d.tmu, 0) * ISNULL(d.frequency, 1)) / 27.8), 0)
+        AS DECIMAL(18,2)
+      ) AS total_action_seconds,  
 
-   COUNT(d.id) AS total_actions
+      COUNT(d.id) AS total_actions
 
- FROM gsd_analysis_headers h
- LEFT JOIN gsd_analysis_details d
-   ON d.analysis_id = h.id
- LEFT JOIN machine_equipments_test m
-   ON m.id = h.machine_id
- GROUP BY
-   h.id,
-   h.analysis_no,
-   h.operation_name,
-   h.skill_grade,
-   h.machine_id,
-   m.machine_code,
-   m.machine_name,
-   m.code_mmtb,
-   h.final_smv,
-   h.total_tmu
- ORDER BY h.id DESC
-
+    FROM gsd_analysis_headers h
+      LEFT JOIN gsd_analysis_details d
+        ON d.analysis_id = h.id
+      LEFT JOIN machine_equipments_test m
+        ON m.id = h.machine_id
+      LEFT JOIN skill_grade sg
+        ON h.skill_grade = sg.level
+      LEFT JOIN salary_coefficients sc
+        ON sc.level_id = sg.level
+      GROUP BY
+        h.id,
+        h.analysis_no,
+        h.operation_name,
+        h.skill_grade,
+        h.machine_id,
+        m.machine_code,
+        m.machine_name,
+        m.code_mmtb,
+        h.final_smv,
+        h.total_tmu,
+        sg.level,
+        sc.level_id,
+        sc.coefficient
+      ORDER BY h.id DESC
   `);
 
   return result.recordset;
@@ -663,8 +672,8 @@ const updateOperationCluster = async (id, payload) => {
 
     const headerEfficiency =
       payload.required_efficiency !== undefined &&
-      payload.required_efficiency !== null &&
-      payload.required_efficiency !== ''
+        payload.required_efficiency !== null &&
+        payload.required_efficiency !== ''
         ? toNumber(payload.required_efficiency, 0)
         : null;
 
@@ -781,8 +790,8 @@ const updateOperationCluster = async (id, payload) => {
 
         const effectiveEfficiency =
           operation.required_efficiency !== undefined &&
-          operation.required_efficiency !== null &&
-          operation.required_efficiency !== ''
+            operation.required_efficiency !== null &&
+            operation.required_efficiency !== ''
             ? toNumber(operation.required_efficiency, 0)
             : headerEfficiency;
 
@@ -947,8 +956,8 @@ const copyOperationCluster = async (payload) => {
 
     const headerEfficiency =
       payload.required_efficiency !== undefined &&
-      payload.required_efficiency !== null &&
-      payload.required_efficiency !== ''
+        payload.required_efficiency !== null &&
+        payload.required_efficiency !== ''
         ? toNumber(payload.required_efficiency, 0)
         : null;
 
@@ -1048,8 +1057,8 @@ const copyOperationCluster = async (payload) => {
 
         const effectiveEfficiency =
           operation.required_efficiency !== undefined &&
-          operation.required_efficiency !== null &&
-          operation.required_efficiency !== ''
+            operation.required_efficiency !== null &&
+            operation.required_efficiency !== ''
             ? toNumber(operation.required_efficiency, 0)
             : headerEfficiency;
 
@@ -1096,8 +1105,8 @@ const copyOperationCluster = async (payload) => {
             'manpower',
             sql.Decimal(10, 2),
             operation.manpower !== undefined &&
-            operation.manpower !== null &&
-            operation.manpower !== ''
+              operation.manpower !== null &&
+              operation.manpower !== ''
               ? toNumber(operation.manpower, 0)
               : null
           )

@@ -298,8 +298,6 @@ export function useGsdAnalysis() {
     const calculate = async (form: Omit<GsdAnalysisPayload, 'sourceId' | 'details'>) => {
         const payload = buildPayload(form);
 
-
-
         // setResult(null);
         setCalculating(true);
 

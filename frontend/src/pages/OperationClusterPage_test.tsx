@@ -334,7 +334,7 @@ export default function OperationClusterPage_test() {
                         code_mmtb: gsd.code_mmtb,
 
                         sam_gsd: toNumber(gsd.sam_gsd, 0),
-                        salary_coefficient: 0,
+                        salary_coefficient: gsd.salary_coefficient,
                         manpower: 1,
                         required_efficiency: requiredEfficiency,
 
@@ -497,7 +497,6 @@ export default function OperationClusterPage_test() {
 
         setCoefficientSearch('');
     };
-
 
     const handleSelectSalaryCoefficient = (coefficient: number, skill_grade_id: number) => {
         if (!coefficientPopup) return;

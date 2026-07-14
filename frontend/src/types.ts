@@ -601,7 +601,7 @@ export interface GsdOption {
 
   skill_grade_id: number | null; // bậc thợ trong danh mục
   skill_level: number | null;
-  // salary_coefficient: number;
+  salary_coefficient: number;
 
   machine_equipment_id: number | null;
   machine_code: string | null;
