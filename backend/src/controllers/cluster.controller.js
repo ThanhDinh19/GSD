@@ -6,6 +6,21 @@ const getClusters = asyncHandler(async (req, res) => {
   return res.json(clusters);
 });
 
+const getClusterById = asyncHandler(async (req, res) => {
+  try {
+    const clusters = await clusterService.getClusterById(Number(req.params.id));
+
+    if (!clusters) {
+      return res.status(404).json({ message: "Không tìm thấy data" });
+    }
+
+    return res.json(clusters);
+  } catch (err) {
+    console.error("error: ", err);
+    res.status(500).json({message: "Không lấy được cụm"})
+  }
+})
+
 const createCluster = asyncHandler(async (req, res) => {
   const { clusterCode, clusterName, statusId } = req.body;
 
@@ -73,5 +88,6 @@ module.exports = {
   getClusters,
   createCluster,
   updateCluster,
-  deactivateCluster
+  deactivateCluster,
+  getClusterById,
 };

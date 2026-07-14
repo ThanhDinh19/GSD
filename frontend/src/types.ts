@@ -249,6 +249,9 @@ export interface GsdAnalysisPayload {
   seamLength?: number | null;
   // attachedActionTime có thể được edit nên cho vào payload (lấy data từ frontend)
   attachedActionTime?: number | null;
+  stitchCount?: number | null;
+  allowance?: number | null;
+  machineSpeed?: number | null;
   difficultyPercent?: number | null;
   productMultiplier?: number | null;
   note?: string | null;

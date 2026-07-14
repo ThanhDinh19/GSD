@@ -9,6 +9,9 @@ const initialForm: Omit<GsdAnalysisPayload, 'sourceId' | 'details'> = {
     operationName: '',
     seamLength: 0,
     attachedActionTime: 0,
+    stitchCount: 0,
+    machineSpeed: 0,
+    allowance: 0,
     difficultyPercent: 0,
     productMultiplier: 1,
     note: '',
@@ -68,6 +71,7 @@ export default function GsdAnalysisPage() {
         uncheckPopupRow,
         takeSelectedActionsToAnalysis,
         clearAnalysisRows,
+        clearResult,
 
         calculate,
         save,
@@ -169,7 +173,12 @@ export default function GsdAnalysisPage() {
         }
     };
 
-
+    const updateForm = (
+        updater: (prev: typeof form) => typeof form
+    ) => {
+        clearResult();
+        setForm(updater);
+    };
 
     return (
         <div className="space-y-5">
@@ -248,7 +257,10 @@ export default function GsdAnalysisPage() {
                                 setForm((prev) => ({
                                     ...prev,
                                     machineId: machineId,
-                                    attachedActionTime: machine?.attachedActionTime ?? 0
+                                    attachedActionTime: machine?.attachedActionTime ?? 0,
+                                    stitchCount: machine?.stitchCount ?? 0,
+                                    machineSpeed: machine?.machineSpeed ?? 0,
+                                    allowance: machine?.allowance ?? 0,
                                 }));
                             }}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
@@ -343,22 +355,49 @@ export default function GsdAnalysisPage() {
                                 step="0.01"
                                 value={form.attachedActionTime ?? 0}
                                 onChange={(e) =>
-                                    setForm((prev) => ({
-                                        ...prev,
-                                        attachedActionTime: e.target.value === '' ? 0 : Number(e.target.value),
-                                    }))
+                                    setForm((prev) => {
+                                        return {
+                                            ...prev,
+                                            attachedActionTime: e.target.value === '' ? 0 : Number(e.target.value),
+                                        }
+
+                                    })
                                 }
                             />
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                             <div className="text-slate-500">Số mũi chỉ</div>
-                            <div className="font-bold text-slate-800">{selectedMachine_test.stitchCount ?? 0}</div>
+                            <input
+                                className="font-bold text-slate-800"
+                                style={{ outline: 'none' }}
+                                type="number"
+                                value={form.stitchCount ?? 0}
+                                onChange={(e) =>
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        stitchCount: e.target.value === '' ? 0 : Number(e.target.value),
+                                    }))
+                                }
+                            />
+                            {/* <div className="font-bold text-slate-800">{selectedMachine_test.stitchCount ?? 0}</div> */}
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                             <div className="text-slate-500">Tốc độ máy</div>
-                            <div className="font-bold text-slate-800">{selectedMachine_test.machineSpeed ?? 0}</div>
+                            <input
+                                className="font-bold text-slate-800"
+                                style={{ outline: 'none' }}
+                                type="number"
+                                value={form.machineSpeed ?? 0}
+                                onChange={(e) => {
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        machineSpeed: e.target.value === '' ? 0 : Number(e.target.value),
+                                    }))
+                                }}
+                            />
+                            {/* <div className="font-bold text-slate-800">{selectedMachine_test.machineSpeed ?? 0}</div> */}
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
@@ -366,15 +405,27 @@ export default function GsdAnalysisPage() {
                             <div className="font-bold text-slate-800">
                                 {result
                                     ? Number(result.machineVelocity || 0).toFixed(4)
-                                    : selectedMachine_test.machineSpeed
-                                        ? (((Number(selectedMachine_test.stitchCount || 0) / Number(selectedMachine_test.machineSpeed || 1)) * 60)).toFixed(4)
+                                    : form.machineSpeed
+                                        ? (((Number(form.stitchCount || 0) / Number(form.machineSpeed || 1)) * 60)).toFixed(4)
                                         : '0.0000'}
                             </div>
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                             <div className="text-slate-500">Hao phí</div>
-                            <div className="font-bold text-slate-800">{selectedMachine_test.allowance ?? 0}</div>
+                            <input
+                                className="font-bold text-slate-800"
+                                style={{ outline: 'none' }}
+                                value={form.allowance ?? 0}
+                                type="number"
+                                onChange={(e) => {
+                                    setForm((prev) => ({
+                                        ...prev,
+                                        allowance: e.target.value === '' ? 0 : Number(e.target.value),
+                                    }))
+                                }}
+                            />
+                            {/* <div className="font-bold text-slate-800">{selectedMachine_test.allowance ?? 0}</div> */}
                         </div>
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">

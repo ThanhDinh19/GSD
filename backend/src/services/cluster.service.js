@@ -19,6 +19,25 @@ async function getClusters() {
   return result.recordset;
 }
 
+async function getClusterById(id) {
+  const pool = getPool();
+
+  const result = await pool.request()
+  .input('id', sql.Int, id)
+  .query(`
+    select
+      s.id,
+      s.cluster_name,
+      s.cluster_code,
+      ms.status_name
+    from clusters s
+    left join master_status ms on s.status_id = ms.id  
+    where s.id = @id
+  `);
+
+  return result.recordset[0];
+}
+
 async function createCluster(payload) {
   const pool = getPool();
 
@@ -81,8 +100,11 @@ async function deactivateCluster(id) {
   return result.rowsAffected[0] > 0;
 }
 
+
+
 module.exports = {
   getClusters,
+  getClusterById,
   createCluster,
   updateCluster,
   deactivateCluster

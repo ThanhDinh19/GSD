@@ -35,6 +35,10 @@ export function useGsdAnalysis() {
     const [analyses, setAnalyses] = useState<GsdAnalysisSummary[]>([]);
     const [loadingAnalyses, setLoadingAnalyses] = useState(false);
 
+    const clearResult = () => {
+        setResult(null);
+    };
+
     const popupRows = useMemo(() => {
         if (!popupSourceId) return [];
         return sourceActionMap[popupSourceId] || [];
@@ -149,10 +153,10 @@ export function useGsdAnalysis() {
 
     const loadMachines_test = async () => {
         setLoadingMachines_test(true);
-        try{
+        try {
             const data = await machineEquipmentService.getMachineEquipments_test();
             setMachines_test(data);
-        }finally{
+        } finally {
             setLoadingMachines_test(false);
         }
     }
@@ -291,9 +295,12 @@ export function useGsdAnalysis() {
         };
     };
 
-    const calculate = async ( form: Omit<GsdAnalysisPayload, 'sourceId' | 'details'> ) => {
+    const calculate = async (form: Omit<GsdAnalysisPayload, 'sourceId' | 'details'>) => {
         const payload = buildPayload(form);
 
+
+
+        // setResult(null);
         setCalculating(true);
 
         try {
@@ -472,6 +479,7 @@ export function useGsdAnalysis() {
         uncheckPopupRow,
         takeSelectedActionsToAnalysis,
         clearAnalysisRows,
+        clearResult,
 
         calculate,
         save,

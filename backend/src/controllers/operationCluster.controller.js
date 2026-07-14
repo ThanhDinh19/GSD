@@ -52,7 +52,7 @@ const getOperationClusterById = async (req, res) => {
   } catch (error) {
     console.error('getOperationClusterById error:', error);
     res.status(500).json({ message: 'Không lấy được chi tiết chứng từ' });
-  }
+  } 
 };
 
 const createOperationCluster = async (req, res) => {

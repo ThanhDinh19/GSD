@@ -91,9 +91,26 @@ async function calculateAnalysis(payload) {
     const difficultyPercent = toNumber(payload.difficultyPercent, 0);
     const productMultiplier = toNumber(payload.productMultiplier, 1);
 
-    const stitchCount = machine ? toNumber(machine.stitchCount, 0) : 0;
-    const machineSpeed = machine ? toNumber(machine.machineSpeed, 0) : 0;
-    const allowance = machine ? toNumber(machine.allowance, 0) : 0;
+    const stitchCount =
+        payload.stitchCount !== undefined && payload.stitchCount !== null
+            ? toNumber(payload.stitchCount, 0)
+            : machine
+                ? toNumber(machine.stitchCount, 0)
+                : 0;
+
+    const machineSpeed =
+        payload.machineSpeed !== undefined && payload.machineSpeed !== null
+            ? toNumber(payload.machineSpeed, 0)
+            : machine
+                ? toNumber(machine.machineSpeed, 0)
+                : 0;
+
+    const allowance =
+        payload.allowance !== undefined && payload.allowance !== null
+            ? toNumber(payload.allowance, 0)
+            : machine
+                ? toNumber(machine.allowance, 0)
+                : 0;
 
     const details = Array.isArray(payload.details) ? payload.details : [];
 
@@ -152,20 +169,22 @@ async function calculateAnalysis(payload) {
         return sum + item.seconds;
     }, 0);
 
+    // vận tốc máy (cm/giây)
     const machineVelocity = machineSpeed > 0
         ? (stitchCount / machineSpeed) * 60
         : 0;
 
+    // thời gian máy móc thiết bị
     const machineSeconds =
         (machineVelocity * seamLength) + attachedActionTime + allowance;
 
     const totalSmvBeforeDifficulty =
         (totalManualSeconds + machineSeconds) * productMultiplier;
 
-        // totalManualSeconds: tổng giây thao tác
+    // totalManualSeconds: tổng giây thao tác
 
-        // tổng smv = ( tổng giây thao tác + thời gian MMTB ) * hệ số nhân SP
-        // smv cuối = (tổng smv + thời gian mức độ)
+    // tổng smv = ( tổng giây thao tác + thời gian MMTB ) * hệ số nhân SP
+    // smv cuối = (tổng smv + thời gian mức độ)
 
     const difficultySeconds =
         totalSmvBeforeDifficulty * difficultyPercent / 100;
@@ -177,7 +196,7 @@ async function calculateAnalysis(payload) {
         Math.ceil(totalSmvBeforeDifficulty + difficultySeconds);
 
 
-        // smv = thời gian thủ công * (
+    // smv = thời gian thủ công * (
 
     const skillGrade = calculateSkillGrade(difficultyPercent);
 
@@ -232,15 +251,15 @@ async function createAnalysis(payload) {
 
     try {
 
-        const updateAttachedActionTime = await new sql.Request(transaction)
-            .input('attached_action_time', sql.Decimal(5, 2), toNumber(payload.attachedActionTime, 0))
-            .input('machineId', sql.Int, payload.machineId ? Number(payload.machineId) : null)
-            .query(`
-                UPDATE machine_equipments_test 
-                SET attached_action_time = @attached_action_time
-                WHERE Id = @machineId
-            `);
-        
+        // const updateAttachedActionTime = await new sql.Request(transaction)
+        //     .input('attached_action_time', sql.Decimal(5, 2), toNumber(payload.attachedActionTime, 0))
+        //     .input('machineId', sql.Int, payload.machineId ? Number(payload.machineId) : null)
+        //     .query(`
+        //         UPDATE machine_equipments_test 
+        //         SET attached_action_time = @attached_action_time
+        //         WHERE Id = @machineId
+        //     `);
+
 
         const headerResult = await new sql.Request(transaction)
             .input('analysis_no', sql.NVarChar, analysisNo)
@@ -403,11 +422,11 @@ async function getAnalyses() {
 
 
 async function getAnalysisById(id) {
-  const pool = getPool();
+    const pool = getPool();
 
-  const headerResult = await pool.request()
-    .input('id', sql.Int, id)
-    .query(`
+    const headerResult = await pool.request()
+        .input('id', sql.Int, id)
+        .query(`
       SELECT
         a.id AS [id],
         a.analysis_no AS [analysisNo],
@@ -450,15 +469,15 @@ async function getAnalysisById(id) {
       WHERE a.id = @id
     `);
 
-  if (headerResult.recordset.length === 0) {
-    const err = new Error('Không tìm thấy phân tích công đoạn.');
-    err.statusCode = 404;
-    throw err;
-  }
+    if (headerResult.recordset.length === 0) {
+        const err = new Error('Không tìm thấy phân tích công đoạn.');
+        err.statusCode = 404;
+        throw err;
+    }
 
-  const detailResult = await pool.request()
-    .input('analysis_id', sql.Int, id)
-    .query(`
+    const detailResult = await pool.request()
+        .input('analysis_id', sql.Int, id)
+        .query(`
       SELECT
         d.id AS [id],
         d.analysis_id AS [analysisId],
@@ -478,10 +497,10 @@ async function getAnalysisById(id) {
       ORDER BY d.step_no, d.line_no
     `);
 
-  return {
-    ...headerResult.recordset[0],
-    details: detailResult.recordset,
-  };
+    return {
+        ...headerResult.recordset[0],
+        details: detailResult.recordset,
+    };
 }
 
 module.exports = {

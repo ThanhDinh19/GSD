@@ -37,7 +37,6 @@ export default function ClusterMasterPage() {
     } else {
       await createCluster(payload);
     }
-
     closeForm();
   };
 
