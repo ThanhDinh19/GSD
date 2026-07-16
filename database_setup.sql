@@ -242,6 +242,18 @@ ADD
 select * from salary_coefficients;
 
 
+create table customer (
+    id int identity(1, 1) primary key,
+    cus_code varchar(32) not null unique,
+    cus_name nvarchar(50) not null,
+    status_id tinyint not null default 0,
+    created_at datetime2 not null default sysdatetime(),
+    constraint FK_cus_status foreign key (status_id) references master_status(id)
+);
+
+
+
+
 MERGE product_categories AS target
 USING (
     VALUES

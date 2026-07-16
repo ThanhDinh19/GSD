@@ -677,3 +677,199 @@ export interface GsdActionDetail {
   note?: string | null;
   is_selected?: boolean;
 }
+
+
+// dinh 15/07/2026
+export interface Customer {
+  id: number;
+  cusCode: string;
+  cusName: string;
+  statusId: number;
+  statusName?: string;
+  createdAt?: string;
+}
+
+export interface CustomerPayload {
+  cusCode: string;
+  cusName: string;
+  statusId: number;
+}
+
+
+export interface SewingProcessLine {
+  id?: number;
+
+  sourceDocumentCode?: string | null;
+  sourceLineId?: number | null;
+
+  lineNo: number;
+  clusterNo?: number | null;
+  clusterName?: string | null;
+
+  operationCode?: string | null;
+  operationName: string;
+
+  lineOrder?: number | null;
+
+  skillGradeId?: number | null;
+  skillGradeLevel?: number | null;
+
+  machineId?: number | null;
+  machineCode?: string | null;
+  machineName?: string | null;
+
+  samGsd: number;
+  salaryCoefficient: number;
+
+  laborCount?: number;
+  standardPrice?: number;
+
+  requiredEfficiency?: number | null;
+  adjustedSam?: number;
+  usedEfficiency?: number;
+
+  totalActions?: number;
+
+  toolNeed?: string | null;
+
+  sewingEmployee?: string | null;
+  cbcTime?: number | null;
+  note?: string | null;
+}
+
+export interface SewingProcessPayload {
+  documentCode: string;
+
+  customerId?: number | null;
+  customerCode?: string | null;
+  customerName?: string | null;
+
+  itemCode?: string | null;
+  productionLine?: string | null;
+  productionRound?: number | null;
+
+  workingHours: number;
+  manpower?: number | null;
+  productionManpower: number;
+  quantity?: number | null;
+
+  effectiveDate?: string | null;
+  issuedDate?: string | null;
+
+  priceMode: 'GSD' | 'ADJUSTED';
+  statusId: number;
+  note?: string | null;
+
+  lines: SewingProcessLine[];
+}
+
+export interface SewingProcessSummary {
+  totalTime: number;
+  c1: number;
+  totalSamGsd: number;
+  taktTime: number;
+  c3: number;
+  c4: number;
+  standardOutput: number;
+  c5: number;
+  c6: number;
+  totalStandardPrice: number;
+  totalPriceByOutput: number;
+  averagePrice: number;
+}
+
+export interface SewingProcessMachineNeed {
+  id?: number;
+  machineId?: number | null;
+  machineCode?: string | null;
+  machineName?: string | null;
+  sumSmv: number;
+  machineNeed: number;
+  machineQuantity: number;
+  usedEfficiency?: number | null;
+}
+
+export interface SewingProcessResult {
+  header: Omit<SewingProcessPayload, 'lines'>;
+  summary: SewingProcessSummary;
+  lines: SewingProcessLine[];
+  machineNeeds: SewingProcessMachineNeed[];
+  images?: SewingProcessImage[];
+}
+
+export interface SewingProcessListItem {
+  id: number;
+  documentCode: string;
+  customerCode?: string | null;
+  customerName?: string | null;
+  itemCode?: string | null;
+  productionLine?: string | null;
+  productionRound?: number | null;
+  workingHours?: number;
+  manpower?: number | null;
+  productionManpower?: number | null;
+  quantity?: number | null;
+  effectiveDate?: string | null;
+  issuedDate?: string | null;
+  priceMode?: string;
+  statusId?: number;
+  note?: string | null;
+
+  imageUrl?: string | null;
+  imageFileName?: string | null;
+
+  totalTime?: number;
+  totalSamGsd?: number;
+  taktTime?: number;
+  standardOutput?: number;
+  totalStandardPrice?: number;
+  averagePrice?: number;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+}
+
+
+// dinh 17/06/2026
+
+export interface SewingProcessImage {
+  id?: number;
+  documentCode?: string;
+  imageUrl?: string;
+  imageFileName?: string;
+  sortOrder?: number;
+  note?: string | null;
+  createdAt?: string;
+  updatedAt?: string | null;
+}
+
+export interface SewingProcessPayload {
+  documentCode: string;
+
+  customerId?: number | null;
+  customerCode?: string | null;
+  customerName?: string | null;
+
+  itemCode?: string | null;
+  productionLine?: string | null;
+  productionRound?: number | null;
+
+  workingHours: number;
+  manpower?: number | null;
+  productionManpower: number;
+  quantity?: number | null;
+
+  effectiveDate?: string | null;
+  issuedDate?: string | null;
+
+  priceMode: 'GSD' | 'ADJUSTED';
+  statusId: number;
+  note?: string | null;
+
+  lines: SewingProcessLine[];
+
+  images?: SewingProcessImage[];
+}

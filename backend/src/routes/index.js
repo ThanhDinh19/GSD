@@ -23,6 +23,10 @@ const salaryCoefficientRoutes = require('./salary_coefficient.routes');
 const operationClusterRoutes = require('./operationCluster.routes');
 const router = express.Router();
 
+// dinh 17/05/2026
+const customerRoutes = require('./customer.routes');
+const sewingProcessRoutes = require('./sewingProcess.routes');
+
 router.use('/statuses', statusRoutes);
 router.use('/clusters', clusterRoutes);
 router.use('/data', employeeRoutes);
@@ -49,5 +53,9 @@ router.use('/skill-grade', skillGradeRoutes);
 // dinh 08/07/2026
 router.use('/salary-coefficient', salaryCoefficientRoutes);
 router.use('/operation-clusters', operationClusterRoutes);
+
+// dinh 15/07/2026
+router.use('/customers', customerRoutes);
+router.use('/sewing-processes', sewingProcessRoutes);
 
 module.exports = router;

@@ -16,6 +16,7 @@ import OrganizationChartPage_test from './pages/OrganizationChartPage_test';
 import OperationClusterPage from './pages/OperationClusterPage';
 import MasterDataPage_test from './pages/MasterDataPage_test';
 import OperationClusterPage_test from './pages/OperationClusterPage_test';
+import SewingProcessPage from './pages/SewingProcessPage';
 
 // Import Syncfusion Spreadsheet CSS files
 import "@syncfusion/ej2-base/styles/material.css";
@@ -331,6 +332,40 @@ export default function App_test() {
 
                   {!isSidebarCollapsed && (
                     <span className="whitespace-nowrap">Kho cụm công đoạn</span>
+                  )}
+                </button>
+              </li>
+
+
+              <li>
+                <button
+                  onClick={() => {
+                    setActiveTab('Bảng quy trình may');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Bảng quy trình may'
+                      ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                      : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
+                  title="Bảng quy trình may"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 5h6m-7 4h8m-8 4h8m-8 4h5M7 3h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"
+                    />
+                  </svg>
+
+                  {!isSidebarCollapsed && (
+                    <span className="whitespace-nowrap">Bảng quy trình may</span>
                   )}
                 </button>
               </li>
@@ -801,6 +836,10 @@ export default function App_test() {
 
           {activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng' && (
             <OperationClusterPage_test />
+          )}
+
+          {activeTab === 'Bảng quy trình may' && (
+            <SewingProcessPage />
           )}
 
         </div>

@@ -10,8 +10,9 @@ import ProductCateGroupMasterPage from './ProductCateGroupMasterPage';
 import DepartmentTypeMasterPage from './DepartmentTypeMasterPage';
 import SkillGradeMasterPage from './SkillGradeMasterPage';
 import SalaryCoefficientMasterPage from './SalaryCoefficientMasterPage';
+import CustomerMasterPage from './CustomerMasterPage';
 
-type MasterTabKey = 'salary-coefficient' | 'skill-grade' | 'clusters' | 'gsd-codes' | 'machine-equipments' | 'sources' | 'source-action-mapping' | 'works' | 'product-category' | 'product-category-group' | 'department-type';
+type MasterTabKey = 'salary-coefficient' | 'skill-grade' | 'clusters' | 'gsd-codes' | 'machine-equipments' | 'sources' | 'source-action-mapping' | 'works' | 'product-category' | 'product-category-group' | 'department-type' | 'customer';
 
 interface MasterTab {
     key: MasterTabKey;
@@ -74,6 +75,11 @@ const masterTabs: MasterTab[] = [
         key: 'department-type',
         label: 'Loại phòng ban',
         description: 'Quản lý loại phòng ban',
+    },
+    {
+        key: 'customer',
+        label: 'Khách hàng',
+        description: 'Quản lý khách hàng',
     }
 ];
 
@@ -116,6 +122,9 @@ export default function MasterDataPage() {
 
             case 'department-type':
                 return <DepartmentTypeMasterPage />;
+
+            case 'customer':
+                return <CustomerMasterPage />;
 
             default:
                 return <ClusterMasterPage />;
