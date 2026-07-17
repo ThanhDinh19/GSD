@@ -37,6 +37,7 @@ const initialForm: SewingProcessPayload = {
 };
 
 const initialLine: SewingProcessLine = {
+  gsdAnalysisId: null,
   lineNo: 1,
   clusterNo: 1,
   clusterName: '',

@@ -5,20 +5,38 @@ import {
     SewingProcessPayload,
     SewingProcessResult,
     SewingProcessMachineNeed,
+    GsdActionDetail,
 } from '../types';
 
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:9000').replace(/\/$/, '');
 
 export function getSewingProcessImageUrl(fileName?: string | null) {
-  if (!fileName) return '';
+    if (!fileName) return '';
 
-  const cleanFileName = String(fileName).split('/').pop();
+    const cleanFileName = String(fileName).split('/').pop();
 
-  return `${API_URL}/sewing_process_images/${cleanFileName}`;
+    return `${API_URL}/sewing_process_images/${cleanFileName}`;
 }
 
 export const sewingProcessService = {
+
+    async getActionDetailsByOperationClusterLineId(id: number) {
+        const res = await request<ApiResponse<any[]>>(
+            `/api/sewing-processes/operation-lines/${id}/action-details`
+        );
+
+        return res.data;
+    },
+
+    async getGsdActionDetailsById(id: number) {
+        const res = await request<ApiResponse<GsdActionDetail[]>>(
+            `/api/sewing-processes/${id}/action-details`
+        );
+
+        return res.data;
+    },
+
     async getSewingProcesses() {
         const res = await request<ApiResponse<SewingProcessListItem[]>>(
             '/api/sewing-processes'

@@ -242,17 +242,6 @@ CREATE TABLE sewing_process_machine_needs (
     -- Ngày giờ cập nhật gần nhất
 );
 
-
-select * from operation_cluster_operations
-where header_id = 44
-
-
-select * from operation_cluster_headers
-where document_code = '2026B234_COPY'
-
-
-select * from sewing_process_headers
-
 CREATE TABLE sewing_process_images (
     id INT IDENTITY(1,1) PRIMARY KEY,
     document_code VARCHAR(32) NOT NULL,
@@ -264,15 +253,127 @@ CREATE TABLE sewing_process_images (
     updated_at DATETIME2 NULL
 );
 
+
+select * from operation_cluster_operations
+where header_id = 44
+
+
+select * from operation_cluster_headers
+where document_code = '2026B234_COPY'
+
+
+select * from sewing_process_headers
+
+
+
 select * from sewing_process_images
+where document_code = '2026B02'
 
-select * from sewing_process_lines
-ALTER TABLE sewing_process_lines ADD tool_need NVARCHAR(200) NULL;
+select * from sewing_process_lines;
 
-select * from sewing_process_machine_needs
 
-select * from sewing_process_summaries
 
+select * from sewing_process_machine_needs;
+
+select * from sewing_process_summaries;
+
+select * from gsd_analysis_details;
+
+select * from gsd_analysis_headers;
+
+select * from gsd_analysis_details order by analysis_id desc;
+
+select * from operation_cluster_operations
+
+select * from operation_cluster_headers
+
+select 
+     gd.analysis_id,
+     gd.gsd_code,
+     gd.action_name
+from operation_cluster_operations oco
+left join gsd_analysis_headers gh on oco.operation_code = gh.analysis_no
+left join gsd_analysis_details gd on gh.id = gd.analysis_id
+where oco.operation_code = 'PT20260710110928825'
+
+
+SELECT
+    gd.analysis_id,
+    gd.gsd_code,
+    gd.action_name
+FROM gsd_analysis_details gd
+INNER JOIN gsd_analysis_headers gh
+    ON gh.id = gd.analysis_id
+INNER JOIN operation_cluster_operations oco
+    ON oco.operation_code = gh.analysis_no
+WHERE oco.operation_code = 'PT20260710110928825';
+
+
+SELECT
+    oco.operation_code,
+    gh.id AS header_id,
+    gh.analysis_no,
+    gd.analysis_id,
+    gd.gsd_code,
+    gd.action_name
+FROM operation_cluster_operations oco
+LEFT JOIN gsd_analysis_headers gh
+    ON TRIM(oco.operation_code) = TRIM(gh.analysis_no)
+LEFT JOIN gsd_analysis_details gd
+    ON gd.analysis_id = gh.id
+WHERE TRIM(oco.operation_code) = TRIM('PT20260710110928825');
+
+
+SELECT
+    id,
+    analysis_no,
+    LEN(analysis_no) AS text_length,
+    DATALENGTH(analysis_no) AS data_length
+FROM gsd_analysis_headers
+WHERE analysis_no = 'PT20260710110928825';
+
+SELECT *
+FROM operation_cluster_operations
+WHERE operation_code = 'PT20260710110928825';
+
+
+select * from gsd_analysis_headers
 select * from gsd_analysis_details
 
+
+SELECT
+    TABLE_NAME,
+    COLUMN_NAME,
+    DATA_TYPE
+FROM INFORMATION_SCHEMA.COLUMNS
+WHERE TABLE_NAME IN (
+    'operation_cluster_operations',
+    'gsd_analysis_headers',
+    'gsd_analysis_details'
+)
+ORDER BY TABLE_NAME, ORDINAL_POSITION;
+
+
+
+DECLARE @operationCode VARCHAR(50) = 'PT20260710110928825';
+
+SELECT
+    gd.id,
+    gd.analysis_id,
+    gd.gsd_code,
+    gd.action_name
+FROM gsd_analysis_details gd
+INNER JOIN gsd_analysis_headers gh
+    ON gh.id = gd.analysis_id
+WHERE gh.analysis_no = @operationCode
+  AND EXISTS (
+      SELECT 1
+      FROM operation_cluster_operations oco
+      WHERE oco.operation_code = @operationCode
+  )
+ORDER BY gd.id;
+
+select * from operation_cluster_operations where operation_code = 'PT20260710110928825'
+
+select * from gsd_analysis_headers where analysis_no = 'PT20260710110928825'
 

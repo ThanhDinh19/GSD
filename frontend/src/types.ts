@@ -698,19 +698,18 @@ export interface CustomerPayload {
 
 export interface SewingProcessLine {
   id?: number;
-
   sourceDocumentCode?: string | null;
   sourceLineId?: number | null;
+
+  gsdAnalysisId?: number | null;
 
   lineNo: number;
   clusterNo?: number | null;
   clusterName?: string | null;
-
   operationCode?: string | null;
   operationName: string;
 
   lineOrder?: number | null;
-
   skillGradeId?: number | null;
   skillGradeLevel?: number | null;
 
@@ -723,15 +722,12 @@ export interface SewingProcessLine {
 
   laborCount?: number;
   standardPrice?: number;
-
   requiredEfficiency?: number | null;
   adjustedSam?: number;
   usedEfficiency?: number;
 
   totalActions?: number;
-
   toolNeed?: string | null;
-
   sewingEmployee?: string | null;
   cbcTime?: number | null;
   note?: string | null;
@@ -873,3 +869,4 @@ export interface SewingProcessPayload {
 
   images?: SewingProcessImage[];
 }
+

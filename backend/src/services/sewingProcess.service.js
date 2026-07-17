@@ -67,6 +67,7 @@ function normalizeHeader(payload) {
 
 function normalizeLine(row, index) {
     return {
+        gsdAnalysisId: row.gsdAnalysisId ?? row.gsd_analysis_id ?? null,
         sourceDocumentCode: row.sourceDocumentCode ?? row.source_document_code ?? null,
         sourceLineId: row.sourceLineId ?? row.source_line_id ?? null,
 
@@ -439,6 +440,7 @@ async function getSewingProcessById(id) {
                 id AS [id],
                 document_code AS [documentCode],
                 source_document_code AS [sourceDocumentCode],
+                gsd_analysis_id AS [gsdAnalysisId],
                 source_line_id AS [sourceLineId],
                 line_no AS [lineNo],
                 cluster_no AS [clusterNo],
@@ -791,6 +793,7 @@ async function insertLines(transaction, documentCode, lines) {
         await new sql.Request(transaction)
             .input('document_code', sql.VarChar(32), documentCode)
             .input('source_document_code', sql.VarChar(32), line.sourceDocumentCode)
+            .input('gsd_analysis_id', sql.Int, line.gsdAnalysisId)
             .input('source_line_id', sql.Int, line.sourceLineId)
             .input('line_no', sql.Int, line.lineNo)
             .input('cluster_no', sql.Int, line.clusterNo)
@@ -819,6 +822,7 @@ async function insertLines(transaction, documentCode, lines) {
                 INSERT INTO sewing_process_lines (
                     document_code,
                     source_document_code,
+                    gsd_analysis_id,
                     source_line_id,
                     line_no,
                     cluster_no,
@@ -847,6 +851,7 @@ async function insertLines(transaction, documentCode, lines) {
                 VALUES (
                     @document_code,
                     @source_document_code,
+                    @gsd_analysis_id,
                     @source_line_id,
                     @line_no,
                     @cluster_no,
@@ -1026,6 +1031,103 @@ async function deleteSewingProcessImage(id) {
         `);
 }
 
+async function getActionDetailsById(id){
+    const pool = await getPool();
+
+    const result = await pool.request()
+        .input('analysis_id', sql.Int, id)
+        .query(`
+            select 
+                gd.id,
+                gd.line_no,
+                gd.step_no,
+                gd.gsd_code,
+                gd.action_name,
+                gd.tmu,
+                gd.frequency
+            from gsd_analysis_details gd
+            where analysis_id = @analysis_id
+        `)
+    return result.recordset;
+}
+
+async function getActionDetailsById(id) {
+    const pool = await getPool();
+
+    const result = await pool.request()
+        .input('analysis_id', sql.Int, id)
+        .query(`
+            SELECT
+                d.id AS [id],
+                d.analysis_id AS [analysisId],
+                d.line_no AS [lineNo],
+                d.step_no AS [stepNo],
+                d.gsd_code AS [gsdCode],
+                d.action_name AS [actionName],
+                d.tmu AS [tmu],
+                d.frequency AS [frequency],
+                CAST((ISNULL(d.tmu, 0) * ISNULL(d.frequency, 1)) / 27.8 AS DECIMAL(18, 6)) AS [seconds],
+                d.note AS [note],
+                d.is_selected AS [isSelected]
+            FROM gsd_analysis_details d
+            WHERE d.analysis_id = @analysis_id
+            ORDER BY d.line_no ASC, d.step_no ASC, d.id ASC
+        `);
+
+    return result.recordset;
+}
+
+
+async function getActionDetailsByOperationClusterLineId(operationLineId) {
+    const pool = await getPool();
+
+    const result = await pool.request()
+        .input('operation_line_id', sql.Int, operationLineId)
+        .query(`
+            SELECT
+                o.id AS [operationClusterLineId],
+                o.operation_code AS [operationCode],
+                o.operation_name AS [operationName],
+                o.gsd_analysis_id AS [gsdAnalysisId],
+
+                h.id AS [analysisId],
+                h.analysis_no AS [analysisNo],
+
+                d.id AS [id],
+                d.line_no AS [lineNo],
+                d.step_no AS [stepNo],
+                d.gsd_code AS [gsdCode],
+                d.action_name AS [actionName],
+                d.tmu AS [tmu],
+                d.frequency AS [frequency],
+                CAST((ISNULL(d.tmu, 0) * ISNULL(d.frequency, 1)) / 27.8 AS DECIMAL(18, 6)) AS [seconds],
+                d.note AS [note],
+                d.is_selected AS [isSelected]
+            FROM operation_cluster_operations o
+            OUTER APPLY (
+                SELECT TOP 1
+                    gh.id,
+                    gh.analysis_no
+                FROM gsd_analysis_headers gh
+                WHERE
+                    gh.analysis_no = o.operation_code
+                    OR gh.id = o.gsd_analysis_id
+                ORDER BY
+                    CASE
+                        WHEN gh.analysis_no = o.operation_code THEN 0
+                        WHEN gh.id = o.gsd_analysis_id THEN 1
+                        ELSE 2
+                    END
+            ) h
+            INNER JOIN gsd_analysis_details d
+                ON d.analysis_id = h.id
+            WHERE o.id = @operation_line_id
+            ORDER BY d.line_no ASC, d.step_no ASC, d.id ASC
+        `);
+
+    return result.recordset;
+}
+
 module.exports = {
     getSewingProcesses,
     getSewingProcessById,
@@ -1035,4 +1137,7 @@ module.exports = {
     updateSewingProcess,
     addSewingProcessImage,
     deleteSewingProcessImage,
+    getActionDetailsById,
+    getActionDetailsById,
+    getActionDetailsByOperationClusterLineId
 };

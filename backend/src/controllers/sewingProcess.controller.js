@@ -155,6 +155,67 @@ async function uploadSewingProcessImage(req, res) {
     }
 }
 
+async function getActionDetailsById(req, res) {
+    try {
+        const data = await sewingProcessService.getActionDetailsById(req.params.id)
+
+        return res.status(200).json({
+            success: true,
+            data
+        })
+    } catch (err) {
+        return res.status(500).json({
+            success: false,
+            message: err.message,
+        });
+    }
+}
+
+async function getGsdActionDetailsById(req, res, next) {
+    try {
+        const id = Number(req.params.id);
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu mã phân tích GSD.',
+            });
+        }
+
+        const data = await service.getActionDetailsById(id);
+
+        return res.json({
+            success: true,
+            data,
+        });
+    } catch (err) {
+        next(err);
+    }
+}
+
+async function getActionDetailsByOperationClusterLineId(req, res, next) {
+    try {
+        const id = Number(req.params.id);
+
+        if (!id) {
+            return res.status(400).json({
+                success: false,
+                message: 'Thiếu mã dòng kho cụm công đoạn.',
+            });
+        }
+
+        const data =
+            await sewingProcessService.getActionDetailsByOperationClusterLineId(id);
+
+        return res.json({
+            success: true,
+            data,
+        });
+    } catch (err) {
+        next(err);
+    }
+}
+
 module.exports = {
     getSewingProcesses,
     getSewingProcessById,
@@ -163,4 +224,7 @@ module.exports = {
     createSewingProcess,
     updateSewingProcess,
     uploadSewingProcessImage,
+    getActionDetailsById,
+    getGsdActionDetailsById,
+    getActionDetailsByOperationClusterLineId,
 };

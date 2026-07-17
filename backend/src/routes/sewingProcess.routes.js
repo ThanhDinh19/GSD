@@ -6,6 +6,12 @@ const router = express.Router();
 router.post('/calculate', controller.calculateSewingProcess);
 router.post('/calculate-machine-needs', controller.calculateMachineNeeds);
 
+router.get(
+    '/operation-lines/:id/action-details',
+    controller.getActionDetailsByOperationClusterLineId
+);
+
+
 router.get('/', controller.getSewingProcesses);
 router.get('/:id', controller.getSewingProcessById);
 
@@ -16,6 +22,7 @@ router.post(
     uploadSewingProcessImage.single('image'),
     controller.uploadSewingProcessImage
 );
+
 
 
 module.exports = router;

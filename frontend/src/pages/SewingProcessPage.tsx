@@ -14,6 +14,23 @@ function formatNumber(value: number | null | undefined, digits = 4) {
     return Number(value || 0).toFixed(digits);
 }
 
+function formatSummaryNumber(value: number | null | undefined, digits = 2) {
+    if (value === null || value === undefined || Number.isNaN(Number(value))) {
+        return '-';
+    }
+
+    return new Intl.NumberFormat('vi-VN', {
+        minimumFractionDigits: digits,
+        maximumFractionDigits: digits,
+    }).format(Number(value));
+}
+
+function formatSummaryMoney(value: number | null | undefined, digits = 2) {
+    const formatted = formatSummaryNumber(value, digits);
+
+    return formatted === '-' ? '-' : `${formatted} VND`;
+}
+
 function numberInputValue(value: number | null | undefined) {
     if (value === null || value === undefined) return '';
     return value;
@@ -84,6 +101,65 @@ function getDetailRows(detail: any): any[] {
     );
 }
 
+
+function getActionCode(row: any) {
+    return (
+        row.gsdCode ??
+        row.gsd_code ??
+        row.actionCode ??
+        row.action_code ??
+        row.code ??
+        ''
+    );
+}
+
+function getActionName(row: any) {
+    return (
+        row.actionName ??
+        row.action_name ??
+        row.name ??
+        row.description ??
+        ''
+    );
+}
+
+function getActionTime(row: any) {
+    return (
+        row.seconds ??
+        row.tmu ??
+        row.actionTime ??
+        row.action_time ??
+        row.time ??
+        row.totalSeconds ??
+        row.total_seconds ??
+        row.smv ??
+        ''
+    );
+}
+
+function getOperationClusterLineId(row: any): number | null {
+    const candidates = [
+        row?.sourceLineId,
+        row?.source_line_id,
+        row?.operationClusterLineId,
+        row?.operation_cluster_line_id,
+        row?.operationLineId,
+        row?.operation_line_id,
+        row?.lineId,
+        row?.line_id,
+        row?.id,
+    ];
+
+    for (const value of candidates) {
+        const id = Number(value);
+        if (Number.isFinite(id) && id > 0) {
+            return id;
+        }
+    }
+
+    return null;
+}
+
 function mapOperationClusterToLines(detail: any): SewingProcessLine[] {
     const header = detail?.header ?? detail;
     const documentCode = getDocumentCode(header);
@@ -91,7 +167,9 @@ function mapOperationClusterToLines(detail: any): SewingProcessLine[] {
 
     return rows.map((row: any, index: number) => ({
         sourceDocumentCode: documentCode,
-        sourceLineId: row.id ?? null,
+        sourceLineId: getOperationClusterLineId(row),
+
+        gsdAnalysisId: row.gsdAnalysisId ?? row.gsd_analysis_id ?? null,
 
         lineNo: index + 1,
         clusterNo: row.clusterNo ?? row.cluster_no ?? row.line_no ?? index + 1,
@@ -304,7 +382,17 @@ export default function SewingProcessPage() {
 
         try {
             const detail = await loadOperationClusterDetail(Number(id));
+
+            console.log('DETAIL KHO CỤM:', detail);
+            console.log('ROW ĐẦU TIÊN RAW:', getDetailRows(detail)[0]);
+
             const mappedRows = mapOperationClusterToLines(detail);
+
+            console.log('MAPPED ROW ĐẦU TIÊN:', mappedRows[0]);
+            console.log(
+                'GSD ANALYSIS ID SAU KHI MAP:',
+                mappedRows[0]?.gsdAnalysisId
+            );
 
             setPickerRows(mappedRows);
         } catch (err: any) {
@@ -392,6 +480,14 @@ export default function SewingProcessPage() {
         loadDetail: loadOperationClusterDetail,
     } = useOperationClusters();
 
+    const [operationActionsModal, setOperationActionsModal] = useState<{
+        title: string;
+        loading: boolean;
+        rows: any[];
+    } | null>(null);
+
+
+
     const { productCateGroups } = useProductCateGroups();
 
     const activeCustomers = customers.filter((item: any) => getStatusId(item) === 0);
@@ -429,9 +525,6 @@ export default function SewingProcessPage() {
         updateLine(lineIndex, 'machineName', machine ? getMachineName(machine) : '');
     };
 
-
-
-
     const handleCreateNew = () => {
         setSelectedId(null);
         resetForm();
@@ -457,6 +550,7 @@ export default function SewingProcessPage() {
             );
         }
     };
+
     const handleEditSelected = async () => {
         if (!selectedId) {
             alert('Vui lòng chọn một chứng từ cần sửa.');
@@ -511,6 +605,42 @@ export default function SewingProcessPage() {
         }
     };
 
+    // const handleOpenOperationActions = async (line: SewingProcessLine) => {
+    //     const gsdAnalysisId =
+    //         line.gsdAnalysisId ??
+    //         (line as any).gsd_analysis_id ??
+    //         null;
+
+    //     if (!gsdAnalysisId) {
+    //         alert('Công đoạn này chưa có mã GSD để xem thao tác.');
+    //         return;
+    //     }
+
+    //     setOperationActionsModal({
+    //         title: line.operationName || 'Chi tiết thao tác',
+    //         loading: true,
+    //         rows: [],
+    //     });
+
+    //     try {
+    //         const rows = await loadGsdActions(Number(gsdAnalysisId));
+
+    //         setOperationActionsModal({
+    //             title: line.operationName || 'Chi tiết thao tác',
+    //             loading: false,
+    //             rows: rows || [],
+    //         });
+    //     } catch (err: any) {
+    //         setOperationActionsModal(null);
+
+    //         alert(
+    //             err?.response?.data?.message ||
+    //             err?.message ||
+    //             'Lấy danh sách thao tác thất bại.'
+    //         );
+    //     }
+    // };
+
 
     const renderSavedList = () => {
         return (
@@ -519,9 +649,7 @@ export default function SewingProcessPage() {
                     <thead className="bg-slate-50 text-slate-600">
                         <tr>
                             <th className="border border-slate-200 px-3 py-2 text-left">Mã chứng từ</th>
-                            <th className="border border-slate-200 px-3 py-2 text-center">
-                                Hình ảnh
-                            </th>
+                            <th className="border border-slate-200 px-3 py-2 text-center">Hình ảnh</th>
                             <th className="border border-slate-200 px-3 py-2 text-left">Khách hàng</th>
                             <th className="border border-slate-200 px-3 py-2 text-left">Mã hàng</th>
                             <th className="border border-slate-200 px-3 py-2 text-left">Chuyền</th>
@@ -610,15 +738,15 @@ export default function SewingProcessPage() {
                                     </td>
 
                                     <td className="border border-slate-200 px-3 py-2 text-right">
-                                        {formatNumber(item.totalTime, 4)}
+                                        {formatNumber(item.totalTime, 2)}
                                     </td>
 
                                     <td className="border border-slate-200 px-3 py-2 text-right">
-                                        {formatNumber(item.standardOutput, 4)}
+                                        {formatNumber(item.standardOutput, 2)}
                                     </td>
 
                                     <td className="border border-slate-200 px-3 py-2 text-right">
-                                        {formatNumber(item.averagePrice, 4)}
+                                        {formatNumber(item.averagePrice, 2)}
                                     </td>
 
                                     {/* <td className="border border-slate-200 px-3 py-2 text-center">
@@ -864,13 +992,13 @@ export default function SewingProcessPage() {
                             />
 
                             <SummaryBox
-                                label="C1"
-                                formula="Tổng thời gian / 60"
+                                label="Tổng phút chuẩn"
+                                // formula="Tổng thời gian / 60"
                                 value={result?.summary.c1}
                             />
 
                             <SummaryBox
-                                label="C2 - Tổng SAM GSD"
+                                label="Tổng SMV GSD gốc"
                                 // formula="SUM(SAM gốc GSD)"
                                 value={result?.summary.totalSamGsd}
                             />
@@ -882,13 +1010,13 @@ export default function SewingProcessPage() {
                             />
 
                             <SummaryBox
-                                label="C3"
+                                label="Nhịp phút/người"
                                 // formula="Nhịp sản xuất / 60"
                                 value={result?.summary.c3}
                             />
 
                             <SummaryBox
-                                label="C4"
+                                label="Hệ số điều chỉnh SMV"
                                 // formula="Tổng thời gian / C2"
                                 value={result?.summary.c4}
                             />
@@ -900,13 +1028,13 @@ export default function SewingProcessPage() {
                             />
 
                             <SummaryBox
-                                label="C5"
+                                label="Sản lượng/giờ"
                                 // formula="Định mức sản lượng / Thời gian LV"
                                 value={result?.summary.c5}
                             />
 
                             <SummaryBox
-                                label="C6"
+                                label="Định mức theo SMV gốc"
                                 // formula="(3600 / C2) * Thời gian LV * Nhân sự SX"
                                 value={result?.summary.c6}
                             />
@@ -915,18 +1043,21 @@ export default function SewingProcessPage() {
                                 label="Tổng đơn giá"
                                 // formula="SUM(Đơn giá chuẩn)"
                                 value={result?.summary.totalStandardPrice}
+                                money
                             />
 
                             <SummaryBox
                                 label="Tổng đơn giá theo định mức"
                                 // formula="Định mức sản lượng * Tổng đơn giá"
                                 value={result?.summary.totalPriceByOutput}
+                                money
                             />
 
                             <SummaryBox
                                 label="Đơn giá bình quân"
                                 // formula="Tổng đơn giá theo định mức / Nhân sự SX"
                                 value={result?.summary.averagePrice}
+                                money
                             />
                         </div>
                     </div>
@@ -1074,6 +1205,58 @@ export default function SewingProcessPage() {
         );
     };
 
+    const handleOpenOperationActions = async (line: SewingProcessLine) => {
+        const operationLineId = line.sourceLineId ?? null;
+        const gsdAnalysisId = line.gsdAnalysisId ?? null;
+
+        if (!operationLineId && !gsdAnalysisId) {
+            alert('Công đoạn này chưa có mã dòng kho cụm hoặc mã GSD để xem thao tác.');
+            return;
+        }
+
+        setOperationActionsModal({
+            title: line.operationName || 'Chi tiết thao tác',
+            loading: true,
+            rows: [],
+        });
+
+        try {
+            let rows: any[] = [];
+
+            if (operationLineId) {
+                try {
+                    rows = await sewingProcessService.getActionDetailsByOperationClusterLineId(
+                        Number(operationLineId)
+                    );
+                } catch (err) {
+                    if (!gsdAnalysisId) {
+                        throw err;
+                    }
+                }
+            }
+
+            if ((!Array.isArray(rows) || rows.length === 0) && gsdAnalysisId) {
+                rows = await sewingProcessService.getGsdActionDetailsById(
+                    Number(gsdAnalysisId)
+                );
+            }
+
+            setOperationActionsModal({
+                title: line.operationName || 'Chi tiết thao tác',
+                loading: false,
+                rows: Array.isArray(rows) ? rows : [],
+            });
+        } catch (err: any) {
+            setOperationActionsModal(null);
+
+            alert(
+                err?.response?.data?.message ||
+                err?.message ||
+                'Lấy danh sách thao tác thất bại.'
+            );
+        }
+    };
+
     const renderProcessTable = () => {
         return (
             <div className="overflow-auto border border-slate-300 rounded-sm max-h-[460px]">
@@ -1085,9 +1268,10 @@ export default function SewingProcessPage() {
                             <th className="border border-slate-300 px-2 py-2">Tên cụm</th>
                             <th className="border border-slate-300 px-2 py-2">Tên công đoạn</th>
                             <th className="border border-slate-300 px-2 py-2">Bậc thợ</th>
-                            <th className="border border-slate-300 px-2 py-2">Nhu cầu CCDC</th>
+                            {/* <th className="border border-slate-300 px-2 py-2">Nhu cầu CCDC</th> */}
                             <th className="border border-slate-300 px-2 py-2">Nhân sự</th>
-                            <th className="border border-slate-300 px-2 py-2">Code MMTB</th>
+                            <th className="border border-slate-300 px-2 py-2">MMTB</th>
+                            <th className="border border-slate-300 px-2 py-2">MMTB Code</th>
                             <th className="border border-slate-300 px-2 py-2">SMV gốc GSD</th>
                             <th className="border border-slate-300 px-2 py-2">Hệ số bậc thợ</th>
                             {/* <th className="border border-slate-300 px-2 py-2">Nhân sự</th> */}
@@ -1145,12 +1329,14 @@ export default function SewingProcessPage() {
                                 </td>
 
                                 <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        disabled={isViewMode}
-                                        value={line.operationName || ''}
-                                        onChange={(e) => updateLine(index, 'operationName', e.target.value)}
-                                        className="w-full min-w-[220px] outline-none disabled:bg-slate-100"
-                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenOperationActions(line)}
+                                        className="text-left text-blue-700 font-semibold hover:underline min-w-[220px]"
+                                        title="Xem thao tác công đoạn"
+                                    >
+                                        {line.operationName || '-'}
+                                    </button>
                                 </td>
 
                                 <td className="border border-slate-300 px-2 py-2">
@@ -1165,14 +1351,14 @@ export default function SewingProcessPage() {
                                     />
                                 </td>
 
-                                <td className="border border-slate-300 px-2 py-2">
+                                {/* <td className="border border-slate-300 px-2 py-2">
                                     <input
                                         disabled={isViewMode}
                                         value={line.toolNeed || ''}
                                         onChange={(e) => updateLine(index, 'toolNeed', e.target.value)}
                                         className="w-full min-w-[120px] outline-none disabled:bg-slate-100"
                                     />
-                                </td>
+                                </td> */}   
 
                                 <td className="border border-slate-300 px-2 py-2 text-right">
                                     {result ? formatNumber(line.laborCount, 4) : '-'}
@@ -1188,10 +1374,18 @@ export default function SewingProcessPage() {
                                         <option value="">-- Chọn máy --</option>
                                         {activeMachines.map((machine: any) => (
                                             <option key={machine.id} value={machine.id}>
-                                                {getMachineCode(machine)} - {getMachineName(machine)}
+                                                {getMachineName(machine)}
                                             </option>
                                         ))}
                                     </select>
+                                </td>
+
+                                <td className="border border-slate-300 px-2 py-2">
+                                    <input
+                                        readOnly
+                                        value={line.machineCode || ''}
+                                        className="w-full min-w-[120px] outline-none bg-slate-100 text-slate-700"
+                                    />
                                 </td>
 
                                 <td className="border border-slate-300 px-2 py-2">
@@ -1343,10 +1537,10 @@ export default function SewingProcessPage() {
                                         {item.machineName}
                                     </td>
                                     <td className="border border-slate-300 px-3 py-2 text-right">
-                                        {formatNumber(item.sumSmv, 4)}
+                                        {formatNumber(item.sumSmv, 2)}
                                     </td>
                                     <td className="border border-slate-300 px-3 py-2 text-right">
-                                        {formatNumber(item.machineNeed, 4)}
+                                        {formatNumber(item.machineNeed, 2)}
                                     </td>
                                     <td className="border border-slate-300 px-3 py-2 text-right font-bold text-blue-700">
                                         {formatNumber(item.machineQuantity, 0)}
@@ -1419,6 +1613,16 @@ export default function SewingProcessPage() {
                     {renderSewingProcessForm()}
                 </SewingProcessModal>
             )}
+
+            {operationActionsModal && (
+                <OperationActionsModal
+                    title={operationActionsModal.title}
+                    loading={operationActionsModal.loading}
+                    rows={operationActionsModal.rows}
+                    onClose={() => setOperationActionsModal(null)}
+                />
+            )}
+
             {previewImageUrl && (
                 <ImagePreviewModal
                     imageUrl={previewImageUrl}
@@ -1428,6 +1632,8 @@ export default function SewingProcessPage() {
         </div>
     );
 }
+
+
 
 function ImagePreviewModal({
     imageUrl,
@@ -1451,18 +1657,159 @@ function ImagePreviewModal({
     );
 }
 
+function OperationActionsModal({
+    title,
+    loading,
+    rows,
+    onClose,
+}: {
+    title: string;
+    loading: boolean;
+    rows: any[];
+    onClose: () => void;
+}) {
+    const safeRows = Array.isArray(rows) ? rows : [];
+
+    return (
+        <div
+            className="fixed inset-0 z-[120] bg-black/50 flex items-center justify-center p-4"
+            onClick={onClose}
+        >
+            <div
+                className="bg-white w-[90vw] max-w-[1100px] max-h-[85vh] rounded-sm shadow-xl flex flex-col"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
+                    <div>
+                        <h3 className="text-sm font-bold text-slate-800 uppercase">
+                            Chi tiết thao tác công đoạn
+                        </h3>
+                        <div className="text-xs text-slate-500 mt-1">
+                            {title}
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="px-3 py-1.5 rounded-sm border border-slate-300 text-xs font-bold hover:bg-slate-50"
+                    >
+                        Đóng
+                    </button>
+                </div>
+
+                <div className="flex-1 min-h-0 overflow-auto p-4">
+                    {loading ? (
+                        <div className="text-center text-slate-400 text-sm py-8">
+                            Đang tải thao tác...
+                        </div>
+                    ) : (
+                        <table className="w-full min-w-[900px] text-xs border-collapse">
+                            <thead className="bg-slate-50 text-slate-700 sticky top-0 z-10">
+                                <tr>
+                                    <th className="border border-slate-300 px-2 py-2 text-center">
+                                        STT
+                                    </th>
+                                    <th className="border border-slate-300 px-2 py-2 text-right">
+                                        Line no
+                                    </th>
+                                    <th className="border border-slate-300 px-2 py-2 text-right">
+                                        Step no
+                                    </th>
+                                    <th className="border border-slate-300 px-2 py-2">
+                                        Mã GSD
+                                    </th>
+                                    <th className="border border-slate-300 px-2 py-2">
+                                        Tên thao tác
+                                    </th>
+                                    <th className="border border-slate-300 px-2 py-2 text-right">
+                                        TMU
+                                    </th>
+                                    <th className="border border-slate-300 px-2 py-2 text-right">
+                                        Tần suất
+                                    </th>
+                                    <th className="border border-slate-300 px-2 py-2 text-right">
+                                        Giây
+                                    </th>
+                                </tr>
+                            </thead>
+
+                            <tbody>
+                                {safeRows.length === 0 && (
+                                    <tr>
+                                        <td
+                                            colSpan={8}
+                                            className="border border-slate-300 px-4 py-8 text-center text-slate-400"
+                                        >
+                                            Công đoạn này chưa có thao tác.
+                                        </td>
+                                    </tr>
+                                )}
+
+                                {safeRows.map((row, index) => (
+                                    <tr key={`${row.id || 'action'}-${index}`}>
+                                        <td className="border border-slate-300 px-2 py-2 text-center">
+                                            {index + 1}
+                                        </td>
+
+                                        <td className="border border-slate-300 px-2 py-2 text-right">
+                                            {row.lineNo ?? row.line_no ?? ''}
+                                        </td>
+
+                                        <td className="border border-slate-300 px-2 py-2 text-right">
+                                            {row.stepNo ?? row.step_no ?? ''}
+                                        </td>
+
+                                        <td className="border border-slate-300 px-2 py-2">
+                                            {getActionCode(row)}
+                                        </td>
+
+                                        <td className="border border-slate-300 px-2 py-2">
+                                            {getActionName(row)}
+                                        </td>
+
+                                        <td className="border border-slate-300 px-2 py-2 text-right">
+                                            {formatNumber(row.tmu, 2)}
+                                        </td>
+
+                                        <td className="border border-slate-300 px-2 py-2 text-right">
+                                            {formatNumber(row.frequency, 2)}
+                                        </td>
+
+                                        <td className="border border-slate-300 px-2 py-2 text-right">
+                                            {formatNumber(getActionTime(row), 2)}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+}
+
 function SummaryBox({
     label,
     formula,
     value,
+    money = false,
+    digits = 2,
 }: {
     label: string;
     formula?: string;
     value: number | null | undefined;
+    money?: boolean;
+    digits?: number;
 }) {
+    const displayValue = money
+        ? formatSummaryMoney(value, digits)
+        : formatSummaryNumber(value, digits);
+
     return (
         <div className="border border-slate-200 rounded-sm p-2 bg-slate-50 min-h-[74px]">
-            <div className="text-slate-500 font-semibold">
+            <div className="text-slate-500 font-semibold leading-snug">
                 {label}
             </div>
 
@@ -1472,15 +1819,12 @@ function SummaryBox({
                 </div>
             )}
 
-            <div className="font-bold text-slate-800 mt-1">
-                {value === null || value === undefined
-                    ? '-'
-                    : formatNumber(value, 4)}
+            <div className="font-bold text-slate-800 mt-1 break-words">
+                {displayValue}
             </div>
         </div>
     );
 }
-
 
 function SewingProcessModal({
     mode,
@@ -1578,7 +1922,9 @@ function getPickerLineKey(row: SewingProcessLine) {
         row.operationName || '',
         row.lineOrder ?? row.lineNo,
     ].join('|');
-} function OperationPickerModal({
+}
+
+function OperationPickerModal({
     productCateGroups,
     operationClusters,
     pickerProductCateGroupId,
