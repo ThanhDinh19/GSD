@@ -377,3 +377,10 @@ select * from operation_cluster_operations where operation_code = 'PT20260710110
 
 select * from gsd_analysis_headers where analysis_no = 'PT20260710110928825'
 
+select * from sewing_process_lines
+
+select * from source_action_headers;
+select * from source_action_details;
+
+select * from gsd_codes;
+

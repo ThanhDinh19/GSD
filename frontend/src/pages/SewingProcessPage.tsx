@@ -101,7 +101,6 @@ function getDetailRows(detail: any): any[] {
     );
 }
 
-
 function getActionCode(row: any) {
     return (
         row.gsdCode ??
@@ -485,7 +484,6 @@ export default function SewingProcessPage() {
         loading: boolean;
         rows: any[];
     } | null>(null);
-
 
 
     const { productCateGroups } = useProductCateGroups();
@@ -1632,8 +1630,6 @@ export default function SewingProcessPage() {
         </div>
     );
 }
-
-
 
 function ImagePreviewModal({
     imageUrl,

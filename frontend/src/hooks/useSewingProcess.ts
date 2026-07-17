@@ -112,7 +112,7 @@ export function useSewingProcess() {
     key: K,
     value: SewingProcessLine[K]
   ) => {
-    setResult(null);
+    // setResult(null);
 
     setForm((prev) => ({
       ...prev,
