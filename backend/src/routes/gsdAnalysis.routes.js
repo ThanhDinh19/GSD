@@ -8,5 +8,7 @@ router.get('/source-actions/:sourceId', gsdAnalysisController.getSourceActionsFo
 router.post('/calculate', gsdAnalysisController.calculateAnalysis);
 router.post('/', gsdAnalysisController.createAnalysis);
 router.get('/:id', gsdAnalysisController.getAnalysisById);
+router.put('/:id',gsdAnalysisController.updateAnalysis);
+router.get('/:id/copy-draft',gsdAnalysisController.getAnalysisCopyDraft);
 
 module.exports = router;

@@ -7,6 +7,19 @@ import {
 } from '../types';
 import { request } from './httpClient';
 
+type SaveAnalysisResponse = {
+  message: string;
+  data: GsdAnalysisDetail;
+};
+
+type CopyAnalysisDraftResponse = {
+  success: boolean;
+  message: string;
+  data: GsdAnalysisDetail & {
+    copyOfAnalysisId: number;
+  };
+};
+
 export const gsdAnalysisService = {
 
   getAnalysisById(id: number) {
@@ -42,4 +55,24 @@ export const gsdAnalysisService = {
       body: payload,
     });
   },
+
+  updateAnalysis(
+    id: number,
+    payload: GsdAnalysisPayload
+  ) {
+    return request<SaveAnalysisResponse>(
+      `/api/gsd-analysis/${id}`,
+      {
+        method: 'PUT',
+        body: payload,
+      }
+    );
+  },
+
+  getAnalysisCopyDraft(id: number) {
+    return request<CopyAnalysisDraftResponse>(
+      `/api/gsd-analysis/${id}/copy-draft`
+    );
+  },
+
 };

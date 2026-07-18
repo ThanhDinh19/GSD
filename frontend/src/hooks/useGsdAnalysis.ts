@@ -35,6 +35,9 @@ export function useGsdAnalysis() {
     const [analyses, setAnalyses] = useState<GsdAnalysisSummary[]>([]);
     const [loadingAnalyses, setLoadingAnalyses] = useState(false);
 
+    const [loadingAnalysisDetail, setLoadingAnalysisDetail] =
+        useState(false);
+
     const clearResult = () => {
         setResult(null);
     };
@@ -295,6 +298,22 @@ export function useGsdAnalysis() {
         };
     };
 
+    const loadAnalysisForEdit = async (
+        id: number
+    ) => {
+        setLoadingAnalysisDetail(true);
+
+        try {
+            const detail =
+                await gsdAnalysisService.getAnalysisById(id);
+
+            return applyAnalysisDetailToState(
+                detail
+            );
+        } finally {
+            setLoadingAnalysisDetail(false);
+        }
+    };
     const calculate = async (form: Omit<GsdAnalysisPayload, 'sourceId' | 'details'>) => {
         const payload = buildPayload(form);
 
@@ -311,21 +330,75 @@ export function useGsdAnalysis() {
     };
 
     const save = async (
-        form: Omit<GsdAnalysisPayload, 'sourceId' | 'details'>
+        form: Omit<
+            GsdAnalysisPayload,
+            'sourceId' | 'details'
+        >,
+        analysisId?: number | null
     ) => {
         const payload = buildPayload(form);
 
         setSaving(true);
 
         try {
-            const response = await gsdAnalysisService.createAnalysis(payload);
-            setResult(response.data);
+            const response = analysisId
+                ? await gsdAnalysisService.updateAnalysis(
+                    analysisId,
+                    payload
+                )
+                : await gsdAnalysisService.createAnalysis(
+                    payload
+                );
+
+            setResult(
+                response.data as unknown as
+                GsdAnalysisCalculateResult
+            );
 
             await loadAnalyses();
 
             return response;
         } finally {
             setSaving(false);
+        }
+    };
+
+    const loadAnalysisForCopy = async (
+        id: number
+    ) => {
+        setLoadingAnalysisDetail(true);
+
+        try {
+            const response =
+                await gsdAnalysisService.getAnalysisCopyDraft(
+                    id
+                );
+
+            const detail = response.data;
+
+            // Backend đã thêm _COPY.
+            // Fallback để tránh thiếu trong trường hợp backend chưa thêm.
+            const currentName = String(
+                detail.operationName || ''
+            ).trim();
+
+            const operationName =
+                currentName
+                    .toUpperCase()
+                    .endsWith('_COPY')
+                    ? currentName
+                    : `${currentName || 'Công đoạn'}_COPY`;
+
+            const copyDetail = {
+                ...detail,
+                operationName,
+            };
+
+            return applyAnalysisDetailToState(
+                copyDetail
+            );
+        } finally {
+            setLoadingAnalysisDetail(false);
         }
     };
 
@@ -442,11 +515,205 @@ export function useGsdAnalysis() {
         setResult(null);
     };
 
+    const applyAnalysisDetailToState = (
+        detail: any
+    ) => {
+        const rows: GsdAnalysisRow[] = (
+            detail.details || []
+        ).map((item: any, index: number) => ({
+            lineNo: Number(
+                item.lineNo ?? index + 1
+            ),
+
+            sourceId:
+                item.sourceId ??
+                detail.sourceId ??
+                null,
+
+            sourceCode:
+                item.sourceCode ??
+                detail.sourceCode ??
+                '',
+
+            sourceName:
+                item.sourceName ??
+                detail.sourceName ??
+                '',
+
+            sourceActionDetailId:
+                item.sourceActionDetailId ??
+                null,
+
+            gsdCodeId:
+                item.gsdCodeId ??
+                null,
+
+            gsdCode:
+                item.gsdCode ??
+                '',
+
+            codeNew:
+                item.codeNew ??
+                null,
+
+            actionName:
+                item.actionName ??
+                '',
+
+            tmu: Number(
+                item.tmu || 0
+            ),
+
+            frequency: Number(
+                item.frequency ?? 1
+            ),
+
+            stepNo:
+                item.stepNo === null ||
+                    item.stepNo === undefined
+                    ? null
+                    : Number(item.stepNo),
+
+            note:
+                item.note ?? '',
+
+            isSelected:
+                item.isSelected !== false,
+        }));
+
+        setAnalysisRows(rows);
+
+        const nextSourceMap: SourceActionMap = {};
+
+        rows.forEach((row) => {
+            const sourceId = Number(row.sourceId);
+
+            if (!sourceId) return;
+
+            if (!nextSourceMap[sourceId]) {
+                nextSourceMap[sourceId] = [];
+            }
+
+            nextSourceMap[sourceId].push(row);
+        });
+
+        setSourceActionMap(nextSourceMap);
+
+        setPopupSourceId(
+            rows[0]?.sourceId
+                ? Number(rows[0].sourceId)
+                : null
+        );
+
+        const resultDetails:
+            GsdAnalysisCalculateResult['details'] =
+            rows.map((row, index) => {
+                const tmu = Number(row.tmu || 0);
+                const frequency = Number(
+                    row.frequency ?? 1
+                );
+
+                return {
+                    lineNo: Number(
+                        row.lineNo ?? index + 1
+                    ),
+
+                    sourceActionDetailId:
+                        row.sourceActionDetailId ??
+                        null,
+
+                    gsdCodeId:
+                        row.gsdCodeId ??
+                        null,
+
+                    gsdCode:
+                        row.gsdCode ??
+                        null,
+
+                    actionName:
+                        row.actionName || '',
+
+                    tmu,
+                    frequency,
+
+                    stepNo:
+                        row.stepNo === null ||
+                            row.stepNo === undefined ||
+                            row.stepNo === ''
+                            ? null
+                            : Number(row.stepNo),
+
+                    note:
+                        row.note ?? null,
+
+                    isSelected:
+                        row.isSelected,
+
+                    seconds:
+                        (tmu * frequency) / 27.8,
+                };
+            });
+
+        setResult({
+            machine: null,
+
+            stitchCount: Number(
+                detail.stitchCount || 0
+            ),
+
+            machineSpeed: Number(
+                detail.machineSpeed || 0
+            ),
+
+            machineVelocity: Number(
+                detail.machineVelocity || 0
+            ),
+
+            allowance: Number(
+                detail.allowance || 0
+            ),
+
+            totalTmu: Number(
+                detail.totalTmu || 0
+            ),
+
+            totalManualSeconds: Number(
+                detail.totalManualSeconds || 0
+            ),
+
+            machineSeconds: Number(
+                detail.machineSeconds || 0
+            ),
+
+            totalSmvBeforeDifficulty: Number(
+                detail.totalSmvBeforeDifficulty || 0
+            ),
+
+            difficultySeconds: Number(
+                detail.difficultySeconds || 0
+            ),
+
+            finalSmv: Number(
+                detail.finalSmv || 0
+            ),
+
+            skillGrade: Number(
+                detail.skillGrade || 0
+            ),
+
+            details: resultDetails,
+        });
+
+        return detail;
+    };
+
     useEffect(() => {
         loadMasterData();
         loadMachines_test();
         loadAnalyses();
     }, []);
+
+
 
     return {
         sources,
@@ -486,6 +753,9 @@ export function useGsdAnalysis() {
         analyses,
         loadingAnalyses,
         loadAnalyses,
-        togglePopupActionRow
+        togglePopupActionRow,
+        loadingAnalysisDetail,
+        loadAnalysisForEdit,
+        loadAnalysisForCopy
     };
 }

@@ -286,13 +286,20 @@ export interface GsdAnalysisCalculateResult {
   } | null;
 }
 
-export interface GsdAnalysisRow extends SourceActionForAnalysis {
-  sourceId?: number | null;
-  sourceCode?: string;
-  sourceName?: string | null;
-  stepNo?: number | string | null;
-  frequency: number;
-  isSelected: boolean;
+export interface GsdAnalysisRow
+    extends Omit<
+        SourceActionForAnalysis,
+        'sourceActionDetailId' | 'frequency'
+    > {
+    sourceActionDetailId?: number | null;
+
+    sourceId?: number | null;
+    sourceCode?: string;
+    sourceName?: string | null;
+
+    stepNo?: number | string | null;
+    frequency: number;
+    isSelected: boolean;
 }
 
 export interface GsdAnalysisSummary {

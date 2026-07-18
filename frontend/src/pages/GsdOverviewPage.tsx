@@ -18,22 +18,106 @@ export default function GsdOverviewPage() {
 
     const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<WorkTab>('analysis');
-    const [selectedAnalysis, setSelectedAnalysis] = useState<GsdAnalysisDetail | null>(null);
-    const [loadingDetail, setLoadingDetail] = useState(false);
+
+    // Dòng đang được chọn trong bảng
+    const [selectedAnalysisId, setSelectedAnalysisId] =
+        useState<number | null>(null);
+
+    // ID đang được chỉnh sửa
+    const [editAnalysisId, setEditAnalysisId] =
+        useState<number | null>(null);
+
+    // ID bản ghi được dùng để sao chép
+    const [copyAnalysisId, setCopyAnalysisId] =
+        useState<number | null>(null);
+
+    const [selectedAnalysis, setSelectedAnalysis] =
+        useState<GsdAnalysisDetail | null>(null);
+
+    const [loadingDetail, setLoadingDetail] =
+        useState(false);
+
+    const isEditMode = editAnalysisId !== null;
+    const isCopyMode = copyAnalysisId !== null;
 
     const openNewOperationWorkspace = () => {
+        setEditAnalysisId(null);
+        setCopyAnalysisId(null);
+        setSelectedAnalysisId(null);
+
         setIsWorkspaceOpen(true);
         setActiveTab('analysis');
     };
 
-    const handleOpenAnalysisDetail = async (analysisId: number) => {
+    const handleEditSelected = () => {
+        if (!selectedAnalysisId) {
+            alert('Vui lòng chọn công đoạn cần sửa.');
+            return;
+        }
+
+        setEditAnalysisId(selectedAnalysisId);
+        setCopyAnalysisId(null);
+
+        setIsWorkspaceOpen(true);
+        setActiveTab('analysis');
+    };
+
+    const handleCopySelected = () => {
+        if (!selectedAnalysisId) {
+            alert(
+                'Vui lòng chọn công đoạn cần sao chép.'
+            );
+            return;
+        }
+
+        // Sao chép không phải edit
+        setEditAnalysisId(null);
+        setCopyAnalysisId(selectedAnalysisId);
+
+        setIsWorkspaceOpen(true);
+        setActiveTab('analysis');
+    };
+
+    const handleCloseWorkspace = async () => {
+        setIsWorkspaceOpen(false);
+
+        setEditAnalysisId(null);
+        setCopyAnalysisId(null);
+        setSelectedAnalysisId(null);
+
+        await loadAnalyses();
+    };
+
+    const handleSaveSuccess = async () => {
+        await loadAnalyses();
+
+        setIsWorkspaceOpen(false);
+
+        setEditAnalysisId(null);
+        setCopyAnalysisId(null);
+        setSelectedAnalysisId(null);
+
+        setActiveTab('analysis');
+    };
+
+    const handleOpenAnalysisDetail = async (
+        analysisId: number
+    ) => {
         setLoadingDetail(true);
 
         try {
-            const data = await gsdAnalysisService.getAnalysisById(analysisId);
+            const data =
+                await gsdAnalysisService.getAnalysisById(
+                    analysisId
+                );
+
             setSelectedAnalysis(data);
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Không tải được chi tiết phân tích.');
+            alert(
+                err instanceof Error
+                    ? err.message
+                    : 'Không tải được chi tiết phân tích.'
+            );
         } finally {
             setLoadingDetail(false);
         }
@@ -47,6 +131,7 @@ export default function GsdOverviewPage() {
                         <h1 className="text-xl font-bold text-slate-800 uppercase tracking-tight">
                             Tổng quan phân tích GSD
                         </h1>
+
                         <p className="text-xs text-slate-500 mt-1">
                             Theo dõi công đoạn đã phân tích và khai báo công đoạn mới.
                         </p>
@@ -66,6 +151,7 @@ export default function GsdOverviewPage() {
                         <div className="text-xs text-blue-600 font-semibold">
                             Tổng công đoạn
                         </div>
+
                         <div className="text-2xl text-blue-900 mt-1">
                             {stats.totalAnalysis}
                         </div>
@@ -75,6 +161,7 @@ export default function GsdOverviewPage() {
                         <div className="text-xs text-green-600 font-semibold">
                             SMV trung bình
                         </div>
+
                         <div className="text-2xl text-green-900 mt-1">
                             {stats.averageSmv.toFixed(2)}
                         </div>
@@ -84,6 +171,7 @@ export default function GsdOverviewPage() {
                         <div className="text-xs text-indigo-600 font-semibold">
                             Tổng TMU
                         </div>
+
                         <div className="text-2xl text-indigo-900 mt-1">
                             {stats.totalTmu.toFixed(2)}
                         </div>
@@ -93,6 +181,7 @@ export default function GsdOverviewPage() {
                         <div className="text-xs text-orange-600 font-semibold">
                             Số máy đã dùng
                         </div>
+
                         <div className="text-2xl text-orange-900 mt-1">
                             {stats.machineCount}
                         </div>
@@ -101,12 +190,50 @@ export default function GsdOverviewPage() {
             </div>
 
             {!isWorkspaceOpen && (
-                <GsdProcessTable
-                    analyses={analyses}
-                    loading={loading}
-                    onRefresh={loadAnalyses}
-                    onRowClick={handleOpenAnalysisDetail}
-                />
+                <div className="space-y-3">
+                    <div className="flex justify-end gap-2">
+                        <button
+                            type="button"
+                            onClick={handleEditSelected}
+                            disabled={!selectedAnalysisId}
+                            className="px-4 py-2 border border-amber-300 text-amber-700 rounded-sm text-xs font-bold hover:bg-amber-50 disabled:opacity-50"
+                        >
+                            Sửa
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleCopySelected}
+                            disabled={!selectedAnalysisId}
+                            className="px-4 py-2 border border-indigo-300 text-indigo-700 rounded-sm text-xs font-bold hover:bg-indigo-50 disabled:opacity-50"
+                        >
+                            Sao chép
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={loadAnalyses}
+                            disabled={loading}
+                            className="px-4 py-2 border border-slate-300 text-slate-700 rounded-sm text-xs font-bold hover:bg-slate-50 disabled:opacity-50"
+                        >
+                            {loading
+                                ? 'Đang tải...'
+                                : 'Tải lại'}
+                        </button>
+                    </div>
+
+                    <GsdProcessTable
+                        analyses={analyses}
+                        loading={loading}
+                        onRefresh={loadAnalyses}
+                        selectedId={selectedAnalysisId}
+                        onRowClick={(analysisId) => {
+                            setSelectedAnalysisId(analysisId);
+                        }}
+                        onDetailClick={handleOpenAnalysisDetail}
+                        showRefreshButton={false}
+                    />
+                </div>
             )}
 
             {isWorkspaceOpen && (
@@ -115,19 +242,25 @@ export default function GsdOverviewPage() {
                         <div className="flex items-center justify-between gap-4 mb-4">
                             <div>
                                 <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
-                                    Khai báo công đoạn mới
+                                    {isEditMode
+                                        ? 'Chỉnh sửa phân tích công đoạn'
+                                        : isCopyMode
+                                            ? 'Sao chép phân tích công đoạn'
+                                            : 'Khai báo công đoạn mới'}
                                 </h2>
+
                                 <p className="text-xs text-slate-500 mt-1">
-                                    Thực hiện phân tích công đoạn và xem quy trình tổng hợp.
+                                    {isEditMode
+                                        ? 'Chỉnh sửa dữ liệu, phân tích lại và lưu cập nhật.'
+                                        : isCopyMode
+                                            ? 'Điều chỉnh dữ liệu bản sao rồi lưu thành công đoạn mới.'
+                                            : 'Thực hiện phân tích công đoạn và xem quy trình tổng hợp.'}
                                 </p>
                             </div>
 
                             <button
                                 type="button"
-                                onClick={() => {
-                                    setIsWorkspaceOpen(false);
-                                    loadAnalyses();
-                                }}
+                                onClick={handleCloseWorkspace}
                                 className="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50"
                             >
                                 Đóng
@@ -137,7 +270,9 @@ export default function GsdOverviewPage() {
                         <div className="border-b border-slate-200 flex gap-2">
                             <button
                                 type="button"
-                                onClick={() => setActiveTab('analysis')}
+                                onClick={() =>
+                                    setActiveTab('analysis')
+                                }
                                 className={`px-4 py-3 text-xs font-bold border-b-2 ${activeTab === 'analysis'
                                     ? 'border-blue-700 text-blue-700 bg-blue-50'
                                     : 'border-transparent text-slate-500 hover:text-blue-700'
@@ -162,17 +297,44 @@ export default function GsdOverviewPage() {
                         </div>
                     </div>
 
-                    <div className="p-5 bg-slate-10">
-                        <div style={{ display: activeTab === 'analysis' ? 'block' : 'none' }}>
-                            <GsdAnalysisPage />
+                    <div className="p-5 bg-slate-50">
+                        <div
+                            style={{
+                                display:
+                                    activeTab === 'analysis'
+                                        ? 'block'
+                                        : 'none',
+                            }}
+                        >
+                            <GsdAnalysisPage
+                                editAnalysisId={editAnalysisId}
+                                copyAnalysisId={copyAnalysisId}
+                                onSaveSuccess={handleSaveSuccess}
+                                onCancel={handleCloseWorkspace}
+                            />
                         </div>
 
-                        <div style={{ display: activeTab === 'process' ? 'block' : 'none' }}>
+                        <div
+                            style={{
+                                display:
+                                    activeTab === 'process'
+                                        ? 'block'
+                                        : 'none',
+                            }}
+                        >
                             <GsdProcessTable
                                 analyses={analyses}
                                 loading={loading}
                                 onRefresh={loadAnalyses}
-                                onRowClick={handleOpenAnalysisDetail}
+                                selectedId={selectedAnalysisId}
+                                onRowClick={(analysisId) => {
+                                    setSelectedAnalysisId(
+                                        analysisId
+                                    );
+                                }}
+                                onDetailClick={
+                                    handleOpenAnalysisDetail
+                                }
                             />
                         </div>
                     </div>
@@ -190,7 +352,9 @@ export default function GsdOverviewPage() {
             {selectedAnalysis && (
                 <GsdAnalysisDetailModal
                     analysis={selectedAnalysis}
-                    onClose={() => setSelectedAnalysis(null)}
+                    onClose={() =>
+                        setSelectedAnalysis(null)
+                    }
                 />
             )}
         </div>

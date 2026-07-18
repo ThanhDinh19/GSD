@@ -420,7 +420,6 @@ async function getAnalyses() {
     return result.recordset;
 }
 
-
 async function getAnalysisById(id) {
     const pool = getPool();
 
@@ -478,23 +477,53 @@ async function getAnalysisById(id) {
     const detailResult = await pool.request()
         .input('analysis_id', sql.Int, id)
         .query(`
-      SELECT
-        d.id AS [id],
-        d.analysis_id AS [analysisId],
-        d.line_no AS [lineNo],
-        d.step_no AS [stepNo],
-        d.source_action_detail_id AS [sourceActionDetailId],
-        d.gsd_code_id AS [gsdCodeId],
-        d.gsd_code AS [gsdCode],
-        d.action_name AS [actionName],
-        d.tmu AS [tmu],
-        d.frequency AS [frequency],
-        CAST((d.tmu * d.frequency) / 27.8 AS DECIMAL(18,6)) AS [seconds],
-        d.note AS [note],
-        d.is_selected AS [isSelected]
-      FROM gsd_analysis_details d
-      WHERE d.analysis_id = @analysis_id
-      ORDER BY d.step_no, d.line_no
+        SELECT
+            d.id AS [id],
+            d.analysis_id AS [analysisId],
+            d.line_no AS [lineNo],
+            d.step_no AS [stepNo],
+
+            d.source_action_detail_id
+                AS [sourceActionDetailId],
+
+            sad.header_id AS [sourceActionHeaderId],
+
+            s.id AS [sourceId],
+            s.source_code AS [sourceCode],
+            s.source_name AS [sourceName],
+
+            d.gsd_code_id AS [gsdCodeId],
+            d.gsd_code AS [gsdCode],
+            d.action_name AS [actionName],
+            d.tmu AS [tmu],
+            d.frequency AS [frequency],
+
+            CAST(
+                (ISNULL(d.tmu, 0) *
+                 ISNULL(d.frequency, 1)) / 27.8
+                AS DECIMAL(18, 6)
+            ) AS [seconds],
+
+            d.note AS [note],
+            d.is_selected AS [isSelected]
+
+        FROM gsd_analysis_details d
+
+        LEFT JOIN source_action_details sad
+            ON sad.id = d.source_action_detail_id
+
+        LEFT JOIN source_action_headers sah
+            ON sah.id = sad.header_id
+
+        LEFT JOIN sources s
+            ON s.id = sah.source_id
+
+        WHERE d.analysis_id = @analysis_id
+
+        ORDER BY
+            d.step_no ASC,
+            d.line_no ASC,
+            d.id ASC
     `);
 
     return {
@@ -503,12 +532,381 @@ async function getAnalysisById(id) {
     };
 }
 
+function buildCopyOperationName(operationName) {
+    const name = String(operationName || '').trim();
+
+    if (!name) {
+        return 'Công đoạn_COPY';
+    }
+
+    // Không thêm lặp lại nếu tên đã có _COPY
+    if (name.toUpperCase().endsWith('_COPY')) {
+        return name;
+    }
+
+    return `${name}_COPY`;
+}
+
+async function getAnalysisCopyDraft(id) {
+    const analysisId = Number(id);
+
+    if (!Number.isInteger(analysisId) || analysisId <= 0) {
+        const err = new Error(
+            'Mã phân tích công đoạn không hợp lệ.'
+        );
+        err.statusCode = 400;
+        throw err;
+    }
+
+    // Dùng lại hàm lấy chi tiết hiện tại
+    const current = await getAnalysisById(analysisId);
+
+    /*
+     * Không trả lại các trường định danh của bản ghi cũ.
+     * Khi lưu, frontend sẽ gọi createAnalysis để sinh:
+     * - id mới
+     * - analysis_no mới
+     * - detail id mới
+     */
+    const {
+        id: ignoredId,
+        analysisNo: ignoredAnalysisNo,
+        analysisDate: ignoredAnalysisDate,
+        createdAt: ignoredCreatedAt,
+        updatedAt: ignoredUpdatedAt,
+        details: currentDetails,
+        ...headerData
+    } = current;
+
+    const details = Array.isArray(currentDetails)
+        ? currentDetails.map((item, index) => {
+            const {
+                id: ignoredDetailId,
+                analysisId: ignoredDetailAnalysisId,
+                ...detailData
+            } = item;
+
+            return {
+                ...detailData,
+
+                // Đánh lại số dòng cho bản sao
+                lineNo: index + 1,
+
+                // Giữ lại các thao tác đã chọn
+                isSelected: item.isSelected !== false,
+            };
+        })
+        : [];
+
+    return {
+        ...headerData,
+
+        // Dùng để frontend biết bản này được sao chép từ đâu
+        copyOfAnalysisId: analysisId,
+
+        operationName: buildCopyOperationName(
+            current.operationName
+        ),
+
+        details,
+    };
+}
+
+async function updateAnalysis(id, payload) {
+    const pool = getPool();
+
+    const analysisId = Number(id);
+    const operationName = String(payload.operationName || '').trim();
+
+    if (!Number.isInteger(analysisId) || analysisId <= 0) {
+        const err = new Error('Mã phân tích công đoạn không hợp lệ.');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    if (!operationName) {
+        const err = new Error('Tên công đoạn là bắt buộc.');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    if (!Array.isArray(payload.details) || payload.details.length === 0) {
+        const err = new Error('Vui lòng chọn thao tác trước khi cập nhật.');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    // Kiểm tra chứng từ tồn tại trước khi tính và mở transaction
+    const currentResult = await pool.request()
+        .input('id', sql.Int, analysisId)
+        .query(`
+            SELECT TOP 1
+                id,
+                analysis_no AS [analysisNo]
+            FROM gsd_analysis_headers
+            WHERE id = @id
+        `);
+
+    const current = currentResult.recordset[0];
+
+    if (!current) {
+        const err = new Error('Không tìm thấy phân tích công đoạn cần cập nhật.');
+        err.statusCode = 404;
+        throw err;
+    }
+
+    // Tính lại toàn bộ dữ liệu header và detail
+    const calculated = await calculateAnalysis(payload);
+
+    if (!calculated.details.length) {
+        const err = new Error(
+            'Vui lòng chọn thao tác có số lần lặp lại lớn hơn 0.'
+        );
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const sourceId = payload.sourceId
+        ? Number(payload.sourceId)
+        : null;
+
+    const machineId = payload.machineId
+        ? Number(payload.machineId)
+        : null;
+
+    const transaction = new sql.Transaction(pool);
+
+    await transaction.begin();
+
+    try {
+        const updateHeaderResult = await new sql.Request(transaction)
+            .input('id', sql.Int, analysisId)
+            .input('source_id', sql.Int, sourceId)
+            .input('machine_id', sql.Int, machineId)
+            .input('operation_name', sql.NVarChar(255), operationName)
+            .input(
+                'seam_length',
+                sql.Decimal(18, 4),
+                toNumber(payload.seamLength, 0)
+            )
+            .input(
+                'attached_action_time',
+                sql.Decimal(18, 4),
+                toNumber(payload.attachedActionTime, 0)
+            )
+            .input(
+                'difficulty_percent',
+                sql.Decimal(18, 4),
+                toNumber(payload.difficultyPercent, 0)
+            )
+            .input(
+                'product_multiplier',
+                sql.Decimal(18, 4),
+                toNumber(payload.productMultiplier, 1)
+            )
+            .input(
+                'stitch_count',
+                sql.Decimal(18, 4),
+                calculated.stitchCount
+            )
+            .input(
+                'machine_speed',
+                sql.Decimal(18, 4),
+                calculated.machineSpeed
+            )
+            .input(
+                'machine_velocity',
+                sql.Decimal(18, 4),
+                calculated.machineVelocity
+            )
+            .input(
+                'allowance',
+                sql.Decimal(18, 4),
+                calculated.allowance
+            )
+            .input(
+                'total_tmu',
+                sql.Decimal(18, 4),
+                calculated.totalTmu
+            )
+            .input(
+                'total_manual_seconds',
+                sql.Decimal(18, 4),
+                calculated.totalManualSeconds
+            )
+            .input(
+                'machine_seconds',
+                sql.Decimal(18, 4),
+                calculated.machineSeconds
+            )
+            .input(
+                'total_smv_before_difficulty',
+                sql.Decimal(18, 4),
+                calculated.totalSmvBeforeDifficulty
+            )
+            .input(
+                'difficulty_seconds',
+                sql.Decimal(18, 4),
+                calculated.difficultySeconds
+            )
+            .input(
+                'final_smv',
+                sql.Decimal(18, 4),
+                calculated.finalSmv
+            )
+            .input(
+                'skill_grade',
+                sql.TinyInt,
+                calculated.skillGrade
+            )
+            .input(
+                'note',
+                sql.NVarChar(500),
+                payload.note
+                    ? String(payload.note).trim()
+                    : null
+            )
+            .query(`
+                UPDATE gsd_analysis_headers
+                SET
+                    source_id = @source_id,
+                    machine_id = @machine_id,
+                    operation_name = @operation_name,
+                    seam_length = @seam_length,
+                    attached_action_time = @attached_action_time,
+                    difficulty_percent = @difficulty_percent,
+                    product_multiplier = @product_multiplier,
+                    stitch_count = @stitch_count,
+                    machine_speed = @machine_speed,
+                    machine_velocity = @machine_velocity,
+                    allowance = @allowance,
+                    total_tmu = @total_tmu,
+                    total_manual_seconds = @total_manual_seconds,
+                    machine_seconds = @machine_seconds,
+                    total_smv_before_difficulty =
+                        @total_smv_before_difficulty,
+                    difficulty_seconds = @difficulty_seconds,
+                    final_smv = @final_smv,
+                    skill_grade = @skill_grade,
+                    note = @note,
+                    updated_at = SYSDATETIME()
+                WHERE id = @id
+            `);
+
+        if (!updateHeaderResult.rowsAffected[0]) {
+            const err = new Error(
+                'Không tìm thấy phân tích công đoạn cần cập nhật.'
+            );
+            err.statusCode = 404;
+            throw err;
+        }
+
+        // Xóa detail cũ
+        await new sql.Request(transaction)
+            .input('analysis_id', sql.Int, analysisId)
+            .query(`
+                DELETE FROM gsd_analysis_details
+                WHERE analysis_id = @analysis_id
+            `);
+
+        // Insert lại detail mới
+        for (const item of calculated.details) {
+            await new sql.Request(transaction)
+                .input('analysis_id', sql.Int, analysisId)
+                .input('line_no', sql.Int, item.lineNo)
+                .input(
+                    'step_no',
+                    sql.Decimal(18, 4),
+                    item.stepNo
+                )
+                .input(
+                    'source_action_detail_id',
+                    sql.Int,
+                    item.sourceActionDetailId
+                )
+                .input(
+                    'gsd_code_id',
+                    sql.Int,
+                    item.gsdCodeId
+                )
+                .input(
+                    'gsd_code',
+                    sql.NVarChar(50),
+                    item.gsdCode
+                )
+                .input(
+                    'action_name',
+                    sql.NVarChar(500),
+                    item.actionName
+                )
+                .input(
+                    'tmu',
+                    sql.Decimal(18, 4),
+                    item.tmu
+                )
+                .input(
+                    'frequency',
+                    sql.Decimal(18, 4),
+                    item.frequency
+                )
+                .input(
+                    'note',
+                    sql.NVarChar(500),
+                    item.note
+                )
+                .input(
+                    'is_selected',
+                    sql.Bit,
+                    item.isSelected ? 1 : 0
+                )
+                .query(`
+                    INSERT INTO gsd_analysis_details (
+                        analysis_id,
+                        line_no,
+                        step_no,
+                        source_action_detail_id,
+                        gsd_code_id,
+                        gsd_code,
+                        action_name,
+                        tmu,
+                        frequency,
+                        note,
+                        is_selected
+                    )
+                    VALUES (
+                        @analysis_id,
+                        @line_no,
+                        @step_no,
+                        @source_action_detail_id,
+                        @gsd_code_id,
+                        @gsd_code,
+                        @action_name,
+                        @tmu,
+                        @frequency,
+                        @note,
+                        @is_selected
+                    )
+                `);
+        }
+
+        await transaction.commit();
+
+        // Trả lại đầy đủ header + details sau cập nhật
+        return await getAnalysisById(analysisId);
+    } catch (err) {
+        await transaction.rollback();
+        throw err;
+    }
+}
+
 module.exports = {
     getSourceActionsForAnalysis,
     calculateAnalysis,
     createAnalysis,
     getAnalyses,
     getAnalysisById,
+    updateAnalysis,
+    getAnalysisCopyDraft
 };
 
 

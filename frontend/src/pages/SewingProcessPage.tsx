@@ -1042,6 +1042,7 @@ export default function SewingProcessPage() {
                                 // formula="SUM(Đơn giá chuẩn)"
                                 value={result?.summary.totalStandardPrice}
                                 money
+                                digits={0}
                             />
 
                             <SummaryBox
@@ -1049,6 +1050,7 @@ export default function SewingProcessPage() {
                                 // formula="Định mức sản lượng * Tổng đơn giá"
                                 value={result?.summary.totalPriceByOutput}
                                 money
+                                digits={0}
                             />
 
                             <SummaryBox
@@ -1056,6 +1058,7 @@ export default function SewingProcessPage() {
                                 // formula="Tổng đơn giá theo định mức / Nhân sự SX"
                                 value={result?.summary.averagePrice}
                                 money
+                                digits={0}
                             />
                         </div>
                     </div>
@@ -1504,14 +1507,14 @@ export default function SewingProcessPage() {
                         {result ? formatNumber(result.summary.taktTime, 4) : '-'}
                     </span>
                 </div>
-                <table className="w-full min-w-[850px] text-xs border-collapse">
+                <table className="w-full min-w-[600px] text-xs border-collapse">
                     <thead className="bg-slate-50 text-slate-700 sticky top-0 z-10">
                         <tr>
-                            <th className="border border-slate-300 px-3 py-2 text-left">Mã máy</th>
-                            <th className="border border-slate-300 px-3 py-2 text-left">Tên máy</th>
-                            <th className="border border-slate-300 px-3 py-2 text-right">Tổng SMV</th>
-                            <th className="border border-slate-300 px-3 py-2 text-right">Nhu cầu</th>
-                            <th className="border border-slate-300 px-3 py-2 text-right">Số lượng MMTB</th>
+                            <th className="border border-slate-300 px-3 py-2 text-left w-[50px]">Mã máy</th>
+                            <th className="border border-slate-300 px-3 py-2 text-left w-[50px]">Tên máy</th>
+                            <th className="border border-slate-300 px-3 py-2 text-right w-[50px]">Tổng SMV</th>
+                            <th className="border border-slate-300 px-3 py-2 text-right w-[50px]">Nhu cầu</th>
+                            <th className="border border-slate-300 px-3 py-2 text-right w-[50px]">Số lượng MMTB</th>
                         </tr>
                     </thead>
 

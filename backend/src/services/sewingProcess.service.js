@@ -123,7 +123,6 @@ function normalizeImages(payload) {
         }));
 }
 
-
 function validatePayload(header, lines) {
     if (!header.documentCode) {
         const err = new Error('Mã chứng từ là bắt buộc.');
@@ -637,7 +636,6 @@ async function updateSewingProcess(id, payload) {
     }
 }
 
-
 async function insertHeader(transaction, header) {
     await new sql.Request(transaction)
         .input('document_code', sql.VarChar(32), header.documentCode)
@@ -992,7 +990,6 @@ async function deleteChildData(transaction, documentCode) {
         `);
 }
 
-
 async function addSewingProcessImage(documentCode, image) {
     const pool = await getPool();
 
@@ -1076,7 +1073,6 @@ async function getActionDetailsById(id) {
 
     return result.recordset;
 }
-
 
 async function getActionDetailsByOperationClusterLineId(operationLineId) {
     const pool = await getPool();

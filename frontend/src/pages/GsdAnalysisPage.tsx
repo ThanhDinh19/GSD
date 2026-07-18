@@ -17,6 +17,13 @@ const initialForm: Omit<GsdAnalysisPayload, 'sourceId' | 'details'> = {
     note: '',
 };
 
+type GsdAnalysisPageProps = {
+    editAnalysisId?: number | null;
+    copyAnalysisId?: number | null;
+    onSaveSuccess?: () => void;
+    onCancel?: () => void;
+};
+
 function formatNumber(value: number | null | undefined, digits = 4) {
     const numberValue = Number(value || 0);
     return numberValue.toFixed(digits);
@@ -41,7 +48,12 @@ function getLaborGradeByDifficulty(value: number | null | undefined) {
 }
 
 
-export default function GsdAnalysisPage() {
+export default function GsdAnalysisPage({
+    editAnalysisId = null,
+    copyAnalysisId = null,
+    onSaveSuccess,
+    onCancel,
+}: GsdAnalysisPageProps) {
     const {
         sources,
         machines,
@@ -80,7 +92,10 @@ export default function GsdAnalysisPage() {
         analyses,
         loadingAnalyses,
         loadAnalyses,
-        togglePopupActionRow
+        togglePopupActionRow,
+        loadingAnalysisDetail,
+        loadAnalysisForEdit,
+        loadAnalysisForCopy
 
     } = useGsdAnalysis();
 
@@ -166,10 +181,29 @@ export default function GsdAnalysisPage() {
         if (!validateBeforeCalculate()) return;
 
         try {
-            const response = await save(form);
-            alert(`${response.message}\nMã phân tích: ${response.data.analysisNo}`);
+            // Chế độ copy: editAnalysisId = null
+            // nên save sẽ gọi createAnalysis.
+            const response = await save(
+                form,
+                editAnalysisId
+            );
+
+            alert(
+                `${response.message}\nMã phân tích: ${response.data.analysisNo || ''
+                }`
+            );
+
+            onSaveSuccess?.();
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Lưu phân tích thất bại.');
+            alert(
+                err instanceof Error
+                    ? err.message
+                    : editAnalysisId
+                        ? 'Cập nhật phân tích thất bại.'
+                        : copyAnalysisId
+                            ? 'Lưu công đoạn sao chép thất bại.'
+                            : 'Lưu phân tích thất bại.'
+            );
         }
     };
 
@@ -179,6 +213,93 @@ export default function GsdAnalysisPage() {
         clearResult();
         setForm(updater);
     };
+
+    useEffect(() => {
+        let cancelled = false;
+
+        const loadData = async () => {
+            try {
+                let detail: any = null;
+
+                if (editAnalysisId) {
+                    detail =
+                        await loadAnalysisForEdit(
+                            editAnalysisId
+                        );
+                } else if (copyAnalysisId) {
+                    detail =
+                        await loadAnalysisForCopy(
+                            copyAnalysisId
+                        );
+                } else {
+                    setForm(initialForm);
+                    clearAnalysisRows();
+                    clearResult();
+                    return;
+                }
+
+                if (cancelled || !detail) return;
+
+                setForm({
+                    machineId:
+                        detail.machineId ?? null,
+
+                    operationName:
+                        detail.operationName ?? '',
+
+                    seamLength: Number(
+                        detail.seamLength || 0
+                    ),
+
+                    attachedActionTime: Number(
+                        detail.attachedActionTime || 0
+                    ),
+
+                    stitchCount: Number(
+                        detail.stitchCount || 0
+                    ),
+
+                    machineSpeed: Number(
+                        detail.machineSpeed || 0
+                    ),
+
+                    allowance: Number(
+                        detail.allowance || 0
+                    ),
+
+                    difficultyPercent: Number(
+                        detail.difficultyPercent || 0
+                    ),
+
+                    productMultiplier: Number(
+                        detail.productMultiplier || 1
+                    ),
+
+                    note:
+                        detail.note ?? '',
+                });
+            } catch (err) {
+                if (cancelled) return;
+
+                alert(
+                    err instanceof Error
+                        ? err.message
+                        : copyAnalysisId
+                            ? 'Không tải được dữ liệu sao chép.'
+                            : 'Không tải được dữ liệu phân tích.'
+                );
+            }
+        };
+
+        loadData();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [
+        editAnalysisId,
+        copyAnalysisId,
+    ]);
 
     return (
         <div className="space-y-5">
@@ -219,11 +340,28 @@ export default function GsdAnalysisPage() {
 
                         <button
                             onClick={handleSave}
-                            disabled={saving}
+                            disabled={saving || loadingAnalysisDetail}
                             className="px-4 py-2 bg-green-700 text-white rounded-lg text-xs font-bold hover:bg-green-800 disabled:opacity-50"
                         >
-                            {saving ? 'Đang lưu...' : 'Lưu phân tích'}
+                            {saving
+                                ? 'Đang lưu...'
+                                : editAnalysisId
+                                    ? 'Lưu cập nhật'
+                                    : copyAnalysisId
+                                        ? 'Lưu bản sao'
+                                        : 'Lưu phân tích'}
                         </button>
+
+                        {(editAnalysisId || copyAnalysisId) && (
+                            <button
+                                type="button"
+                                onClick={onCancel}
+                                disabled={saving}
+                                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-lg text-xs font-bold hover:bg-slate-50"
+                            >
+                                Quay lại
+                            </button>
+                        )}
                     </div>
                 </div>
 
