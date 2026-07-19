@@ -302,6 +302,8 @@ export interface GsdAnalysisRow
     isSelected: boolean;
 }
 
+
+// hiển thị cho bảng Quy trình công đoạn bên Tổng quan GSD
 export interface GsdAnalysisSummary {
   id: number;
   analysisNo: string;
@@ -423,6 +425,7 @@ export interface DepartmentNode_test {
   manager_employee_id?: string | null;
   manager_name?: string | null;
   parent_department_code?: string | null;
+  parent_department_name?: string | null;
   department_type_code: string;
   department_type_name?: string | null;
   department_type_sort_order?: number | null;

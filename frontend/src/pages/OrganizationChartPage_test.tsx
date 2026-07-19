@@ -94,6 +94,46 @@ function DepartmentTreeNode({
     );
 }
 
+type DepartmentParentOption = {
+    departmentCode: string;
+    departmentName: string;
+    level: number;
+    statusId: number;
+};
+
+function flattenDepartmentTree(
+    nodes: DepartmentNode_test[],
+    level = 0
+): DepartmentParentOption[] {
+    return nodes.flatMap((node) => [
+        {
+            departmentCode: node.department_code,
+            departmentName: node.department_name,
+            level,
+            statusId: node.status_id,
+        },
+
+        ...flattenDepartmentTree(
+            node.children || [],
+            level + 1
+        ),
+    ]);
+}
+
+
+function collectDepartmentCodes(
+    node: DepartmentNode_test,
+    result = new Set<string>()
+) {
+    result.add(node.department_code);
+
+    (node.children || []).forEach((child) => {
+        collectDepartmentCodes(child, result);
+    });
+
+    return result;
+}
+
 export default function OrganizationChartPage() {
     const {
         employees,
@@ -113,11 +153,18 @@ export default function OrganizationChartPage() {
     const [createMode, setCreateMode] = useState<CreateMode>(null);
     const [draftParentDepartment, setDraftParentDepartment] = useState<DepartmentNode_test | null>(null);
     const [draftSameLevelDepartment, setDraftSameLevelDepartment] = useState<DepartmentNode_test | null>(null);
+
     const handleOpenContextMenu = (
         event: React.MouseEvent,
         node: DepartmentNode_test
     ) => {
         event.preventDefault();
+
+        // Phòng ban đã giải thể thì không cho mở menu thêm cấp con/cùng cấp
+        if (node.status_id === 1) {
+            setContextMenu(null);
+            return;
+        }
 
         setSelectedDepartment(node);
 
@@ -129,6 +176,11 @@ export default function OrganizationChartPage() {
     };
 
     const handleAddChild = (node: DepartmentNode_test) => {
+        if (node.status_id === 1) {
+            setContextMenu(null);
+            return;
+        }
+
         setFormMode('create-child');
         setSelectedDepartment(node);
         setContextMenu(null);
@@ -143,6 +195,11 @@ export default function OrganizationChartPage() {
     };
 
     const handleAddSibling = (node: DepartmentNode_test) => {
+        if (node.status_id === 1) {
+            setContextMenu(null);
+            return;
+        }
+
         setFormMode('create-sibling');
         setSelectedDepartment(node);
         setContextMenu(null);
@@ -150,13 +207,15 @@ export default function OrganizationChartPage() {
         setForm({
             department_name: '',
             manager_employee_id: '',
-            parent_department_code: node.parent_department_code || '',
-            department_type_code: node.department_type_code,
+            parent_department_code:
+                node.parent_department_code || '',
+            department_type_code:
+                node.department_type_code,
             status_id: 0,
         });
     };
-    
-    const handleCreateRoot = () => {
+
+    const handleCreateDepartment = () => {
         setFormMode('create-child');
         setSelectedDepartment(null);
 
@@ -235,6 +294,32 @@ export default function OrganizationChartPage() {
         status_id: 0,
     });
 
+    const parentDepartmentOptions = useMemo(() => {
+        const excludedCodes = new Set<string>();
+
+        // Khi chỉnh sửa, không cho chọn chính nó
+        // hoặc phòng ban cấp dưới làm phòng ban cha.
+        if (formMode === 'edit' && selectedDepartment) {
+            collectDepartmentCodes(
+                selectedDepartment,
+                excludedCodes
+            );
+        }
+
+        return flattenDepartmentTree(tree)
+            .filter((item) => item.statusId === 0)
+            .filter(
+                (item) =>
+                    !excludedCodes.has(
+                        item.departmentCode
+                    )
+            );
+    }, [
+        tree,
+        formMode,
+        selectedDepartment,
+    ]);
+
     useEffect(() => {
         const closeMenu = () => setContextMenu(null);
 
@@ -258,14 +343,14 @@ export default function OrganizationChartPage() {
             </div> */}
 
             <div className="grid grid-cols-[360px_1fr] gap-4 flex-1 min-h-0">
-                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm min-h-[600px] flex flex-col">
+                <div className="bg-white border border-slate-200 rounded-sm p-4 shadow-sm min-h-[600px] flex flex-col">
                     <div className="flex items-center justify-between mb-3 gap-3">
                         <h2 className="font-bold text-slate-700">Cây sơ đồ tổ chức</h2>
 
                         <button
                             type="button"
-                            onClick={handleCreateRoot}
-                            className="px-3 py-1.5 rounded-lg bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
+                            onClick={handleCreateDepartment}
+                            className="px-3 py-1.5 rounded-sm bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
                         >
                             + Tạo mới
                         </button>
@@ -309,12 +394,12 @@ export default function OrganizationChartPage() {
                     </div>
                 </div>
 
-                <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm min-h-[600px]">
+                <div className="bg-white border border-slate-200 rounded-sm p-4 shadow-sm min-h-[600px]">
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="font-bold text-slate-700">
                             {formMode === 'view' ? 'Thông tin phòng ban' : 'Nhập thông tin phòng ban'}
                         </h2>
-{/* 
+                        {/* 
                         {formMode !== 'view' && (
                             <button
                                 type="button"
@@ -329,13 +414,13 @@ export default function OrganizationChartPage() {
                     {formMode !== 'view' ? (
                         <div className="space-y-4">
                             {formMode === 'create-child' && form.parent_department_code && (
-                                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
+                                <div className="rounded-sm border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">
                                     Đang thêm vị trí cấp con.
                                 </div>
                             )}
 
                             {formMode === 'create-sibling' && selectedDepartment && (
-                                <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
+                                <div className="rounded-sm border border-emerald-200 bg-emerald-50 p-3 text-sm text-emerald-700">
                                     Đang thêm vị trí cùng cấp với: <b>{selectedDepartment.department_name}</b>
                                 </div>
                             )}
@@ -349,7 +434,7 @@ export default function OrganizationChartPage() {
                                     onChange={(e) =>
                                         setForm((prev) => ({ ...prev, department_name: e.target.value }))
                                     }
-                                    className="w-[400px] border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                                    className="w-[400px] border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                                     placeholder="Nhập tên phòng ban"
                                 />
                             </div>
@@ -363,7 +448,7 @@ export default function OrganizationChartPage() {
                                     onChange={(e) =>
                                         setForm((prev) => ({ ...prev, manager_employee_id: e.target.value }))
                                     }
-                                    className="w-[400px] border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                                    className="w-[400px] border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                                 >
                                     <option value="">-- Chọn trưởng phòng --</option>
                                     {employees.map((employee) => (
@@ -378,11 +463,49 @@ export default function OrganizationChartPage() {
                                 <label className="block text-sm font-bold text-slate-700 mb-1">
                                     Phòng ban cha
                                 </label>
-                                <input
-                                    value={form.parent_department_code || 'Không có - cấp gốc'}
-                                    disabled
-                                    className="w-[400px] border border-slate-200 bg-slate-50 rounded-lg px-3 py-2 text-sm text-slate-500"
-                                />
+
+                                <select
+                                    value={form.parent_department_code}
+                                    onChange={(e) =>
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            parent_department_code:
+                                                e.target.value,
+                                        }))
+                                    }
+                                    className="w-[400px] border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none bg-white focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                                >
+                                    <option value="">
+                                        Gốc - Không có phòng ban cha
+                                    </option>
+
+                                    {parentDepartmentOptions.map(
+                                        (department) => {
+                                            const prefix =
+                                                department.level === 0
+                                                    ? ''
+                                                    : `${'— '.repeat(
+                                                        department.level
+                                                    )}`;
+
+                                            return (
+                                                <option
+                                                    key={
+                                                        department.departmentCode
+                                                    }
+                                                    value={
+                                                        department.departmentCode
+                                                    }
+                                                >
+                                                    {prefix}
+                                                    {
+                                                        department.departmentName
+                                                    }
+                                                </option>
+                                            );
+                                        }
+                                    )}
+                                </select>
                             </div>
 
                             <div>
@@ -397,7 +520,7 @@ export default function OrganizationChartPage() {
                                             department_type_code: e.target.value,
                                         }))
                                     }
-                                    className="w-[400px] border border-slate-300 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
+                                    className="w-[400px] border border-slate-300 rounded-sm px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-400"
                                 >
                                     <option value="">-- Chọn loại phòng ban --</option>
                                     {departmentTypes
@@ -431,7 +554,7 @@ export default function OrganizationChartPage() {
                                 <button
                                     type="button"
                                     onClick={handleSaveDepartment}
-                                    className="px-4 py-2 rounded-lg bg-blue-600 text-white text-sm font-bold hover:bg-blue-700"
+                                    className="px-4 py-2 rounded-sm bg-blue-600 text-white text-sm font-bold hover:bg-blue-700"
                                 >
                                     Lưu
                                 </button>
@@ -439,7 +562,7 @@ export default function OrganizationChartPage() {
                                 <button
                                     type="button"
                                     onClick={() => setFormMode('view')}
-                                    className="px-4 py-2 rounded-lg border border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-50"
+                                    className="px-4 py-2 rounded-sm border border-slate-300 text-slate-700 text-sm font-bold hover:bg-slate-50"
                                 >
                                     Hủy
                                 </button>
@@ -452,44 +575,44 @@ export default function OrganizationChartPage() {
                     ) : (
                         <div className="space-y-4">
                             <div>
-                                <div className="text-xs font-bold text-slate-400 uppercase">
-                                    Mã phòng ban
+                                <div className="text-xs font-bold text-slate-700 uppercase">
+                                    Phòng ban cha
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800">
-                                    {selectedDepartment.department_code}
+                                <div className="text-sm text-slate-800">
+                                    {selectedDepartment.parent_department_name ?? 'Cấp gốc'}
                                 </div>
                             </div>
 
                             <div>
-                                <div className="text-xs font-bold text-slate-400 uppercase">
+                                <div className="text-xs font-bold text-slate-700 uppercase">
                                     Tên phòng ban
                                 </div>
-                                <div className="text-sm font-semibold text-slate-800">
+                                <div className="text-sm text-slate-800">
                                     {selectedDepartment.department_name}
                                 </div>
                             </div>
 
                             <div>
-                                <div className="text-xs font-bold text-slate-400 uppercase">
+                                <div className="text-xs font-bold text-slate-700 uppercase">
                                     Loại phòng ban
                                 </div>
-                                <div className="text-sm text-slate-700">
+                                <div className="text-sm text-slate-800">
                                     {selectedDepartment.department_type_name ||
                                         selectedDepartment.department_type_code}
                                 </div>
                             </div>
 
                             <div>
-                                <div className="text-xs font-bold text-slate-400 uppercase">
-                                    Trưởng phòng
+                                <div className="text-xs font-bold text-slate-700 uppercase">
+                                    Người quản lý
                                 </div>
-                                <div className="text-sm text-slate-700">
+                                <div className="text-sm text-slate-800">
                                     {selectedDepartment.manager_name || 'Chưa khai báo'}
                                 </div>
                             </div>
 
                             <div>
-                                <div className="text-xs font-bold text-slate-400 uppercase">
+                                <div className="text-xs font-bold text-slate-700 uppercase">
                                     Trạng thái
                                 </div>
                                 <div
@@ -506,18 +629,18 @@ export default function OrganizationChartPage() {
                                 <button
                                     type="button"
                                     onClick={handleEditDepartment}
-                                    className="px-4 py-2 rounded-lg bg-slate-800 text-white text-sm font-bold hover:bg-slate-900"
+                                    className="px-4 py-2 border border-amber-300 text-amber-700 rounded-sm text-xs font-bold hover:bg-amber-50 disabled:opacity-50"
                                 >
-                                    Chỉnh sửa
+                                    Sửa
                                 </button>
 
                                 {selectedDepartment.status_id === 0 && (
                                     <button
                                         type="button"
                                         onClick={handleDissolveDepartment}
-                                        className="px-4 py-2 rounded-lg bg-rose-600 text-white text-sm font-bold hover:bg-rose-700"
+                                        className="px-4 py-2 border border-amber-300 text-amber-700 rounded-sm text-xs font-bold hover:bg-amber-50 disabled:opacity-50"
                                     >
-                                        Giải thể phòng ban
+                                        Giải thể
                                     </button>
                                 )}
                             </div>

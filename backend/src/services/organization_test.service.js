@@ -73,6 +73,7 @@ const getDepartmentTree = async (includeInactive = false) => {
         d.manager_employee_id,
         e.name AS manager_name,
         d.parent_department_code,
+         parent.department_name AS parent_department_name,
         d.department_type_code,
         dt.department_type_name,
         dt.sort_order AS department_type_sort_order,
@@ -81,6 +82,8 @@ const getDepartmentTree = async (includeInactive = false) => {
         d.created_at,
         d.updated_at
       FROM departments_test d
+      LEFT JOIN departments_test parent
+        ON parent.department_code = d.parent_department_code
       LEFT JOIN department_types_test dt
         ON dt.department_type_code = d.department_type_code
       LEFT JOIN employees e

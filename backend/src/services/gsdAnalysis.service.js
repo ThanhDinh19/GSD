@@ -413,7 +413,7 @@ async function getAnalyses() {
       a.created_at AS [createdAt]
     FROM gsd_analysis_headers a
     LEFT JOIN sources s ON a.source_id = s.id
-    LEFT JOIN machine_equipments m ON a.machine_id = m.id
+    LEFT JOIN machine_equipments_test m ON a.machine_id = m.id
     ORDER BY a.id DESC
   `);
 

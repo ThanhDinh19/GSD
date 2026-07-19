@@ -134,9 +134,17 @@ export default function GsdProcessTable({
 
                         {!loading &&
                             analyses.map((item, index) => {
-                                const isSelected =
-                                    selectedId === item.id;
+                                // const isSelected =
+                                //     selectedId === item.id;
 
+                                let isSelected;
+                                if(selectedId === item.id){
+                                    isSelected = true;
+                                }
+                                else{
+                                    isSelected = false;
+                                }
+                                
                                 return (
                                     <tr
                                         key={item.id}

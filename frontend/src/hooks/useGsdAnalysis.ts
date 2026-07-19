@@ -314,6 +314,7 @@ export function useGsdAnalysis() {
             setLoadingAnalysisDetail(false);
         }
     };
+
     const calculate = async (form: Omit<GsdAnalysisPayload, 'sourceId' | 'details'>) => {
         const payload = buildPayload(form);
 
@@ -606,7 +607,7 @@ export function useGsdAnalysis() {
         );
 
         const resultDetails:
-            GsdAnalysisCalculateResult['details'] =
+            GsdAnalysisCalculateResult['details'] = 
             rows.map((row, index) => {
                 const tmu = Number(row.tmu || 0);
                 const frequency = Number(
@@ -712,8 +713,6 @@ export function useGsdAnalysis() {
         loadMachines_test();
         loadAnalyses();
     }, []);
-
-
 
     return {
         sources,
