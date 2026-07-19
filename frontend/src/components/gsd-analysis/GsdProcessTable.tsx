@@ -3,13 +3,17 @@ import { GsdAnalysisSummary } from '../../types';
 interface GsdProcessTableProps {
     analyses: GsdAnalysisSummary[];
     loading?: boolean;
-    onRefresh?: () => void;
 
     selectedId?: number | null;
     onRowClick?: (analysisId: number) => void;
     onDetailClick?: (analysisId: number) => void;
 
-    showRefreshButton?: boolean;
+    onCreate?: () => void;
+    onEdit?: () => void;
+    onCopy?: () => void;
+    onRefresh?: () => void;
+
+    showActionButtons?: boolean;
 }
 
 function formatDateTime(value?: string) {
@@ -32,13 +36,17 @@ function formatDateTime(value?: string) {
 export default function GsdProcessTable({
     analyses,
     loading = false,
-    onRefresh,
 
     selectedId = null,
     onRowClick,
     onDetailClick,
 
-    showRefreshButton = true,
+    onCreate,
+    onEdit,
+    onCopy,
+    onRefresh,
+
+    showActionButtons = true,
 }: GsdProcessTableProps) {
     const columnCount = onDetailClick ? 8 : 7;
 
@@ -51,19 +59,55 @@ export default function GsdProcessTable({
                     </h2>
 
                     <p className="text-xs text-slate-500 mt-1">
-                        Chọn một công đoạn rồi bấm Sửa để chỉnh sửa phân tích.
+                        Chọn một công đoạn rồi bấm Sửa hoặc Sao chép.
                     </p>
                 </div>
 
-                {showRefreshButton && (
-                    <button
-                        type="button"
-                        onClick={onRefresh}
-                        disabled={loading}
-                        className="px-4 py-2 border border-blue-200 text-blue-700 rounded-sm text-xs font-bold hover:bg-blue-50 disabled:opacity-50"
-                    >
-                        {loading ? 'Đang tải...' : 'Tải lại'}
-                    </button>
+                {showActionButtons && (
+                    <div className="flex items-center gap-2">
+                        {onCreate && (
+                            <button
+                                type="button"
+                                onClick={onCreate}
+                                className="px-4 py-2 bg-blue-700 text-white rounded-sm text-xs font-bold hover:bg-blue-800"
+                            >
+                                + Khai báo công đoạn mới
+                            </button>
+                        )}
+
+                        {onEdit && (
+                            <button
+                                type="button"
+                                onClick={onEdit}
+                                disabled={!selectedId}
+                                className="px-4 py-2 border border-amber-300 text-amber-700 rounded-sm text-xs font-bold hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Sửa
+                            </button>
+                        )}
+
+                        {onCopy && (
+                            <button
+                                type="button"
+                                onClick={onCopy}
+                                disabled={!selectedId}
+                                className="px-4 py-2 border border-indigo-300 text-indigo-700 rounded-sm text-xs font-bold hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                Sao chép
+                            </button>
+                        )}
+
+                        {onRefresh && (
+                            <button
+                                type="button"
+                                onClick={onRefresh}
+                                disabled={loading}
+                                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-sm text-xs font-bold hover:bg-slate-50 disabled:opacity-50"
+                            >
+                                {loading ? 'Đang tải...' : 'Tải lại'}
+                            </button>
+                        )}
+                    </div>
                 )}
             </div>
 
@@ -138,13 +182,13 @@ export default function GsdProcessTable({
                                 //     selectedId === item.id;
 
                                 let isSelected;
-                                if(selectedId === item.id){
+                                if (selectedId === item.id) {
                                     isSelected = true;
                                 }
-                                else{
+                                else {
                                     isSelected = false;
                                 }
-                                
+
                                 return (
                                     <tr
                                         key={item.id}

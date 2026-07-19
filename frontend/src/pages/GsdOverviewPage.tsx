@@ -137,13 +137,13 @@ export default function GsdOverviewPage() {
                         </p>
                     </div>
 
-                    <button
+                    {/* <button
                         type="button"
                         onClick={openNewOperationWorkspace}
                         className="px-4 py-2 bg-blue-700 text-white rounded-sm text-xs hover:bg-blue-800"
                     >
                         + Khai báo công đoạn mới
-                    </button>
+                    </button> */}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -190,50 +190,53 @@ export default function GsdOverviewPage() {
             </div>
 
             {!isWorkspaceOpen && (
-                <div className="space-y-3">
-                    <div className="flex justify-end gap-2">
-                        <button
-                            type="button"
-                            onClick={handleEditSelected}
-                            disabled={!selectedAnalysisId}
-                            className="px-4 py-2 border border-amber-300 text-amber-700 rounded-sm text-xs font-bold hover:bg-amber-50 disabled:opacity-50"
-                        >
-                            Sửa
-                        </button>
+                // <div className="space-y-3">
+                //     <div className="flex justify-end gap-2">
+                //         <button
+                //             type="button"
+                //             onClick={handleEditSelected}
+                //             disabled={!selectedAnalysisId}
+                //             className="px-4 py-2 border border-amber-300 text-amber-700 rounded-sm text-xs font-bold hover:bg-amber-50 disabled:opacity-50"
+                //         >
+                //             Sửa
+                //         </button>
 
-                        <button
-                            type="button"
-                            onClick={handleCopySelected}
-                            disabled={!selectedAnalysisId}
-                            className="px-4 py-2 border border-indigo-300 text-indigo-700 rounded-sm text-xs font-bold hover:bg-indigo-50 disabled:opacity-50"
-                        >
-                            Sao chép
-                        </button>
+                //         <button
+                //             type="button"
+                //             onClick={handleCopySelected}
+                //             disabled={!selectedAnalysisId}
+                //             className="px-4 py-2 border border-indigo-300 text-indigo-700 rounded-sm text-xs font-bold hover:bg-indigo-50 disabled:opacity-50"
+                //         >
+                //             Sao chép
+                //         </button>
 
-                        <button
-                            type="button"
-                            onClick={loadAnalyses}
-                            disabled={loading}
-                            className="px-4 py-2 border border-slate-300 text-slate-700 rounded-sm text-xs font-bold hover:bg-slate-50 disabled:opacity-50"
-                        >
-                            {loading
-                                ? 'Đang tải...'
-                                : 'Tải lại'}
-                        </button>
-                    </div>
+                //         <button
+                //             type="button"
+                //             onClick={loadAnalyses}
+                //             disabled={loading}
+                //             className="px-4 py-2 border border-slate-300 text-slate-700 rounded-sm text-xs font-bold hover:bg-slate-50 disabled:opacity-50"
+                //         >
+                //             {loading
+                //                 ? 'Đang tải...'
+                //                 : 'Tải lại'}
+                //         </button>
+                //     </div>
 
                     <GsdProcessTable
                         analyses={analyses}
                         loading={loading}
-                        onRefresh={loadAnalyses}
                         selectedId={selectedAnalysisId}
                         onRowClick={(analysisId) => {
                             setSelectedAnalysisId(analysisId);
                         }}
                         onDetailClick={handleOpenAnalysisDetail}
-                        showRefreshButton={false}
+                        onCreate={openNewOperationWorkspace}
+                        onEdit={handleEditSelected}
+                        onCopy={handleCopySelected}
+                        onRefresh={loadAnalyses}
+                        showActionButtons
                     />
-                </div>
+                // </div>
             )}
 
             {isWorkspaceOpen && (
