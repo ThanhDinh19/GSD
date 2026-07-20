@@ -14,6 +14,10 @@ const emptyForm: GsdCodePayload = {
     statusId: 0,
 };
 
+// function formatNumber(value: number | null | undefined, digits = 4) {
+//   return Number(value || 0).toFixed(digits);
+// }
+
 export default function GsdCodeMasterPage() {
     const {
         gsdCodes,
@@ -227,7 +231,7 @@ export default function GsdCodeMasterPage() {
                                     <td className="px-4 py-3 text-slate-700">{item.codeNew}</td>
                                     <td className="px-4 py-3 text-right">{item.frequency}</td>
                                     <td className="px-4 py-3 text-right font-bold">{item.tmu}</td>
-                                    <td className="px-4 py-3 text-right">{Number(item.seconds || 0).toFixed(4)}</td>
+                                    <td className="px-4 py-3 text-right">{Number(item.seconds || 0).toFixed(2)}</td>
                                     <td className="px-4 py-3">
                                         <span
                                             className={`px-2 py-1 rounded-full text-[10px] font-bold ${item.statusId === 0

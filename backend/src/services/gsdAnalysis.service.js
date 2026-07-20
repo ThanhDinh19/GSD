@@ -144,6 +144,8 @@ async function calculateAnalysis(payload) {
     const normalizedDetails = selectedInputDetails.map((item, index) => {
         const tmu = toNumber(item.tmu, 0);
         const frequency = toNumber(item.frequency, 1);
+        
+        // giây = (tmu * frequency) / 27.8
         const seconds = (tmu * frequency) / 27.8;
 
         return {

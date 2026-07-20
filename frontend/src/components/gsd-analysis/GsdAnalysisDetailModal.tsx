@@ -64,17 +64,17 @@ export default function GsdAnalysisDetailModal({
 
             <InfoCard label="Số mũi chỉ" value={formatNumber(analysis.stitchCount, 2)} />
             <InfoCard label="Tốc độ máy" value={formatNumber(analysis.machineSpeed, 0)} />
-            <InfoCard label="Vận tốc máy" value={formatNumber(analysis.machineVelocity, 4)} />
+            <InfoCard label="Vận tốc máy" value={formatNumber(analysis.machineVelocity, 2)} />
             <InfoCard label="Hao phí" value={formatNumber(analysis.allowance, 2)} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-7 gap-3 text-xs">
             <MetricCard label="Tổng thao tác" value={analysis.details.length} />
             <MetricCard label="Tổng TMU" value={formatNumber(analysis.totalTmu, 2)} />
-            <MetricCard label="Giây thao tác" value={formatNumber(analysis.totalManualSeconds, 4)} />
-            <MetricCard label="Thời gian MMTB" value={formatNumber(analysis.machineSeconds, 4)} />
-            <MetricCard label="Thời gian mức độ" value={formatNumber(analysis.difficultySeconds, 4)} />
-            <MetricCard label="Tổng SMV" value={analysis.totalSmvBeforeDifficulty} highlight />
+            <MetricCard label="Giây thao tác" value={formatNumber(analysis.totalManualSeconds, 2)} />
+            <MetricCard label="Thời gian MMTB" value={formatNumber(analysis.machineSeconds, 2)} />
+            <MetricCard label="Thời gian mức độ" value={formatNumber(analysis.difficultySeconds, 2)} />
+            <MetricCard label="Tổng SMV" value={formatNumber(analysis.totalSmvBeforeDifficulty, 2)} highlight />
             <MetricCard label="SMV cuối" value={formatNumber(analysis.finalSmv, 0)} highlight />
           </div>
 
@@ -132,7 +132,7 @@ export default function GsdAnalysisDetailModal({
                     </td>
 
                     <td className="px-4 py-3 border border-slate-200 text-right">
-                      {formatNumber(item.seconds, 4)}
+                      {formatNumber(item.seconds, 2)}
                     </td>
 
                     <td className="px-4 py-3 border border-slate-200 text-slate-500">
