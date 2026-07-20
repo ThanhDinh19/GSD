@@ -1362,7 +1362,7 @@ export default function SewingProcessPage() {
                                 </td> */}   
 
                                 <td className="border border-slate-300 px-2 py-2 text-right">
-                                    {result ? formatNumber(line.laborCount, 4) : '-'}
+                                    {result ? formatNumber(line.laborCount, 2) : '-'}
                                 </td>
 
                                 <td className="border border-slate-300 px-2 py-2">
@@ -1420,7 +1420,7 @@ export default function SewingProcessPage() {
                                 </td> */}
 
                                 <td className="border border-slate-300 px-2 py-2 text-right font-bold text-green-700">
-                                    {result ? formatNumber(line.standardPrice, 4) : '-'}
+                                    {result ? formatSummaryMoney(line.standardPrice, 0) : '-'}
                                 </td>
 
                                 <td className="border border-slate-300 px-2 py-2">
@@ -1437,11 +1437,11 @@ export default function SewingProcessPage() {
                                 </td>
 
                                 <td className="border border-slate-300 px-2 py-2 text-right font-bold text-slate-700">
-                                    {result ? formatNumber(line.usedEfficiency, 4) : '-'}
+                                    {result ? formatNumber(line.usedEfficiency, 2) : '-'}
                                 </td>
 
                                 <td className="border border-slate-300 px-2 py-2 text-right font-bold text-blue-700">
-                                    {result ? formatNumber(line.adjustedSam, 4) : '-'}
+                                    {result ? formatNumber(line.adjustedSam, 2) : '-'}
                                 </td>
 
                                 <td className="border border-slate-300 px-2 py-2">

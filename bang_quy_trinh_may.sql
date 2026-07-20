@@ -253,6 +253,7 @@ CREATE TABLE sewing_process_images (
     updated_at DATETIME2 NULL
 );
 
+select * from sewing_process_images;
 
 
 select * from sewing_process_headers
