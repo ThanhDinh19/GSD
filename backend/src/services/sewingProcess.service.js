@@ -318,8 +318,69 @@ function calculateMachineNeedsOnly(payload) {
     return calculated.machineNeeds;
 }
 
+// tạm ngưng
+
+// async function getSewingProcesses() {
+//     const pool = await getPool();
+
+//     const result = await pool.request().query(`
+//        SELECT
+//     h.id AS [id],
+//     h.document_code AS [documentCode],
+//     h.customer_code AS [customerCode],
+//     h.customer_name AS [customerName],
+//     h.item_code AS [itemCode],
+//     h.production_line AS [productionLine],
+//     h.production_round AS [productionRound],
+//     h.working_hours AS [workingHours],
+//     h.manpower AS [manpower],
+//     h.production_manpower AS [productionManpower],
+//     h.quantity AS [quantity],
+//     h.effective_date AS [effectiveDate],
+//     h.issued_date AS [issuedDate],
+//     h.price_mode AS [priceMode],
+//     h.status_id AS [statusId],
+//     h.note AS [note],
+//     h.created_at AS [createdAt],
+//     h.updated_at AS [updatedAt],
+
+//     img.image_file_name AS [imageFileName],
+//     img.image_url AS [imageUrl],
+
+//     s.total_time AS [totalTime],
+//     s.total_sam_gsd AS [totalSamGsd],
+//     s.takt_time AS [taktTime],
+//     s.standard_output AS [standardOutput],
+//     s.total_standard_price AS [totalStandardPrice],
+//     s.average_price AS [averagePrice]
+
+// FROM dbo.sewing_process_headers h
+
+// LEFT JOIN dbo.sewing_process_summaries s
+//     ON s.document_code = h.document_code
+
+// OUTER APPLY (
+//     SELECT TOP 1
+//         m.image_url,
+//         m.image_file_name
+//     FROM dbo.sewing_process_image_links link
+//     INNER JOIN dbo.media_files m
+//         ON m.id = link.media_file_id
+//     WHERE link.sewing_process_id = h.id
+//     ORDER BY
+//         link.sort_order ASC,
+//         link.media_file_id ASC
+// ) img
+
+// ORDER BY h.id DESC;
+//     `);
+
+//     return result.recordset;
+// }
+
+
 async function getSewingProcesses() {
-    const pool = await getPool();
+    const pool = await getPool();   
 
     const result = await pool.request().query(`
        SELECT
@@ -638,6 +699,7 @@ async function updateSewingProcess(id, payload) {
 
 async function insertHeader(transaction, header) {
     await new sql.Request(transaction)
+        .input('id', sql.Int, header.id)
         .input('document_code', sql.VarChar(32), header.documentCode)
         .input('customer_id', sql.Int, header.customerId)
         .input('customer_code', sql.VarChar(32), header.customerCode)
@@ -656,6 +718,7 @@ async function insertHeader(transaction, header) {
         .input('note', sql.NVarChar(500), header.note)
         .query(`
             INSERT INTO sewing_process_headers (
+                id,
                 document_code,
                 customer_id,
                 customer_code,
@@ -674,6 +737,7 @@ async function insertHeader(transaction, header) {
                 note
             )
             VALUES (
+                @id,
                 @document_code,
                 @customer_id,
                 @customer_code,
@@ -951,6 +1015,118 @@ async function insertImages(transaction, documentCode, images) {
             `);
     }
 }
+
+// async function insertImages(
+//     transaction,
+//     sewingProcessId,
+//     images
+// ) {
+//     if (!Array.isArray(images) || images.length === 0) {
+//         return;
+//     }
+
+//     if (!sewingProcessId) {
+//         throw new Error(
+//             'Thiếu sewingProcessId khi lưu hình ảnh quy trình may.'
+//         );
+//     }
+
+//     for (let index = 0; index < images.length; index++) {
+//         const item = images[index];
+
+//         const imageUrl =
+//             item.imageUrl ||
+//             item.image_url ||
+//             item.imageFileName ||
+//             item.image_file_name;
+
+//         const imageFileName =
+//             item.imageFileName ||
+//             item.image_file_name ||
+//             null;
+
+//         if (!imageUrl) {
+//             continue;
+//         }
+
+//         const sortOrder =
+//             item.sortOrder ??
+//             item.sort_order ??
+//             index + 1;
+
+//         const note = item.note ?? null;
+
+//         // Bước 1: lưu thông tin file vào media_files
+//         const mediaResult = await new sql.Request(transaction)
+//             .input(
+//                 'image_url',
+//                 sql.NVarChar(500),
+//                 imageUrl
+//             )
+//             .input(
+//                 'image_file_name',
+//                 sql.NVarChar(255),
+//                 imageFileName
+//             )
+//             .input(
+//                 'note',
+//                 sql.NVarChar(255),
+//                 note
+//             )
+//             .query(`
+//                 INSERT INTO dbo.media_files (
+//                     image_url,
+//                     image_file_name,
+//                     note
+//                 )
+//                 OUTPUT INSERTED.id
+//                 VALUES (
+//                     @image_url,
+//                     @image_file_name,
+//                     @note
+//                 );
+//             `);
+
+//         const mediaFileId =
+//             mediaResult.recordset[0]?.id;
+
+//         if (!mediaFileId) {
+//             throw new Error(
+//                 'Không lấy được ID của hình ảnh vừa tạo.'
+//             );
+//         }
+
+//         // Bước 2: liên kết file với quy trình may
+//         await new sql.Request(transaction)
+//             .input(
+//                 'sewing_process_id',
+//                 sql.Int,
+//                 sewingProcessId
+//             )
+//             .input(
+//                 'media_file_id',
+//                 sql.Int,
+//                 mediaFileId
+//             )
+//             .input(
+//                 'sort_order',
+//                 sql.Int,
+//                 sortOrder
+//             )
+//             .query(`
+//                 INSERT INTO dbo.sewing_process_image_links (
+//                     sewing_process_id,
+//                     media_file_id,
+//                     sort_order
+//                 )
+//                 VALUES (
+//                     @sewing_process_id,
+//                     @media_file_id,
+//                     @sort_order
+//                 );
+//             `);
+//     }
+// }
 
 async function deleteImages(transaction, documentCode) {
     await new sql.Request(transaction)

@@ -985,61 +985,61 @@ export default function SewingProcessPage() {
                         <div className="grid grid-cols-3 gap-3 text-xs">
                             <SummaryBox
                                 label="Tổng thời gian"
-                                // formula="SUM(SAM điều chỉnh)"
+                                formula="SUM(SMV điều chỉnh)"
                                 value={result?.summary.totalTime}
                             />
 
                             <SummaryBox
                                 label="Tổng phút chuẩn"
-                                // formula="Tổng thời gian / 60"
+                                formula="Tổng thời gian / 60"
                                 value={result?.summary.c1}
                             />
 
                             <SummaryBox
                                 label="Tổng SMV GSD gốc"
-                                // formula="SUM(SAM gốc GSD)"
+                                formula="SUM(SMV gốc GSD)"
                                 value={result?.summary.totalSamGsd}
                             />
 
                             <SummaryBox
                                 label="Nhịp sản xuất"
-                                // formula="Tổng thời gian / Nhân sự SX"
+                                formula="Tổng thời gian / Nhân sự SX"
                                 value={result?.summary.taktTime}
                             />
 
                             <SummaryBox
                                 label="Nhịp phút/người"
-                                // formula="Nhịp sản xuất / 60"
+                                formula="Nhịp sản xuất / 60"
                                 value={result?.summary.c3}
                             />
 
                             <SummaryBox
                                 label="Hệ số điều chỉnh SMV"
-                                // formula="Tổng thời gian / C2"
+                                formula="Tổng thời gian / Tổng SMV GSD gốc"
                                 value={result?.summary.c4}
                             />
 
                             <SummaryBox
                                 label="Định mức sản lượng"
-                                // formula="(3600 / Tổng thời gian) * Thời gian LV * Nhân sự SX"
+                                formula="(3600 / Tổng thời gian) * Thời gian LV * Nhân sự SX"
                                 value={result?.summary.standardOutput}
                             />
 
                             <SummaryBox
                                 label="Sản lượng/giờ"
-                                // formula="Định mức sản lượng / Thời gian LV"
+                                formula="Định mức sản lượng / Thời gian LV"
                                 value={result?.summary.c5}
                             />
 
                             <SummaryBox
                                 label="Định mức theo SMV gốc"
-                                // formula="(3600 / C2) * Thời gian LV * Nhân sự SX"
+                                formula="(3600 / Tổng SMV GSD gốc) * Thời gian LV * Nhân sự SX"
                                 value={result?.summary.c6}
                             />
 
                             <SummaryBox
                                 label="Tổng đơn giá"
-                                // formula="SUM(Đơn giá chuẩn)"
+                                formula="SUM(Đơn giá chuẩn)"
                                 value={result?.summary.totalStandardPrice}
                                 money
                                 digits={0}
@@ -1047,7 +1047,7 @@ export default function SewingProcessPage() {
 
                             <SummaryBox
                                 label="Tổng đơn giá theo định mức"
-                                // formula="Định mức sản lượng * Tổng đơn giá"
+                                formula="Định mức sản lượng * Tổng đơn giá"
                                 value={result?.summary.totalPriceByOutput}
                                 money
                                 digits={0}
@@ -1055,7 +1055,7 @@ export default function SewingProcessPage() {
 
                             <SummaryBox
                                 label="Đơn giá bình quân"
-                                // formula="Tổng đơn giá theo định mức / Nhân sự SX"
+                                formula="Tổng đơn giá theo định mức / Nhân sự SX"
                                 value={result?.summary.averagePrice}
                                 money
                                 digits={0}

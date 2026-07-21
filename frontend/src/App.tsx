@@ -34,6 +34,7 @@ const getBackendUrl = () => {
   if (metaEnv && metaEnv.VITE_API_URL !== undefined) return metaEnv.VITE_API_URL;
   return '';
 };
+
 const API_BASE_URL = getBackendUrl();
 
 export default function App() {
@@ -317,7 +318,6 @@ export default function App() {
               </li>
             </ul>
           </div>
-
 
           <div>
             <h3 className={`px-5 text-[9px] font-extrabold text-blue-300 uppercase tracking-widest mb-1.5 opacity-50 whitespace-nowrap ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
@@ -652,3 +652,12 @@ export default function App() {
     </div>
   );
 }
+
+
+// hiện tại tui đang muốn phân quyền cho hệ thống, tui đang cần sự phân quyền chặn chẽ, từng màn hình, roles
+// có thêm danh mục màn hình, có nhật ký ghi logs, quy trình duyệt: Xem xét, Duyệt, Theo dõi,  chi tiết danh sách màn hình có thêm hệ thống
+// user được thấy gì: chuẩn phân quyền dưới database, thấy được gì, được làm gì, được duyệt chứng từ gì, tạo tài khoản, đăng nhập, phân quyền
+// thì thiết kế database như thế nào là phù hợp và cho để sử dụng, sau này nếu có thêm trường, cột thì không phải sửa code nhiều
+// với cũng đang là dự án làm bằng react nữa, code như thế nào cho dễ để khi update database hay sửa thêm xóa gì đó
+// thì không phải sửa code nhiều
+// hãy đưa ra bức tranh tổng quan trước

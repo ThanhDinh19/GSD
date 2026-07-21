@@ -144,7 +144,7 @@ async function calculateAnalysis(payload) {
     const normalizedDetails = selectedInputDetails.map((item, index) => {
         const tmu = toNumber(item.tmu, 0);
         const frequency = toNumber(item.frequency, 1);
-        
+
         // giây = (tmu * frequency) / 27.8
         const seconds = (tmu * frequency) / 27.8;
 
@@ -171,25 +171,27 @@ async function calculateAnalysis(payload) {
         return sum + item.seconds;
     }, 0);
 
-    // vận tốc máy (cm/giây)
+    // vận tốc máy (cm/giây) = (số mũi chỉ / tốc độ máy) * 60
     const machineVelocity = machineSpeed > 0
         ? (stitchCount / machineSpeed) * 60
         : 0;
 
-    // thời gian máy móc thiết bị
+     // thời gian máy móc thiết bị = (vận tốc máy * đường may) + thao tác kèm theo + hao phí
     const machineSeconds =
         (machineVelocity * seamLength) + attachedActionTime + allowance;
 
+    // totalSmvBeforeDifficulty: tổng smv = (tổng giây thao tác + thời gian MMTB) * hệ số SP
     const totalSmvBeforeDifficulty =
         (totalManualSeconds + machineSeconds) * productMultiplier;
-
     // totalManualSeconds: tổng giây thao tác
+
 
     // tổng smv = ( tổng giây thao tác + thời gian MMTB ) * hệ số nhân SP
     // smv cuối = (tổng smv + thời gian mức độ)
-
     const difficultySeconds =
         totalSmvBeforeDifficulty * difficultyPercent / 100;
+
+    // thời gian mức độ = tổng smv * mức độ phức tạp / 100
 
     // difficultySeconds: thời gian mức độ
     // difficultyPercent: mức độ phức tạp

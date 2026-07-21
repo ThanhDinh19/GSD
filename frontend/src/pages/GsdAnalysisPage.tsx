@@ -540,6 +540,7 @@ export default function GsdAnalysisPage({
 
                         <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
                             <div className="text-slate-500">Cm/ giây</div>
+                            <label className="text-slate-400 text-[10px]">Số mũi chỉ / tốc độ máy * 60</label>
                             <div className="font-bold text-slate-800">
                                 {result
                                     ? Number(result.machineVelocity || 0).toFixed(4)
@@ -596,6 +597,7 @@ export default function GsdAnalysisPage({
                     </div>
 
                     <div className="bg-orange-50 border border-orange-100 rounded-lg p-3">
+
                         <div className="text-orange-600">Thời gian MMTB</div>
                         <div className="font-black text-orange-900 text-lg">
                             {result ? formatNumber(result.machineSeconds, 4) : '0.0000'}

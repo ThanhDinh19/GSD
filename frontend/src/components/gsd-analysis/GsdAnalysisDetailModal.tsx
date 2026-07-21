@@ -47,35 +47,35 @@ export default function GsdAnalysisDetailModal({
 
         <div className="p-5 overflow-y-auto space-y-5">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
-            <InfoCard label="Tên công đoạn" value={analysis.operationName} />
-            <InfoCard label="Mã phân tích" value={analysis.analysisNo} />
-            <InfoCard label="Ngày tạo" value={formatDateTime(analysis.createdAt || analysis.analysisDate)} />
-            <InfoCard label="Bậc tay nghề" value={analysis.skillGrade ?? '-'} />
+            <InfoCard label="Tên công đoạn" sub_label={""} value={analysis.operationName} />
+            <InfoCard label="Mã phân tích" sub_label={""} value={analysis.analysisNo} />
+            <InfoCard label="Ngày tạo" sub_label={""} value={formatDateTime(analysis.createdAt || analysis.analysisDate)} />
+            <InfoCard label="Bậc tay nghề" sub_label={""} value={analysis.skillGrade ?? '-'} />
 
-            <InfoCard label="Source" value={analysis.sourceName || '-'} />
-            <InfoCard label="Loại máy / MMTB" value={analysis.machineName || '-'} />
-            <InfoCard label="Code MMTB" value={analysis.codeMMTB || '-'} />
-            <InfoCard label="Mức độ phức tạp" value={`${formatNumber(analysis.difficultyPercent, 0)}%`} />
+            <InfoCard label="Source" sub_label={""} value={analysis.sourceName || '-'} />
+            <InfoCard label="Loại máy / MMTB" sub_label={""} value={analysis.machineName || '-'} />
+            <InfoCard label="Code MMTB" sub_label={""} value={analysis.codeMMTB || '-'} />
+            <InfoCard label="Mức độ phức tạp" sub_label={""} value={`${formatNumber(analysis.difficultyPercent, 0)}%`} />
 
-            <InfoCard label="Đường may" value={formatNumber(analysis.seamLength, 2)} />
-            <InfoCard label="Thao tác kèm theo" value={formatNumber(analysis.attachedActionTime, 2)} />
-            <InfoCard label="Hệ số nhân SP" value={formatNumber(analysis.productMultiplier, 2)} />
-            <InfoCard label="Ghi chú" value={analysis.note || '-'} />
+            <InfoCard label="Đường may" sub_label={""} value={formatNumber(analysis.seamLength, 2)} />
+            <InfoCard label="Thao tác kèm theo" sub_label={""} value={formatNumber(analysis.attachedActionTime, 2)} />
+            <InfoCard label="Hệ số nhân SP" sub_label={""} value={formatNumber(analysis.productMultiplier, 2)} />
+            <InfoCard label="Ghi chú" sub_label={""} value={analysis.note || '-'} />
 
-            <InfoCard label="Số mũi chỉ" value={formatNumber(analysis.stitchCount, 2)} />
-            <InfoCard label="Tốc độ máy" value={formatNumber(analysis.machineSpeed, 0)} />
-            <InfoCard label="Vận tốc máy" value={formatNumber(analysis.machineVelocity, 2)} />
-            <InfoCard label="Hao phí" value={formatNumber(analysis.allowance, 2)} />
+            <InfoCard label="Số mũi chỉ" sub_label={""} value={formatNumber(analysis.stitchCount, 2)} />
+            <InfoCard label="Tốc độ máy" sub_label={""} value={formatNumber(analysis.machineSpeed, 0)} />
+            <InfoCard label="Vận tốc máy" sub_label={"(số mũi chỉ / tốc độ máy) * 60"} value={formatNumber(analysis.machineVelocity, 2)} />
+            <InfoCard label="Hao phí" sub_label={""} value={formatNumber(analysis.allowance, 2)} />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-7 gap-3 text-xs">
-            <MetricCard label="Tổng thao tác" value={analysis.details.length} />
-            <MetricCard label="Tổng TMU" value={formatNumber(analysis.totalTmu, 2)} />
-            <MetricCard label="Giây thao tác" value={formatNumber(analysis.totalManualSeconds, 2)} />
-            <MetricCard label="Thời gian MMTB" value={formatNumber(analysis.machineSeconds, 2)} />
-            <MetricCard label="Thời gian mức độ" value={formatNumber(analysis.difficultySeconds, 2)} />
-            <MetricCard label="Tổng SMV" value={formatNumber(analysis.totalSmvBeforeDifficulty, 2)} highlight />
-            <MetricCard label="SMV cuối" value={formatNumber(analysis.finalSmv, 0)} highlight />
+            <MetricCard label="Tổng thao tác" sub_label={""} value={analysis.details.length} />
+            <MetricCard label="Tổng TMU" sub_label={""} value={formatNumber(analysis.totalTmu, 2)} />
+            <MetricCard label="Giây thao tác" sub_label={""} value={formatNumber(analysis.totalManualSeconds, 2)} />
+            <MetricCard label="Thời gian MMTB" sub_label={"(vận tốc máy * đường may) + thao tác kèm theo + hao phí"} value={formatNumber(analysis.machineSeconds, 2)} />
+            <MetricCard label="Thời gian mức độ" sub_label={"tổng smv * mức độ phức tạp / 100"} value={formatNumber(analysis.difficultySeconds, 2)} />
+            <MetricCard label="Tổng SMV" sub_label={"(tổng giây thao tác + thời gian MMTB) * hệ số SP"} value={formatNumber(analysis.totalSmvBeforeDifficulty, 2)} highlight />
+            <MetricCard label="SMV cuối" sub_label={"(tổng smv + thời gian mức độ)"} value={formatNumber(analysis.finalSmv, 0)} highlight />
           </div>
 
           <div className="border border-slate-200 rounded-lg overflow-x-auto">
@@ -161,14 +161,17 @@ export default function GsdAnalysisDetailModal({
 
 function InfoCard({
   label,
+  sub_label = null,
   value,
 }: {
   label: string;
+  sub_label: string | null;
   value: string | number;
 }) {
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
       <div className="text-slate-500">{label}</div>
+      <label className="text-slate-400">{sub_label}</label>
       <div className="font-bold text-slate-800 mt-1">{value}</div>
     </div>
   );
@@ -176,10 +179,12 @@ function InfoCard({
 
 function MetricCard({
   label,
+  sub_label = null,
   value,
   highlight = false,
 }: {
   label: string;
+  sub_label: string | null;
   value: string | number;
   highlight?: boolean;
 }) {
@@ -189,6 +194,7 @@ function MetricCard({
         : 'bg-blue-50 border-blue-100 text-blue-800'
       }`}>
       <div className="font-semibold">{label}</div>
+      <label className="text-slate-400">{sub_label}</label>
       <div className="text-lg mt-1">{value}</div>
     </div>
   );

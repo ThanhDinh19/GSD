@@ -744,6 +744,7 @@ export interface SewingProcessLine {
 }
 
 export interface SewingProcessPayload {
+  id: number | null;
   documentCode: string;
 
   customerId?: number | null;

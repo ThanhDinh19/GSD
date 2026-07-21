@@ -10,6 +10,7 @@ import { sewingProcessService } from '../services/sewingProcess.service';
 const today = new Date().toISOString().slice(0, 10);
 
 const initialForm: SewingProcessPayload = {
+  id: 0,
   documentCode: '',
 
   customerId: null,
