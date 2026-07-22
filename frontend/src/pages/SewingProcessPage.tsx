@@ -1202,7 +1202,7 @@ export default function SewingProcessPage() {
                                 Nhu cầu MMTB
                             </button>
 
-                                <button
+                                {/* <button
                                 type="button"
                                 onClick={() => setActiveTab('test')}
                                 className={`px-4 py-2 text-xs font-bold border rounded-md ${activeTab === 'test'
@@ -1211,7 +1211,7 @@ export default function SewingProcessPage() {
                                     }`}
                             >
                                 Test
-                            </button>
+                            </button> */}
                         </div>
 
                         {!isViewMode && (
@@ -1666,12 +1666,12 @@ export default function SewingProcessPage() {
 
                     <div className="flex gap-2">
 
-                        <button
+                        {/* <button
                             type='button'
                             onClick={handleTest}
                         >
                             button test
-                        </button>
+                        </button> */}
 
                         <button
                             type="button"
