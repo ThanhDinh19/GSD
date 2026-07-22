@@ -881,3 +881,19 @@ export interface SewingProcessPayload {
   images?: SewingProcessImage[];
 }
 
+
+
+// dinh test 21/07/2026
+
+export interface FormTestUser {
+  id: number;
+  name: string | null;
+  age: number | 0;
+}
+
+
+export interface FormTest {
+  name: string | null;
+  age: number | 0;
+}
+

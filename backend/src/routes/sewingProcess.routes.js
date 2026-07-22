@@ -18,8 +18,8 @@ router.get('/:id', controller.getSewingProcessById);
 router.post('/', controller.createSewingProcess);
 router.put('/:id', controller.updateSewingProcess);
 router.post(
-    '/images/upload',
-    uploadSewingProcessImage.single('image'),
+    '/images/upload', 
+    uploadSewingProcessImage.single('image'), 
     controller.uploadSewingProcessImage
 );
 

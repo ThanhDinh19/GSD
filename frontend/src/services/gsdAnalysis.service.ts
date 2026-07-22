@@ -20,6 +20,8 @@ type CopyAnalysisDraftResponse = {
   };
 };
 
+const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:9000').replace(/\/$/, '');
+
 export const gsdAnalysisService = {
 
   getAnalysisById(id: number) {
@@ -75,4 +77,26 @@ export const gsdAnalysisService = {
     );
   },
 
+
+  async uploadImage(file: File) {
+        const formData = new FormData();
+        formData.append('image', file);
+
+        const res = await fetch(`${API_URL}/api/gsd-analysis/images/upload`, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!res.ok) {
+            const error = await res.json().catch(() => null);
+            throw new Error(error?.message || 'Upload hình ảnh thất bại.');
+        }
+
+        const json = await res.json();
+
+        return json.data as {
+            imageFileName: string;
+            imageUrl: string;
+        };
+    },
 };

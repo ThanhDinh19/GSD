@@ -9,6 +9,7 @@ import {
     sewingProcessService,
     getSewingProcessImageUrl,
 } from '../services/sewingProcess.service';
+import { div, tr } from 'motion/react-client';
 
 function formatNumber(value: number | null | undefined, digits = 4) {
     return Number(value || 0).toFixed(digits);
@@ -270,15 +271,18 @@ function getProductCateGroupName(item: ProductCateGroup) {
     return `${item.cateGroupCode} - ${item.cateGroupName}`;
 }
 
+
 export default function SewingProcessPage() {
     const {
         items,
         form,
+        form_test,
         result,
 
         loading,
         calculating,
         saving,
+        users,
 
         refresh,
         loadDetailToForm,
@@ -292,14 +296,20 @@ export default function SewingProcessPage() {
         calculate,
         createSewingProcess,
         updateSewingProcess,
+        createFormTest,
+        updateFormTest,
         setForm,
+        loadFormTest,
     } = useSewingProcess();
 
+    
 
     type ModalMode = 'create' | 'view' | 'edit' | null;
+    type ModalTest = 'test' | null;
 
     const [selectedId, setSelectedId] = useState<number | null>(null);
     const [modalMode, setModalMode] = useState<ModalMode>(null);
+    const [modalTest, setModalTest] = useState<ModalTest>(null);
 
 
     const isModalOpen = modalMode !== null;
@@ -307,7 +317,7 @@ export default function SewingProcessPage() {
     const isEditMode = modalMode === 'edit';
     // const isCreateMode = modalMode === 'create';
 
-    const [activeTab, setActiveTab] = useState<'process' | 'machine'>('process');
+    const [activeTab, setActiveTab] = useState<'process' | 'machine' | 'test'>('process');
 
     const [isOperationPickerOpen, setIsOperationPickerOpen] = useState(false);
     const [pickerProductCateGroupId, setPickerProductCateGroupId] = useState<number | ''>('');
@@ -326,9 +336,7 @@ export default function SewingProcessPage() {
 
     const mainImageSrc = getSewingProcessImageUrl(mainImageFileName);
 
-    const handleUploadMainImage = async (
-        e: React.ChangeEvent<HTMLInputElement>
-    ) => {
+    const handleUploadMainImage = async ( e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
 
         if (!file) return;
@@ -530,8 +538,13 @@ export default function SewingProcessPage() {
         setModalMode('create');
     };
 
+    const handleTest = () => {
+        setModalTest('test');
+    }
+
     const handleCloseModal = () => {
         setModalMode(null);
+        setModalTest(null);
     };
 
     const handleOpenDetail = async (id: number) => {
@@ -591,6 +604,14 @@ export default function SewingProcessPage() {
         }
     };
 
+    const handleSaveTest = async () => {
+        try{
+            createFormTest();
+        }catch(err: any){
+            alert("lỗi submit")
+        }
+    }
+
     const handleCalculate = async () => {
         try {
             await calculate();
@@ -646,6 +667,7 @@ export default function SewingProcessPage() {
                 <table className="w-full min-w-[1100px] text-xs border-collapse text-[15px]">
                     <thead className="bg-slate-50 text-slate-600">
                         <tr>
+                            <th className="border border-slate-200 px-3 py-2 text-center">STT</th>
                             <th className="border border-slate-200 px-3 py-2 text-left">Mã chứng từ</th>
                             <th className="border border-slate-200 px-3 py-2 text-center">Hình ảnh</th>
                             <th className="border border-slate-200 px-3 py-2 text-left">Khách hàng</th>
@@ -671,7 +693,7 @@ export default function SewingProcessPage() {
                             </tr>
                         )}
 
-                        {items.map((item) => {
+                        {items.map((item, index) => {
                             const isSelected = selectedId === item.id;
 
                             const imageFileName = item.imageFileName || item.imageUrl || '';
@@ -683,7 +705,8 @@ export default function SewingProcessPage() {
                                     onClick={() => setSelectedId(item.id)}
                                     className={`cursor-pointer ${isSelected ? 'bg-blue-50' : 'hover:bg-slate-50'
                                         }`}
-                                >
+                                >   
+                                    <td className="border border-slate-200 px-3 py-2 text-blue-700 text-center">{index + 1}</td>
                                     <td className="border border-slate-200 px-3 py-2 text-blue-700">
                                         <button
                                             type="button"
@@ -770,10 +793,42 @@ export default function SewingProcessPage() {
 
     const inputClass = `w-full border border-slate-300 rounded-lg px-3 py-2 text-sm ${isViewMode ? 'bg-slate-100 cursor-not-allowed' : 'bg-white'
         }`;
+
+    const renderFormTest = () => {
+        return (
+            <div>
+                <label>Nhập tên</label>
+                <div>
+                    <input type="text" placeholder='nhập...' className='border' 
+                        value={form_test.name ?? ''}
+                        onChange={(e) => updateFormTest('name', e.target.value)}
+                    />
+                </div>
+                <label>Nhập tuổi</label>
+                <div>
+                    <input type="number" placeholder='nhập...' className='border' 
+                        value={Number(form_test.age)}
+                        onChange={(e) => updateFormTest('age', Number(e.target.value))}
+                    />
+                </div>
+                <div>
+                    <button
+                        type='button'
+                        onClick={handleSaveTest}
+                    >
+                        Save
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
     const renderSewingProcessForm = () => {
         return (
             <div className="space-y-4">
                 <div className="grid grid-cols-1 xl:grid-cols-12 gap-4">
+
+                    {/* THONG TIN CHUNG */}
                     <div className="xl:col-span-5 bg-white border border-slate-300 rounded-sm p-4">
                         <div className="inline-block px-3 py-1 bg-sky-100 border border-sky-300 text-xs font-bold mb-3">
                             THÔNG TIN CHUNG
@@ -977,6 +1032,7 @@ export default function SewingProcessPage() {
                         </div>
                     </div>
 
+                    {/* THONG TIN SAN XUAT */}
                     <div className="xl:col-span-4 bg-white border border-slate-300 rounded-sm p-4">
                         <div className="inline-block px-3 py-1 bg-sky-100 border border-sky-300 text-xs font-bold mb-3">
                             THÔNG TIN SẢN XUẤT
@@ -1063,6 +1119,7 @@ export default function SewingProcessPage() {
                         </div>
                     </div>
 
+                    {/* HINH ANH */}
                     <div className="xl:col-span-3 bg-white border border-slate-300 rounded-sm p-4">
                         <div className="inline-block px-3 py-1 bg-sky-100 border border-sky-300 text-xs font-bold mb-3">
                             HÌNH ẢNH
@@ -1144,6 +1201,17 @@ export default function SewingProcessPage() {
                             >
                                 Nhu cầu MMTB
                             </button>
+
+                                <button
+                                type="button"
+                                onClick={() => setActiveTab('test')}
+                                className={`px-4 py-2 text-xs font-bold border rounded-md ${activeTab === 'test'
+                                    ? 'bg-sky-100 border-sky-400 text-sky-800'
+                                    : 'bg-white border-slate-300 text-slate-600'
+                                    }`}
+                            >
+                                Test
+                            </button>
                         </div>
 
                         {!isViewMode && (
@@ -1179,6 +1247,9 @@ export default function SewingProcessPage() {
                     {activeTab === 'process' && renderProcessTable()}
 
                     {activeTab === 'machine' && renderMachineNeedTable()}
+                    
+                    {activeTab === 'test' && renderTableTest()}
+
                 </div>
 
                 {isOperationPickerOpen && (
@@ -1257,6 +1328,31 @@ export default function SewingProcessPage() {
             );
         }
     };
+
+    const renderTableTest = () => {
+        return (
+            <div className="overflow-auto border border-slate-300 rounded-sm max-h-[460px]">
+                <table className="min-w-[2600px] w-full text-xs border-collapse">
+                    <thead className="bg-slate-50 text-slate-700 sticky top-0 z-10">
+                        <tr>
+                            <th  className="border border-slate-300 px-2 py-2">STT</th>
+                            <th  className="border border-slate-300 px-2 py-2">name</th>
+                            <th  className="border border-slate-300 px-2 py-2">age</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {users.map((item, index) => (
+                            <tr key={item.id}> 
+                                <th>{index + 1}</th>
+                                <th className="border border-slate-300 px-2 py-2">{item.name}</th>
+                                <th className="border border-slate-300 px-2 py-2">{item.age}</th>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+        );
+    }
 
     const renderProcessTable = () => {
         return (
@@ -1359,7 +1455,7 @@ export default function SewingProcessPage() {
                                         onChange={(e) => updateLine(index, 'toolNeed', e.target.value)}
                                         className="w-full min-w-[120px] outline-none disabled:bg-slate-100"
                                     />
-                                </td> */}   
+                                </td> */}
 
                                 <td className="border border-slate-300 px-2 py-2 text-right">
                                     {result ? formatNumber(line.laborCount, 2) : '-'}
@@ -1569,6 +1665,14 @@ export default function SewingProcessPage() {
                     </div>
 
                     <div className="flex gap-2">
+
+                        <button
+                            type='button'
+                            onClick={handleTest}
+                        >
+                            button test
+                        </button>
+
                         <button
                             type="button"
                             onClick={handleCreateNew}
@@ -1630,6 +1734,16 @@ export default function SewingProcessPage() {
                     onClose={() => setPreviewImageUrl('')}
                 />
             )}
+
+
+            {modalTest && (
+                <ModalTest
+                    onClose={handleCloseModal}
+                    title={""}
+                >
+                    {renderFormTest()}
+                </ModalTest>
+            )}
         </div>
     );
 }
@@ -1644,13 +1758,13 @@ function ImagePreviewModal({
     return (
         <div
             className="fixed inset-0 z-[100] bg-black/75 flex items-center justify-center p-6"
-            onClick={onClose}
+            onClick={onClose} // bấm ngoài ảnh, đóng pop up
         >
             <img
                 src={imageUrl}
                 alt="Hình mã hàng"
                 className="w-[30vw] h-[50vh] object-contain bg-white"
-                onClick={(e) => e.stopPropagation()}
+                onClick={(e) => e.stopPropagation()} // bấm vào ảnh ko đóng pop up
             />
         </div>
     );
@@ -1825,6 +1939,24 @@ function SummaryBox({
     );
 }
 
+function ModalTest({ onClose, title, children, }: { onClose: () => void, title: '', children: ReactNode }) {
+    return (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+            <div className="bg-white w-[50vw] max-w-[1600px] h-[50vh] rounded-sm shadow-xl flex flex-col">
+                <div>
+                    {children}
+                </div>
+                <button
+                    type='button'
+                    onClick={onClose}
+                >
+                    Close
+                </button>
+            </div>
+        </div>
+    );
+};
+
 function SewingProcessModal({
     mode,
     isViewMode,
@@ -1865,14 +1997,6 @@ function SewingProcessModal({
                                 : 'Nhập thông tin, bấm Tính rồi Lưu chứng từ.'}
                         </p>
                     </div>
-                    {/* 
-                    <button
-                        type="button"
-                        onClick={onClose}
-                        className="px-3 py-2 rounded-lg border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50"
-                    >
-                        Đóng
-                    </button> */}
                 </div>
 
                 <div className="flex-1 min-h-0 overflow-auto p-5 bg-slate-50">

@@ -6,6 +6,8 @@ import {
     SewingProcessResult,
     SewingProcessMachineNeed,
     GsdActionDetail,
+    FormTest,
+    FormTestUser,
 } from '../types';
 
 
@@ -20,6 +22,13 @@ export function getSewingProcessImageUrl(fileName?: string | null) {
 }
 
 export const sewingProcessService = {
+
+    async createFormTest(payload: FormTest){
+        return request<ApiResponse<any>>('/api/user', {
+            method: 'POST',
+            body: payload
+        });
+    },
 
     async getActionDetailsByOperationClusterLineId(id: number) {
         const res = await request<ApiResponse<any[]>>(
@@ -41,7 +50,15 @@ export const sewingProcessService = {
         const res = await request<ApiResponse<SewingProcessListItem[]>>(
             '/api/sewing-processes'
         );
+  
+        return res.data;
+    },
 
+    async getUser(){
+        const res = await request<ApiResponse<FormTestUser[]>>(
+            '/api/user'
+        );
+        console.log(res.data);
         return res.data;
     },
 
@@ -112,7 +129,6 @@ export const sewingProcessService = {
             imageUrl: string;
         };
     },
-
 
 };
 

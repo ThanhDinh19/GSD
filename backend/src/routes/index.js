@@ -27,6 +27,9 @@ const router = express.Router();
 const customerRoutes = require('./customer.routes');
 const sewingProcessRoutes = require('./sewingProcess.routes');
 
+// dinh 21/07/2026
+const userRoutes = require('./user.routes');
+
 router.use('/statuses', statusRoutes);
 router.use('/clusters', clusterRoutes);
 router.use('/data', employeeRoutes);
@@ -57,5 +60,9 @@ router.use('/operation-clusters', operationClusterRoutes);
 // dinh 15/07/2026
 router.use('/customers', customerRoutes);
 router.use('/sewing-processes', sewingProcessRoutes);
+
+// dinh 21/07/2026
+router.use('/user', userRoutes);
+
 
 module.exports = router;

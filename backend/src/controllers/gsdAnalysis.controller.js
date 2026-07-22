@@ -89,6 +89,34 @@ const getAnalysisCopyDraft = asyncHandler(
     }
 );
 
+async function uploadGsdAnalysisImage(req, res) {
+    try {
+        console.log('Uploaded file:', req.file);
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message: 'Vui lòng chọn file ảnh.',
+            });
+        }
+
+        return res.json({
+            success: true,
+            data: {
+                imageFileName: req.file.filename,
+                imageUrl: req.file.filename,
+            },
+        });
+    } catch (err) {
+        console.error('uploadGSDImage error:', err);
+
+        return res.status(500).json({
+            success: false,
+            message: err.message || 'Upload hình ảnh thất bại.',
+        });
+    }
+}
+
 module.exports = {
   getSourceActionsForAnalysis,
   calculateAnalysis,
@@ -96,5 +124,6 @@ module.exports = {
   getAnalyses,
   getAnalysisById,
   updateAnalysis,
-  getAnalysisCopyDraft
+  getAnalysisCopyDraft,
+  uploadGsdAnalysisImage
 };

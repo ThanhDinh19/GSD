@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import {
   SewingProcessLine,
   SewingProcessListItem,
   SewingProcessPayload,
   SewingProcessResult,
+  FormTest,
+  FormTestUser,
 } from '../types';
 import { sewingProcessService } from '../services/sewingProcess.service';
 
@@ -75,6 +77,14 @@ export function useSewingProcess() {
     lines: [{ ...initialLine }],
   });
 
+  // dinh test 21/07/2026
+  const [form_test, setFormTest] = useState<FormTest>({
+    name: null,
+    age: 0,
+  });
+
+  const [users, setUser] = useState<FormTestUser[]>([])
+
   const [result, setResult] = useState<SewingProcessResult | null>(null);
 
   const [loading, setLoading] = useState(false);
@@ -92,8 +102,14 @@ export function useSewingProcess() {
     }
   };
 
+  const loadFormTest = async () => {
+    const data = await sewingProcessService.getUser();
+    setUser(data);
+  }
+
   const refresh = async () => {
     await loadSewingProcesses();
+    await loadFormTest();
   };
 
   const updateForm = <K extends keyof SewingProcessPayload>(
@@ -107,6 +123,16 @@ export function useSewingProcess() {
       [key]: value,
     }));
   };
+
+  const updateFormTest = <K extends keyof FormTest>(
+    key: K,
+    value: FormTest[K]
+  ) => {
+    setFormTest((prev) => ({
+      ...prev,
+      [key]: value
+    }))
+  }
 
   const updateLine = <K extends keyof SewingProcessLine>(
     index: number,
@@ -142,6 +168,10 @@ export function useSewingProcess() {
         },
       ],
     }));
+  };
+
+  const createFormTest = async () => {
+    await sewingProcessService.createFormTest(form_test);
   };
 
   const removeLine = (index: number) => {
@@ -304,6 +334,7 @@ export function useSewingProcess() {
     });
   };
 
+
   useEffect(() => {
     refresh();
   }, []);
@@ -311,11 +342,13 @@ export function useSewingProcess() {
   return {
     items,
     form,
+    form_test,
     result,
 
     loading,
     calculating,
     saving,
+    users,
 
     refresh,
     loadSewingProcesses,
@@ -330,6 +363,9 @@ export function useSewingProcess() {
 
     calculate,
     createSewingProcess,
+    createFormTest,
+    updateFormTest,
     updateSewingProcess,
+    loadFormTest,
   };
 }

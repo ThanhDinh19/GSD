@@ -104,8 +104,14 @@ function normalizeLine(row, index) {
 }
 
 function normalizeImages(payload) {
-    // Không gửi images => null, nghĩa là không cập nhật ảnh
-    if (!Object.prototype.hasOwnProperty.call(payload, 'images')) {
+    // Không có thuộc tính images khi cập nhật:
+    // giữ nguyên ảnh hiện có
+    if (
+        !Object.prototype.hasOwnProperty.call(
+            payload,
+            'images'
+        )
+    ) {
         return null;
     }
 
@@ -114,13 +120,35 @@ function normalizeImages(payload) {
     }
 
     return payload.images
-        .filter((item) => item && item.imageUrl)
         .map((item, index) => ({
-            imageUrl: item.imageUrl ?? item.image_url,
-            imageFileName: item.imageFileName ?? item.image_file_name ?? null,
-            sortOrder: toNumber(item.sortOrder ?? item.sort_order, index + 1),
-            note: item.note ?? null,
-        }));
+            mediaFileId:
+                item?.mediaFileId ??
+                item?.media_file_id ??
+                null,
+
+            imageUrl:
+                item?.imageUrl ??
+                item?.image_url ??
+                null,
+
+            imageFileName:
+                item?.imageFileName ??
+                item?.image_file_name ??
+                null,
+
+            sortOrder: toNumber(
+                item?.sortOrder ??
+                item?.sort_order,
+                index + 1
+            ),
+
+            note: item?.note ?? null,
+        }))
+        .filter(
+            (item) =>
+                item.mediaFileId ||
+                item.imageUrl
+        );
 }
 
 function validatePayload(header, lines) {
@@ -318,7 +346,6 @@ function calculateMachineNeedsOnly(payload) {
     return calculated.machineNeeds;
 }
 
-
 async function getSewingProcesses() {
     const pool = await getPool();
 
@@ -377,56 +404,6 @@ ORDER BY h.id DESC;
     return result.recordset;
 }
 
-
-// async function getSewingProcesses() {
-//     const pool = await getPool();   
-
-//     const result = await pool.request().query(`
-//        SELECT
-//     h.id AS [id],
-//     h.document_code AS [documentCode],
-//     h.customer_code AS [customerCode],
-//     h.customer_name AS [customerName],
-//     h.item_code AS [itemCode],
-//     h.production_line AS [productionLine],
-//     h.production_round AS [productionRound],
-//     h.working_hours AS [workingHours],
-//     h.manpower AS [manpower],
-//     h.production_manpower AS [productionManpower],
-//     h.quantity AS [quantity],
-//     h.effective_date AS [effectiveDate],
-//     h.issued_date AS [issuedDate],
-//     h.price_mode AS [priceMode],
-//     h.status_id AS [statusId],
-//     h.note AS [note],
-//     h.created_at AS [createdAt],
-//     h.updated_at AS [updatedAt],
-
-//     img.image_file_name AS [imageFileName],
-//     img.image_url AS [imageUrl],
-
-//     s.total_time AS [totalTime],
-//     s.total_sam_gsd AS [totalSamGsd],
-//     s.takt_time AS [taktTime],
-//     s.standard_output AS [standardOutput],
-//     s.total_standard_price AS [totalStandardPrice],
-//     s.average_price AS [averagePrice]
-// FROM sewing_process_headers h
-// LEFT JOIN sewing_process_summaries s
-//     ON s.document_code = h.document_code
-// OUTER APPLY (
-//     SELECT TOP 1
-//         image_url,
-//         image_file_name
-//     FROM sewing_process_images i
-//     WHERE i.document_code = h.document_code
-//     ORDER BY i.sort_order ASC, i.id ASC
-// ) img
-// ORDER BY h.id DESC
-//     `);
-//     return result.recordset;
-// }
-
 async function getSewingProcessById(id) {
     const pool = await getPool();
 
@@ -466,7 +443,6 @@ async function getSewingProcessById(id) {
     }
 
     const documentCode = header.documentCode;
-    const header_id = header.id;
 
     const summaryResult = await pool.request()
         .input('document_code', sql.VarChar(32), documentCode)
@@ -552,15 +528,39 @@ async function getSewingProcessById(id) {
         `);
 
     const imageResult = await pool.request()
-        .input('sewing_process_id', sql.Int, header_id)
+        .input(
+            'sewing_process_id',
+            sql.Int,
+            id
+        )
         .query(`
-            select 
-                files.image_url as [imageUrl],
-                files.image_file_name as [imageFileName]
-            from sewing_process_image_links links
-            left join media_files files on links.media_file_id = files.id
-            where sewing_process_id = @sewing_process_id
-        `);
+        SELECT
+            m.id AS [id],
+            m.id AS [mediaFileId],
+
+            m.image_url AS [imageUrl],
+            m.image_file_name
+                AS [imageFileName],
+
+            link.sort_order AS [sortOrder],
+
+            m.note AS [note],
+            m.created_at AS [createdAt],
+            m.updated_at AS [updatedAt]
+
+        FROM dbo.sewing_process_image_links link
+
+        INNER JOIN dbo.media_files m
+            ON m.id = link.media_file_id
+
+        WHERE
+            link.sewing_process_id =
+            @sewing_process_id
+
+        ORDER BY
+            link.sort_order ASC,
+            m.id ASC;
+    `);
 
     return {
         header,
@@ -598,35 +598,75 @@ async function ensureDocumentCodeNotExists(pool, documentCode, exceptId = null) 
 async function createSewingProcess(payload) {
     const pool = await getPool();
 
-    const calculated = calculateSewingProcess(payload);
-    const { header, summary, lines, machineNeeds } = calculated;
-    const images = normalizeImages(payload) || [];
+    const calculated =
+        calculateSewingProcess(payload);
 
-    await ensureDocumentCodeNotExists(pool, header.documentCode);
+    const {
+        header,
+        summary,
+        lines,
+        machineNeeds,
+    } = calculated;
 
-    const transaction = new sql.Transaction(pool);
+    const images =
+        normalizeImages(payload) || [];
 
+    await ensureDocumentCodeNotExists(
+        pool,
+        header.documentCode
+    );
+
+    const transaction =
+        new sql.Transaction(pool);
 
     await transaction.begin();
 
     try {
-        const sewingProcessId = await insertHeader(transaction, header);
+        const sewingProcessId =
+            await insertHeader(
+                transaction,
+                header
+            );
 
-        await insertSummary(transaction, header.documentCode, summary);
-        await insertLines(transaction, header.documentCode, lines);
-        await insertMachineNeeds(transaction, header.documentCode, machineNeeds);
-        await insertImages(transaction, sewingProcessId, images);
+        await insertSummary(
+            transaction,
+            header.documentCode,
+            summary
+        );
+
+        await insertLines(
+            transaction,
+            header.documentCode,
+            lines
+        );
+
+        await insertMachineNeeds(
+            transaction,
+            header.documentCode,
+            machineNeeds
+        );
+
+        const insertedImages =
+            await insertImages(
+                transaction,
+                sewingProcessId,
+                images
+            );
+
         await transaction.commit();
 
         return {
-            documentCode: header.documentCode,
+            id: sewingProcessId,
+            documentCode:
+                header.documentCode,
             summary,
             lines,
             machineNeeds,
+            images: insertedImages,
         };
-    } catch (err) {
+    } catch (error) {
         await transaction.rollback();
-        throw err;
+        throw error;
     }
 }
 
@@ -658,8 +698,6 @@ async function updateSewingProcess(id, payload) {
     const oldDocumentCode = current.documentCode;
     const newDocumentCode = header.documentCode;
 
-    const sewingProcessId = current.id; 
-
     const transaction = new sql.Transaction(pool);
 
     await transaction.begin();
@@ -673,10 +711,16 @@ async function updateSewingProcess(id, payload) {
         await insertLines(transaction, newDocumentCode, lines);
         await insertMachineNeeds(transaction, newDocumentCode, machineNeeds);
         if (images !== null) {
-            await deleteImages(transaction, id);
-            await insertImages(transaction, id, images);
-        } else {
-            await moveImagesToNewDocumentCode(transaction, oldDocumentCode, newDocumentCode);
+            await deleteImages(
+                transaction,
+                id
+            );
+
+            await insertImages(
+                transaction,
+                id,
+                images
+            );
         }
         await transaction.commit();
 
@@ -694,64 +738,138 @@ async function updateSewingProcess(id, payload) {
 }
 
 async function insertHeader(transaction, header) {
-    const result = await new sql.Request(transaction)
-        .input('document_code', sql.VarChar(32), header.documentCode)
-        .input('customer_id', sql.Int, header.customerId)
-        .input('customer_code', sql.VarChar(32), header.customerCode)
-        .input('customer_name', sql.NVarChar(100), header.customerName)
-        .input('item_code', sql.VarChar(32), header.itemCode)
-        .input('production_line', sql.NVarChar(50), header.productionLine)
-        .input('production_round', sql.Int, header.productionRound)
-        .input('working_hours', sql.Decimal(6, 2), header.workingHours)
-        .input('manpower', sql.Int, header.manpower)
-        .input('production_manpower', sql.Int, header.productionManpower)
-        .input('quantity', sql.Decimal(18, 2), header.quantity)
-        .input('effective_date', sql.DateTime2, header.effectiveDate)
-        .input('issued_date', sql.DateTime2, header.issuedDate)
-        .input('price_mode', sql.VarChar(32), header.priceMode)
-        .input('status_id', sql.TinyInt, header.statusId)
-        .input('note', sql.NVarChar(500), header.note)
-        .query(`
-            INSERT INTO sewing_process_headers (
-                document_code,
-                customer_id,
-                customer_code,
-                customer_name,
-                item_code,
-                production_line,
-                production_round,
-                working_hours,
-                manpower,
-                production_manpower,
-                quantity,
-                effective_date,
-                issued_date,
-                price_mode,
-                status_id,
-                note
+    const result =
+        await new sql.Request(transaction)
+            .input(
+                'document_code',
+                sql.VarChar(32),
+                header.documentCode
             )
-            OUTPUT INSERTED.id AS id
-            VALUES (
-                @document_code,
-                @customer_id,
-                @customer_code,
-                @customer_name,
-                @item_code,
-                @production_line,
-                @production_round,
-                @working_hours,
-                @manpower,
-                @production_manpower,
-                @quantity,
-                @effective_date,
-                @issued_date,
-                @price_mode,
-                @status_id,
-                @note
+            .input(
+                'customer_id',
+                sql.Int,
+                header.customerId
             )
-        `);
-    console.log('Kết quả insert header:', result);
-    return result.recordset?.[0]?.id;
+            .input(
+                'customer_code',
+                sql.VarChar(32),
+                header.customerCode
+            )
+            .input(
+                'customer_name',
+                sql.NVarChar(100),
+                header.customerName
+            )
+            .input(
+                'item_code',
+                sql.VarChar(32),
+                header.itemCode
+            )
+            .input(
+                'production_line',
+                sql.NVarChar(50),
+                header.productionLine
+            )
+            .input(
+                'production_round',
+                sql.Int,
+                header.productionRound
+            )
+            .input(
+                'working_hours',
+                sql.Decimal(6, 2),
+                header.workingHours
+            )
+            .input(
+                'manpower',
+                sql.Int,
+                header.manpower
+            )
+            .input(
+                'production_manpower',
+                sql.Int,
+                header.productionManpower
+            )
+            .input(
+                'quantity',
+                sql.Decimal(18, 2),
+                header.quantity
+            )
+            .input(
+                'effective_date',
+                sql.DateTime2,
+                header.effectiveDate
+            )
+            .input(
+                'issued_date',
+                sql.DateTime2,
+                header.issuedDate
+            )
+            .input(
+                'price_mode',
+                sql.VarChar(32),
+                header.priceMode
+            )
+            .input(
+                'status_id',
+                sql.TinyInt,
+                header.statusId
+            )
+            .input(
+                'note',
+                sql.NVarChar(500),
+                header.note
+            )
+            .query(`
+                INSERT INTO dbo.sewing_process_headers (
+                    document_code,
+                    customer_id,
+                    customer_code,
+                    customer_name,
+                    item_code,
+                    production_line,
+                    production_round,
+                    working_hours,
+                    manpower,
+                    production_manpower,
+                    quantity,
+                    effective_date,
+                    issued_date,
+                    price_mode,
+                    status_id,
+                    note
+                )
+                OUTPUT INSERTED.id
+                VALUES (
+                    @document_code,
+                    @customer_id,
+                    @customer_code,
+                    @customer_name,
+                    @item_code,
+                    @production_line,
+                    @production_round,
+                    @working_hours,
+                    @manpower,
+                    @production_manpower,
+                    @quantity,
+                    @effective_date,
+                    @issued_date,
+                    @price_mode,
+                    @status_id,
+                    @note
+                );
+            `);
+
+    const sewingProcessId =
+        result.recordset[0]?.id;
+
+    if (!sewingProcessId) {
+        throw new Error(
+            'Không lấy được ID quy trình may vừa tạo.'
+        );
+    }
+
+    return sewingProcessId;
 }
 
 async function updateHeader(transaction, id, header) {
@@ -975,43 +1093,6 @@ async function insertMachineNeeds(transaction, documentCode, machineNeeds) {
     }
 }
 
-// async function insertImages(transaction, documentCode, images) {
-//     if (!Array.isArray(images) || images.length === 0) return;
-
-//     for (const item of images) {
-//         const fileName =
-//             item.imageFileName ||
-//             item.image_file_name ||
-//             item.imageUrl ||
-//             item.image_url;
-
-//         if (!fileName) continue;
-
-//         await new sql.Request(transaction)
-//             .input('document_code', sql.VarChar(32), documentCode)
-//             .input('image_url', sql.NVarChar(500), fileName)
-//             .input('image_file_name', sql.NVarChar(255), fileName)
-//             .input('sort_order', sql.Int, item.sortOrder || item.sort_order || 1)
-//             .input('note', sql.NVarChar(255), item.note || null)
-//             .query(`
-//                 INSERT INTO sewing_process_images (
-//                     document_code,
-//                     image_url,
-//                     image_file_name,
-//                     sort_order,
-//                     note
-//                 )
-//                 VALUES (
-//                     @document_code,
-//                     @image_url,
-//                     @image_file_name,
-//                     @sort_order,
-//                     @note
-//                 )
-//             `);
-//     }
-// }
-
 async function insertImages(
     transaction,
     sewingProcessId,
@@ -1054,9 +1135,21 @@ async function insertImages(
 
         // Bước 1: lưu thông tin file vào media_files
         const mediaResult = await new sql.Request(transaction)
-            .input('image_url', sql.NVarChar(500), imageUrl)
-            .input('image_file_name', sql.NVarChar(255), imageFileName)
-            .input('note', sql.NVarChar(255), note)
+            .input(
+                'image_url',
+                sql.NVarChar(500),
+                imageUrl
+            )
+            .input(
+                'image_file_name',
+                sql.NVarChar(255),
+                imageFileName
+            )
+            .input(
+                'note',
+                sql.NVarChar(255),
+                note
+            )
             .query(`
                 INSERT INTO dbo.media_files (
                     image_url,
@@ -1082,9 +1175,21 @@ async function insertImages(
 
         // Bước 2: liên kết file với quy trình may
         await new sql.Request(transaction)
-            .input('sewing_process_id', sql.Int, sewingProcessId)
-            .input('media_file_id', sql.Int, mediaFileId)
-            .input('sort_order',sql.Int,sortOrder)
+            .input(
+                'sewing_process_id',
+                sql.Int,
+                sewingProcessId
+            )
+            .input(
+                'media_file_id',
+                sql.Int,
+                mediaFileId
+            )
+            .input(
+                'sort_order',
+                sql.Int,
+                sortOrder
+            )
             .query(`
                 INSERT INTO dbo.sewing_process_image_links (
                     sewing_process_id,
@@ -1147,20 +1252,6 @@ async function deleteImages(
     }
 }
 
-async function moveImagesToNewDocumentCode(transaction, oldDocumentCode, newDocumentCode) {
-    if (oldDocumentCode === newDocumentCode) return;
-
-    await new sql.Request(transaction)
-        .input('old_document_code', sql.VarChar(32), oldDocumentCode)
-        .input('new_document_code', sql.VarChar(32), newDocumentCode)
-        .query(`
-            UPDATE sewing_process_images
-            SET document_code = @new_document_code,
-                updated_at = SYSDATETIME()
-            WHERE document_code = @old_document_code
-        `);
-}
-
 async function deleteChildData(transaction, documentCode) {
     await new sql.Request(transaction)
         .input('document_code', sql.VarChar(32), documentCode)
@@ -1176,42 +1267,91 @@ async function deleteChildData(transaction, documentCode) {
         `);
 }
 
-async function addSewingProcessImage(documentCode, image) {
+async function addSewingProcessImage(
+    sewingProcessId,
+    image
+) {
     const pool = await getPool();
 
-    await pool.request()
-        .input('document_code', sql.VarChar(32), documentCode)
-        .input('image_url', sql.NVarChar(500), image.imageUrl)
-        .input('image_file_name', sql.NVarChar(255), image.imageFileName || null)
-        .input('sort_order', sql.Int, image.sortOrder || 1)
-        .input('note', sql.NVarChar(255), image.note || null)
-        .query(`
-            INSERT INTO sewing_process_images (
-                document_code,
-                image_url,
-                image_file_name,
-                sort_order,
-                note
-            )
-            VALUES (
-                @document_code,
-                @image_url,
-                @image_file_name,
-                @sort_order,
-                @note
-            )
-        `);
+    const transaction =
+        new sql.Transaction(pool);
+
+    await transaction.begin();
+
+    try {
+        await insertImages(
+            transaction,
+            sewingProcessId,
+            [image]
+        );
+
+        await transaction.commit();
+
+        return {
+            sewingProcessId,
+            success: true,
+        };
+    } catch (error) {
+        await transaction.rollback();
+        throw error;
+    }
 }
 
-async function deleteSewingProcessImage(id) {
+async function deleteSewingProcessImage(
+    sewingProcessId,
+    mediaFileId
+) {
     const pool = await getPool();
 
-    await pool.request()
-        .input('id', sql.Int, id)
-        .query(`
-            DELETE FROM sewing_process_images
-            WHERE id = @id
-        `);
+    const transaction =
+        new sql.Transaction(pool);
+
+    await transaction.begin();
+
+    try {
+        await new sql.Request(transaction)
+            .input('sewing_process_id',sql.Int,sewingProcessId)
+            .input('media_file_id',sql.Int,mediaFileId)
+            .query(`
+                DELETE
+                FROM dbo.sewing_process_image_links
+                WHERE sewing_process_id =
+                      @sewing_process_id
+                  AND media_file_id =
+                      @media_file_id;
+            `);
+
+        await new sql.Request(transaction)
+            .input('media_file_id',sql.Int, mediaFileId)
+            .query(`
+                DELETE m
+                FROM dbo.media_files m
+                WHERE m.id = @media_file_id
+
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM dbo.sewing_process_image_links sp
+                      WHERE sp.media_file_id = m.id
+                  )
+
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM dbo.gsd_analysis_image_links ga
+                      WHERE ga.media_file_id = m.id
+                  );
+            `);
+
+        await transaction.commit();
+
+        return {
+            sewingProcessId,
+            mediaFileId,
+            success: true,
+        };
+    } catch (error) {
+        await transaction.rollback();
+        throw error;
+    }
 }
 
 async function getActionDetailsById(id) {
