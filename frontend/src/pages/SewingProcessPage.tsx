@@ -1995,39 +1995,91 @@ function OperationActionsModal({
 }
 
 function SummaryBox({
-    label,
-    formula,
-    value,
-    money = false,
-    digits = 2,
+  label,
+  formula,
+  value,
+  money = false,
+  digits = 2,
 }: {
-    label: string;
-    formula?: string;
-    value: number | null | undefined;
-    money?: boolean;
-    digits?: number;
+  label: string;
+  formula?: string;
+  value: number | null | undefined;
+  money?: boolean;
+  digits?: number;
 }) {
-    const displayValue = money
-        ? formatSummaryMoney(value, digits)
-        : formatSummaryNumber(value, digits);
+  const displayValue = money
+    ? formatSummaryMoney(value, digits)
+    : formatSummaryNumber(value, digits);
 
-    return (
-        <div className="border border-slate-200 rounded-sm p-2 bg-slate-50 min-h-[74px]">
-            <div className="text-slate-500 font-semibold leading-snug">
-                {label}
-            </div>
-
-            {formula && (
-                <div className="text-[10px] text-slate-400 mt-0.5 leading-snug">
-                    {formula}
-                </div>
-            )}
-
-            <div className="font-bold text-slate-800 mt-1 break-words">
-                {displayValue}
-            </div>
+  return (
+    <div className="border border-slate-200 rounded-sm p-2 bg-slate-50 min-h-[74px]">
+      <div className="flex items-center gap-2">
+        <div className="text-slate-500 font-semibold leading-snug">
+          {label}
         </div>
-    );
+
+        {formula && (
+          <div className="relative group">
+            <button
+              type="button"
+              aria-label={formula}
+              className="
+                flex h-4 w-4
+                shrink-0 items-center justify-center
+                rounded-full
+                border border-slate-400
+                text-[10px]
+                font-bold
+                text-slate-500
+                cursor-help
+                focus:outline-none
+              "
+            >
+              ?
+            </button>
+
+            <div
+              className="
+                invisible absolute
+                left-1/2 bottom-full
+                z-50 mb-2
+                w-max max-w-[280px]
+                -translate-x-1/2
+                rounded
+                bg-slate-800
+                px-3 py-2
+                text-xs font-normal
+                leading-snug text-white
+                shadow-lg
+                opacity-0
+                pointer-events-none
+                transition-opacity
+                group-hover:visible
+                group-hover:opacity-100
+                group-focus-within:visible
+                group-focus-within:opacity-100
+              "
+            >
+              {formula}
+
+              <div
+                className="
+                  absolute left-1/2 top-full
+                  -translate-x-1/2
+                  border-4 border-transparent
+                  border-t-slate-800
+                "
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="font-bold text-slate-800 mt-1 break-words">
+        {displayValue}
+      </div>
+    </div>
+  );
 }
 
 function ModalTest({ onClose, title, children, }: { onClose: () => void, title: '', children: ReactNode }) {

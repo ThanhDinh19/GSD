@@ -1548,7 +1548,6 @@ export default function OperationClusterPage_test() {
                             </div>
                         )} */}
                 </div>
-
                 {/* khai báo cụm công đoạn */}
                 {isCreateModalOpen && (
                     <div className="fixed inset-0 z-[80] bg-slate-900/40 flex items-center justify-center p-3">
@@ -2270,7 +2269,6 @@ export default function OperationClusterPage_test() {
                     </div>
                 )}
             </div>
-
             {/* pop up show chi tiết mã chứng từ */}
             {isSavedDetailOpen && selectedDetail && (
                 <div className="fixed inset-0 z-50 bg-slate-900/40 flex items-center justify-center p-6">

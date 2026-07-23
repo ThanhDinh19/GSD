@@ -94,7 +94,6 @@ export default function GsdAnalysisDetailModal({
               )}
             </div>
           </div>
-
           <div className="border border-slate-200 rounded-lg overflow-x-auto">
             <table className="min-w-full text-xs border-collapse">
               <thead className="bg-slate-50 text-slate-500 uppercase">
@@ -182,14 +181,75 @@ function InfoCard({
   value,
 }: {
   label: string;
-  sub_label: string | null;
+  sub_label?: string | null;
   value: string | number;
 }) {
   return (
     <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-      <div className="text-slate-500">{label}</div>
-      <label className="text-slate-400">{sub_label}</label>
-      <div className="font-bold text-slate-800 mt-1">{value}</div>
+      <div className="flex items-center gap-2">
+        <div className="text-slate-500">
+          {label}
+        </div>
+
+        {sub_label && (
+          <div className="relative group">
+            <button
+              type="button"
+              aria-label={sub_label}
+              className="
+                flex h-4 w-4
+                items-center justify-center
+                rounded-full
+                border border-slate-400
+                text-[10px]
+                font-bold
+                text-slate-500
+                cursor-help
+                focus:outline-none
+              "
+            >
+              ?
+            </button>
+
+            <div
+              className="
+                invisible absolute
+                left-1/2 bottom-full
+                z-50 mb-2
+                w-max max-w-[240px]
+                -translate-x-1/2
+                rounded
+                bg-slate-800
+                px-3 py-2
+                text-xs font-normal text-white
+                shadow-lg
+                opacity-0
+                pointer-events-none
+                transition-opacity
+                group-hover:visible
+                group-hover:opacity-100
+                group-focus-within:visible
+                group-focus-within:opacity-100
+              "
+            >
+              {sub_label}
+
+              <div
+                className="
+                  absolute left-1/2 top-full
+                  -translate-x-1/2
+                  border-4 border-transparent
+                  border-t-slate-800
+                "
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="font-bold text-slate-800 mt-1">
+        {value}
+      </div>
     </div>
   );
 }
@@ -201,18 +261,91 @@ function MetricCard({
   highlight = false,
 }: {
   label: string;
-  sub_label: string | null;
+  sub_label?: string | null;
   value: string | number;
   highlight?: boolean;
 }) {
   return (
-    <div className={`border rounded-lg p-3 ${highlight
-      ? 'bg-green-50 border-green-100 text-green-800'
-      : 'bg-blue-50 border-blue-100 text-blue-800'
-      }`}>
-      <div className="font-semibold">{label}</div>
-      <label className="text-slate-400">{sub_label}</label>
-      <div className="text-lg mt-1">{value}</div>
+    <div
+      className={`border rounded-lg p-3 ${
+        highlight
+          ? 'bg-green-50 border-green-100 text-green-800'
+          : 'bg-blue-50 border-blue-100 text-blue-800'
+      }`}
+    >
+      <div className="flex items-center gap-2">
+        <div className="font-semibold">
+          {label}
+        </div>
+
+        {sub_label && (
+          <div className="relative group">
+            <button
+              type="button"
+              aria-label={sub_label}
+              className="
+                w-4 h-4
+                rounded-full
+                border border-slate-400
+                text-slate-500
+                text-[10px]
+                font-bold
+                flex items-center justify-center
+                cursor-help
+                focus:outline-none
+              "
+            >
+              ?
+            </button>
+
+            <div
+              className="
+                absolute
+                left-1/2
+                bottom-full
+                z-50
+                mb-2
+                w-max
+                max-w-[240px]
+                -translate-x-1/2
+                rounded
+                bg-slate-800
+                px-3 py-2
+                text-xs
+                font-normal
+                text-white
+                shadow-lg
+                opacity-0
+                invisible
+                pointer-events-none
+                transition-opacity
+                group-hover:opacity-100
+                group-hover:visible
+                group-focus-within:opacity-100
+                group-focus-within:visible
+              "
+            >
+              {sub_label}
+
+              <div
+                className="
+                  absolute
+                  left-1/2
+                  top-full
+                  -translate-x-1/2
+                  border-4
+                  border-transparent
+                  border-t-slate-800
+                "
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="text-lg mt-1">
+        {value}
+      </div>
     </div>
   );
 }
