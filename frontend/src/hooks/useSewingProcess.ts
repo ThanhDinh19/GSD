@@ -12,7 +12,7 @@ import { sewingProcessService } from '../services/sewingProcess.service';
 const today = new Date().toISOString().slice(0, 10);
 
 const initialForm: SewingProcessPayload = {
-  id: 0,
+  // id: 0,
   documentCode: '',
 
   customerId: null,
@@ -232,6 +232,87 @@ export function useSewingProcess() {
     return true;
   };
 
+  function findOriginalLine(
+    calculatedLine: SewingProcessLine,
+    previousLines: SewingProcessLine[],
+    index: number
+  ) {
+    // Ưu tiên theo gsdAnalysisId
+    if (
+      calculatedLine.gsdAnalysisId !== null &&
+      calculatedLine.gsdAnalysisId !== undefined
+    ) {
+      const foundByGsdId = previousLines.find(
+        (line) =>
+          Number(line.gsdAnalysisId) ===
+          Number(calculatedLine.gsdAnalysisId)
+      );
+
+      if (foundByGsdId) {
+        return foundByGsdId;
+      }
+    }
+
+    // Tiếp theo theo sourceLineId
+    if (
+      calculatedLine.sourceLineId !== null &&
+      calculatedLine.sourceLineId !== undefined
+    ) {
+      const foundBySourceLine = previousLines.find(
+        (line) =>
+          Number(line.sourceLineId) ===
+          Number(calculatedLine.sourceLineId)
+      );
+
+      if (foundBySourceLine) {
+        return foundBySourceLine;
+      }
+    }
+
+    // Tiếp theo theo operationCode
+    if (calculatedLine.operationCode) {
+      const foundByOperationCode =
+        previousLines.find(
+          (line) =>
+            String(line.operationCode || '') ===
+            String(
+              calculatedLine.operationCode
+            )
+        );
+
+      if (foundByOperationCode) {
+        return foundByOperationCode;
+      }
+    }
+
+    // Cuối cùng mới lấy theo vị trí
+    return previousLines[index];
+  }
+
+  // const calculate = async () => {
+  //   if (!validate()) return null;
+
+  //   setCalculating(true);
+
+  //   try {
+  //     const payload = buildPayload();
+  //     const data = await sewingProcessService.calculateSewingProcess(payload);
+
+  //     setResult(data);
+
+  //     setForm((prev) => ({
+  //       ...data.header,
+  //       lines: data.lines,
+  //       images: prev.images || [],
+  //     }));
+
+  //     return data;
+  //   } finally {
+  //     setCalculating(false);
+  //   }
+  // };
+
+
   const calculate = async () => {
     if (!validate()) return null;
 
@@ -239,21 +320,71 @@ export function useSewingProcess() {
 
     try {
       const payload = buildPayload();
-      const data = await sewingProcessService.calculateSewingProcess(payload);
 
-      setResult(data);
+      // Giữ lại lines trước khi gọi API
+      const previousLines = payload.lines;
+
+      console.log(
+        'LINES TRƯỚC KHI TÍNH:',
+        previousLines
+      );
+
+      const data =
+        await sewingProcessService
+          .calculateSewingProcess(payload);
+
+      console.log(
+        'LINES BACKEND TRẢ VỀ:',
+        data.lines
+      );
+
+      const mergedLines =
+        data.lines.map(
+          (calculatedLine, index) => {
+            const oldLine =
+              findOriginalLine(
+                calculatedLine,
+                previousLines,
+                index
+              );
+
+            return {
+              ...calculatedLine,
+
+              imageFileName:
+                calculatedLine.imageFileName ??
+                oldLine?.imageFileName ??
+                null,
+
+              imageUrl:
+                calculatedLine.imageUrl ??
+                oldLine?.imageUrl ??
+                null,
+            };
+          }
+        );
+
+      const mergedResult = {
+        ...data,
+        lines: mergedLines,
+      };
+
+      setResult(mergedResult);
 
       setForm((prev) => ({
         ...data.header,
-        lines: data.lines,
+        lines: mergedLines,
+
+        // Giữ ảnh đại diện chung
         images: prev.images || [],
       }));
 
-      return data;
+      return mergedResult;
     } finally {
       setCalculating(false);
     }
   };
+
 
   const createSewingProcess = async () => {
     if (!validate()) return;

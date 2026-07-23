@@ -65,9 +65,29 @@ function normalizeHeader(payload) {
     };
 }
 
+function toNullableInt(value) {
+    if (
+        value === null ||
+        value === undefined ||
+        value === ''
+    ) {
+        return null;
+    }
+
+    const numberValue = Number(value);
+
+    return Number.isInteger(numberValue)
+        ? numberValue
+        : null;
+}
+
 function normalizeLine(row, index) {
     return {
-        gsdAnalysisId: row.gsdAnalysisId ?? row.gsd_analysis_id ?? null,
+        gsdAnalysisId: toNullableInt(
+            row.gsdAnalysisId ??
+            row.gsd_analysis_id
+        ),
+
         sourceDocumentCode: row.sourceDocumentCode ?? row.source_document_code ?? null,
         sourceLineId: row.sourceLineId ?? row.source_line_id ?? null,
 
@@ -100,6 +120,17 @@ function normalizeLine(row, index) {
 
         cbcTime: row.cbcTime ?? row.cbc_time ?? null,
         note: row.note ?? null,
+
+         // Giữ lại thông tin ảnh
+        imageFileName:
+            row.imageFileName ??
+            row.image_file_name ??
+            null,
+
+        imageUrl:
+            row.imageUrl ??
+            row.image_url ??
+            null,
     };
 }
 
@@ -318,7 +349,6 @@ function calculateMachineNeedsOnly(payload) {
     return calculated.machineNeeds;
 }
 
-
 async function getSewingProcesses() {
     const pool = await getPool();
 
@@ -495,40 +525,47 @@ async function getSewingProcessById(id) {
     const lineResult = await pool.request()
         .input('document_code', sql.VarChar(32), documentCode)
         .query(`
-           SELECT
-                id AS [id],
-                document_code AS [documentCode],
-                source_document_code AS [sourceDocumentCode],
-                gsd_analysis_id AS [gsdAnalysisId],
-                source_line_id AS [sourceLineId],
-                line_no AS [lineNo],
-                cluster_no AS [clusterNo],
-                cluster_name AS [clusterName],
-                operation_code AS [operationCode],
-                operation_name AS [operationName],
-                line_order AS [lineOrder],
-                skill_grade_id AS [skillGradeId],
-                skill_grade_level AS [skillGradeLevel],
-                machine_id AS [machineId],
-                machine_code AS [machineCode],
-                machine_name AS [machineName],
-                sam_gsd AS [samGsd],
-                salary_coefficient AS [salaryCoefficient],
-                labor_count AS [laborCount],
-                standard_price AS [standardPrice],
-                required_efficiency AS [requiredEfficiency],
-                adjusted_sam AS [adjustedSam],
-                used_efficiency AS [usedEfficiency],
-                total_actions AS [totalActions],
-                tool_need AS [toolNeed],
-                sewing_employee AS [sewingEmployee],
-                cbc_time AS [cbcTime],
-                note AS [note],
-                created_at AS [createdAt],
-                updated_at AS [updatedAt]
-            FROM sewing_process_lines
-            WHERE document_code = @document_code
-            ORDER BY line_no ASC, id ASC
+              SELECT
+                lines.id AS [id],
+                a.id AS [gsdAnalysisId],
+                a.analysis_no as [analysisNo],
+                lines.document_code AS [documentCode],
+                lines.source_document_code AS [sourceDocumentCode],
+                lines.gsd_analysis_id AS [gsdAnalysisId],
+                lines.source_line_id AS [sourceLineId],
+                lines.line_no AS [lineNo],
+                lines.cluster_no AS [clusterNo],
+                lines.cluster_name AS [clusterName],
+                lines.operation_code AS [operationCode],
+                lines.operation_name AS [operationName],
+                lines.line_order AS [lineOrder],
+                lines.skill_grade_id AS [skillGradeId],
+                lines.skill_grade_level AS [skillGradeLevel],
+                lines.machine_id AS [machineId],
+                lines.machine_code AS [machineCode],
+                lines.machine_name AS [machineName],
+                lines.sam_gsd AS [samGsd],
+                lines.salary_coefficient AS [salaryCoefficient],
+                lines.labor_count AS [laborCount],
+                lines.standard_price AS [standardPrice],
+                lines.required_efficiency AS [requiredEfficiency],
+                lines.adjusted_sam AS [adjustedSam],
+                lines.used_efficiency AS [usedEfficiency],
+                lines.total_actions AS [totalActions],
+                lines.tool_need AS [toolNeed],
+                lines.sewing_employee AS [sewingEmployee],
+                lines.cbc_time AS [cbcTime],
+                lines.note AS [note],
+                lines.created_at AS [createdAt],
+                lines.updated_at AS [updatedAt],
+                files.image_file_name AS [imageFileName],
+                files.image_url AS [imageUrl]
+            FROM sewing_process_lines lines
+            LEFT JOIN gsd_analysis_headers a ON a.analysis_no = lines.operation_code
+            LEFT JOIN gsd_analysis_image_links links ON links.gsd_analysis_id = a.id
+            LEFT JOIN media_files files ON files.id = links.media_file_id
+            WHERE lines.document_code = @document_code
+            ORDER BY lines.line_no ASC, id ASC
         `);
 
     const machineNeedResult = await pool.request()
@@ -658,7 +695,7 @@ async function updateSewingProcess(id, payload) {
     const oldDocumentCode = current.documentCode;
     const newDocumentCode = header.documentCode;
 
-    const sewingProcessId = current.id; 
+    const sewingProcessId = current.id;
 
     const transaction = new sql.Transaction(pool);
 
@@ -1084,7 +1121,7 @@ async function insertImages(
         await new sql.Request(transaction)
             .input('sewing_process_id', sql.Int, sewingProcessId)
             .input('media_file_id', sql.Int, mediaFileId)
-            .input('sort_order',sql.Int,sortOrder)
+            .input('sort_order', sql.Int, sortOrder)
             .query(`
                 INSERT INTO dbo.sewing_process_image_links (
                     sewing_process_id,
@@ -1105,16 +1142,16 @@ async function deleteImages(
     sewingProcessId
 ) {
     const mediaResult = await new sql.Request(transaction)
-            .input('sewing_process_id',sql.Int,sewingProcessId)
-            .query(`
+        .input('sewing_process_id', sql.Int, sewingProcessId)
+        .query(`
                 SELECT media_file_id
                 FROM dbo.sewing_process_image_links
                 WHERE sewing_process_id = @sewing_process_id;
             `);
 
     const mediaFileIds = mediaResult.recordset.map(
-            (row) => row.media_file_id
-        );
+        (row) => row.media_file_id
+    );
 
     await new sql.Request(transaction)
         .input('sewing_process_id', sql.Int, sewingProcessId)

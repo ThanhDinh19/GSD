@@ -8,8 +8,9 @@ import { useProductCateGroups } from '../hooks/useProductCateGroup';
 import {
     sewingProcessService,
     getSewingProcessImageUrl,
+    getGsdAnalysisImageUrl,
 } from '../services/sewingProcess.service';
-import { div, tr } from 'motion/react-client';
+import { button, div, tr } from 'motion/react-client';
 
 function formatNumber(value: number | null | undefined, digits = 4) {
     return Number(value || 0).toFixed(digits);
@@ -264,6 +265,16 @@ function mapOperationClusterToLines(detail: any): SewingProcessLine[] {
         cbcTime: row.cbcTime ?? row.cbc_time ?? null,
 
         note: row.note ?? '',
+
+        imageFileName:
+            row.imageFileName ??
+            row.image_file_name ??
+            null,
+
+        imageUrl:
+            row.imageUrl ??
+            row.image_url ??
+            null,
     }));
 }
 
@@ -302,7 +313,7 @@ export default function SewingProcessPage() {
         loadFormTest,
     } = useSewingProcess();
 
-    
+
 
     type ModalMode = 'create' | 'view' | 'edit' | null;
     type ModalTest = 'test' | null;
@@ -327,6 +338,7 @@ export default function SewingProcessPage() {
     const pickedOperationLines = Object.values(pickedOperationMap);
     const [imageUploading, setImageUploading] = useState(false);
     const [previewImageUrl, setPreviewImageUrl] = useState('');
+    const [previewGsdAnalysisImageUrl, setPreviewGsdAnalysisImageUrl] = useState('');
     const mainImage = form.images?.[0] || null;
 
     const mainImageFileName =
@@ -336,7 +348,7 @@ export default function SewingProcessPage() {
 
     const mainImageSrc = getSewingProcessImageUrl(mainImageFileName);
 
-    const handleUploadMainImage = async ( e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleUploadMainImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
 
         if (!file) return;
@@ -365,6 +377,14 @@ export default function SewingProcessPage() {
     };
 
     const handleRemoveMainImage = () => {
+
+        const confirmed = window.confirm(
+            'Bạn có chắc muốn xóa hình ảnh này?'
+        );
+
+        if (!confirmed) return;
+
+
         setForm((prev) => ({
             ...prev,
             images: [],
@@ -401,7 +421,44 @@ export default function SewingProcessPage() {
                 mappedRows[0]?.gsdAnalysisId
             );
 
+            const rawRows = getDetailRows(detail);
+
+            console.table(
+                rawRows.map((row: any) => ({
+                    id: row.id,
+
+                    operationName:
+                        row.operationName ??
+                        row.operation_name,
+
+                    operationCode:
+                        row.operationCode ??
+                        row.operation_code,
+
+                    gsdAnalysisId:
+                        row.gsdAnalysisId ??
+                        row.gsd_analysis_id,
+
+                    analysisId:
+                        row.analysisId ??
+                        row.analysis_id,
+
+                    imageFileName:
+                        row.imageFileName ??
+                        row.image_file_name,
+
+                    imageUrl:
+                        row.imageUrl ??
+                        row.image_url,
+
+                    images: row.images,
+                }))
+            );
+
             setPickerRows(mappedRows);
+
+
+
         } catch (err: any) {
             alert(
                 err?.response?.data?.message ||
@@ -498,7 +555,6 @@ export default function SewingProcessPage() {
 
     const activeCustomers = customers.filter((item: any) => getStatusId(item) === 0);
     const activeMachines = machineEquiments_test.filter((item: any) => getStatusId(item) === 0);
-
 
     const filteredOperationClusters = pickerProductCateGroupId
         ? operationClusters.filter(
@@ -605,9 +661,9 @@ export default function SewingProcessPage() {
     };
 
     const handleSaveTest = async () => {
-        try{
+        try {
             createFormTest();
-        }catch(err: any){
+        } catch (err: any) {
             alert("lỗi submit")
         }
     }
@@ -705,7 +761,7 @@ export default function SewingProcessPage() {
                                     onClick={() => setSelectedId(item.id)}
                                     className={`cursor-pointer ${isSelected ? 'bg-blue-50' : 'hover:bg-slate-50'
                                         }`}
-                                >   
+                                >
                                     <td className="border border-slate-200 px-3 py-2 text-blue-700 text-center">{index + 1}</td>
                                     <td className="border border-slate-200 px-3 py-2 text-blue-700">
                                         <button
@@ -767,7 +823,7 @@ export default function SewingProcessPage() {
                                     </td>
 
                                     <td className="border border-slate-200 px-3 py-2 text-right">
-                                        {formatNumber(item.averagePrice, 2)}
+                                        {formatSummaryMoney(item.averagePrice, 0)}
                                     </td>
 
                                     {/* <td className="border border-slate-200 px-3 py-2 text-center">
@@ -799,14 +855,14 @@ export default function SewingProcessPage() {
             <div>
                 <label>Nhập tên</label>
                 <div>
-                    <input type="text" placeholder='nhập...' className='border' 
+                    <input type="text" placeholder='nhập...' className='border'
                         value={form_test.name ?? ''}
                         onChange={(e) => updateFormTest('name', e.target.value)}
                     />
                 </div>
                 <label>Nhập tuổi</label>
                 <div>
-                    <input type="number" placeholder='nhập...' className='border' 
+                    <input type="number" placeholder='nhập...' className='border'
                         value={Number(form_test.age)}
                         onChange={(e) => updateFormTest('age', Number(e.target.value))}
                     />
@@ -1140,12 +1196,6 @@ export default function SewingProcessPage() {
                                 )}
                             </div>
 
-                            {/* {mainImageFileName && (
-                                <div className="text-[11px] text-slate-500 break-all">
-                                    {mainImageFileName}
-                                </div>
-                            )} */}
-
                             {!isViewMode && (
                                 <div className="flex gap-2">
                                     <label className="px-3 py-2 rounded-sm border border-blue-300 text-blue-700 text-xs font-bold hover:bg-blue-50 cursor-pointer">
@@ -1202,7 +1252,7 @@ export default function SewingProcessPage() {
                                 Nhu cầu MMTB
                             </button>
 
-                                {/* <button
+                            {/* <button
                                 type="button"
                                 onClick={() => setActiveTab('test')}
                                 className={`px-4 py-2 text-xs font-bold border rounded-md ${activeTab === 'test'
@@ -1247,7 +1297,7 @@ export default function SewingProcessPage() {
                     {activeTab === 'process' && renderProcessTable()}
 
                     {activeTab === 'machine' && renderMachineNeedTable()}
-                    
+
                     {activeTab === 'test' && renderTableTest()}
 
                 </div>
@@ -1335,14 +1385,14 @@ export default function SewingProcessPage() {
                 <table className="min-w-[2600px] w-full text-xs border-collapse">
                     <thead className="bg-slate-50 text-slate-700 sticky top-0 z-10">
                         <tr>
-                            <th  className="border border-slate-300 px-2 py-2">STT</th>
-                            <th  className="border border-slate-300 px-2 py-2">name</th>
-                            <th  className="border border-slate-300 px-2 py-2">age</th>
+                            <th className="border border-slate-300 px-2 py-2">STT</th>
+                            <th className="border border-slate-300 px-2 py-2">name</th>
+                            <th className="border border-slate-300 px-2 py-2">age</th>
                         </tr>
                     </thead>
                     <tbody>
                         {users.map((item, index) => (
-                            <tr key={item.id}> 
+                            <tr key={item.id}>
                                 <th>{index + 1}</th>
                                 <th className="border border-slate-300 px-2 py-2">{item.name}</th>
                                 <th className="border border-slate-300 px-2 py-2">{item.age}</th>
@@ -1364,6 +1414,7 @@ export default function SewingProcessPage() {
                             <th className="border border-slate-300 px-2 py-2">STT xếp chuyền</th>
                             <th className="border border-slate-300 px-2 py-2">Tên cụm</th>
                             <th className="border border-slate-300 px-2 py-2">Tên công đoạn</th>
+                            <th className="border border-slate-300 px-2 py-2">Hình ảnh</th>
                             <th className="border border-slate-300 px-2 py-2">Bậc thợ</th>
                             {/* <th className="border border-slate-300 px-2 py-2">Nhu cầu CCDC</th> */}
                             <th className="border border-slate-300 px-2 py-2">Nhân sự</th>
@@ -1398,57 +1449,87 @@ export default function SewingProcessPage() {
                             </tr>
                         )}
 
-                        {form.lines.map((line, index) => (
-                            <tr key={`${line.id || 'new'}-${index}`}>
-                                <td className="border border-slate-300 px-2 py-2 text-center">
-                                    {index + 1}
-                                </td>
+                        {form.lines.map((line, index) => {
 
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        disabled={isViewMode}
-                                        type="number"
-                                        value={numberInputValue(line.lineOrder)}
-                                        onChange={(e) =>
-                                            updateLine(index, 'lineOrder', toNumberOrNull(e.target.value))
-                                        }
-                                        className="w-full outline-none text-right disabled:bg-slate-100"
-                                    />
-                                </td>
+                            const imageFileName = line.imageFileName || line.imageUrl || '';
+                            const imageSrc = getGsdAnalysisImageUrl(imageFileName);
 
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        disabled={isViewMode}
-                                        value={line.clusterName || ''}
-                                        onChange={(e) => updateLine(index, 'clusterName', e.target.value)}
-                                        className="w-full min-w-[140px] outline-none disabled:bg-slate-100"
-                                    />
-                                </td>
+                            return (
+                                <tr key={`${line.id || 'new'}-${index}`}>
+                                    <td className="border border-slate-300 px-2 py-2 text-center">
+                                        {index + 1}
+                                    </td>
 
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleOpenOperationActions(line)}
-                                        className="text-left text-blue-700 font-semibold hover:underline min-w-[220px]"
-                                        title="Xem thao tác công đoạn"
-                                    >
-                                        {line.operationName || '-'}
-                                    </button>
-                                </td>
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <input
+                                            disabled={isViewMode}
+                                            type="number"
+                                            value={numberInputValue(line.lineOrder)}
+                                            onChange={(e) =>
+                                                updateLine(index, 'lineOrder', toNumberOrNull(e.target.value))
+                                            }
+                                            className="w-full outline-none text-right disabled:bg-slate-100"
+                                        />
+                                    </td>
 
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        disabled={isViewMode}
-                                        type="number"
-                                        value={numberInputValue(line.skillGradeLevel)}
-                                        onChange={(e) =>
-                                            updateLine(index, 'skillGradeLevel', toNumberOrNull(e.target.value))
-                                        }
-                                        className="w-full outline-none text-right disabled:bg-slate-100"
-                                    />
-                                </td>
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <input
+                                            disabled={isViewMode}
+                                            value={line.clusterName || ''}
+                                            onChange={(e) => updateLine(index, 'clusterName', e.target.value)}
+                                            className="w-full min-w-[140px] outline-none disabled:bg-slate-100"
+                                        />
+                                    </td>
 
-                                {/* <td className="border border-slate-300 px-2 py-2">
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenOperationActions(line)}
+                                            className="text-left text-blue-700 font-semibold hover:underline min-w-[220px]"
+                                            title="Xem thao tác công đoạn"
+                                        >
+                                            {line.operationName || '-'}
+                                        </button>
+                                    </td>
+
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <div className="h-[50px] w-[50px] border border-dashed border-slate-300 rounded-sm flex items-center justify-center bg-slate-50 overflow-hidden">
+                                            {imageSrc ? (
+                                                <button
+                                                    type='button'
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setPreviewGsdAnalysisImageUrl(imageSrc);
+                                                    }}
+                                                    className="inline-flex items-center justify-center w-12 h-12 border border-slate-200 rounded-sm bg-slate-50 overflow-hidden hover:ring-2 hover:ring-blue-400"
+                                                    title="Xem hình"
+                                                >
+                                                    <img
+                                                        src={imageSrc}
+                                                        alt="Hình mã hàng"
+                                                        className="w-full h-full object-contain"
+                                                    />
+                                                </button>
+
+                                            ) : (
+                                                <span className="text-slate-400 text-xs">-</span>
+                                            )}
+                                        </div>
+                                    </td>
+
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <input
+                                            disabled={isViewMode}
+                                            type="number"
+                                            value={numberInputValue(line.skillGradeLevel)}
+                                            onChange={(e) =>
+                                                updateLine(index, 'skillGradeLevel', toNumberOrNull(e.target.value))
+                                            }
+                                            className="w-full outline-none text-right disabled:bg-slate-100"
+                                        />
+                                    </td>
+
+                                    {/* <td className="border border-slate-300 px-2 py-2">
                                     <input
                                         disabled={isViewMode}
                                         value={line.toolNeed || ''}
@@ -1457,139 +1538,149 @@ export default function SewingProcessPage() {
                                     />
                                 </td> */}
 
-                                <td className="border border-slate-300 px-2 py-2 text-right">
-                                    {result ? formatNumber(line.laborCount, 2) : '-'}
-                                </td>
+                                    <td className="border border-slate-300 px-2 py-2 text-right">
+                                        {result ? formatNumber(line.laborCount, 2) : '-'}
+                                    </td>
 
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <select
-                                        disabled={isViewMode}
-                                        value={line.machineId ?? ''}
-                                        onChange={(e) => handleMachineChange(index, e.target.value)}
-                                        className="w-full min-w-[180px] outline-none bg-white disabled:bg-slate-100"
-                                    >
-                                        <option value="">-- Chọn máy --</option>
-                                        {activeMachines.map((machine: any) => (
-                                            <option key={machine.id} value={machine.id}>
-                                                {getMachineName(machine)}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </td>
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <select
+                                            disabled={isViewMode}
+                                            value={line.machineId ?? ''}
+                                            onChange={(e) => handleMachineChange(index, e.target.value)}
+                                            className="w-full min-w-[180px] outline-none bg-white disabled:bg-slate-100"
+                                        >
+                                            <option value="">-- Chọn máy --</option>
+                                            {activeMachines.map((machine: any) => (
+                                                <option key={machine.id} value={machine.id}>
+                                                    {getMachineName(machine)}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </td>
 
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        readOnly
-                                        value={line.machineCode || ''}
-                                        className="w-full min-w-[120px] outline-none bg-slate-100 text-slate-700"
-                                    />
-                                </td>
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <input
+                                            readOnly
+                                            value={line.machineCode || ''}
+                                            className="w-full min-w-[120px] outline-none bg-slate-100 text-slate-700"
+                                        />
+                                    </td>
 
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        disabled={isViewMode}
-                                        type="number"
-                                        step="0.0001"
-                                        value={line.samGsd}
-                                        onChange={(e) =>
-                                            updateLine(index, 'samGsd', Number(e.target.value || 0))
-                                        }
-                                        className="w-full outline-none text-right disabled:bg-slate-100"
-                                    />
-                                </td>
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <input
+                                            disabled={isViewMode}
+                                            type="number"
+                                            step="0.0001"
+                                            value={line.samGsd}
+                                            onChange={(e) =>
+                                                updateLine(index, 'samGsd', Number(e.target.value || 0))
+                                            }
+                                            className="w-full outline-none text-right disabled:bg-slate-100"
+                                        />
+                                    </td>
 
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        disabled={isViewMode}
-                                        type="number"
-                                        step="0.0001"
-                                        value={line.salaryCoefficient}
-                                        onChange={(e) =>
-                                            updateLine(index, 'salaryCoefficient', Number(e.target.value || 0))
-                                        }
-                                        className="w-full outline-none text-right disabled:bg-slate-100"
-                                    />
-                                </td>
-                                {/* 
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <input
+                                            disabled={isViewMode}
+                                            type="number"
+                                            step="0.0001"
+                                            value={line.salaryCoefficient}
+                                            onChange={(e) =>
+                                                updateLine(index, 'salaryCoefficient', Number(e.target.value || 0))
+                                            }
+                                            className="w-full outline-none text-right disabled:bg-slate-100"
+                                        />
+                                    </td>
+                                    {/* 
                                 <td className="border border-slate-300 px-2 py-2 text-right font-bold">
                                     {result ? formatNumber(line.laborCount, 4) : '-'}
                                 </td> */}
 
-                                <td className="border border-slate-300 px-2 py-2 text-right font-bold text-green-700">
-                                    {result ? formatSummaryMoney(line.standardPrice, 0) : '-'}
-                                </td>
-
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        disabled={isViewMode}
-                                        type="number"
-                                        step="0.01"
-                                        value={numberInputValue(line.requiredEfficiency)}
-                                        onChange={(e) =>
-                                            updateLine(index, 'requiredEfficiency', toNumberOrNull(e.target.value))
-                                        }
-                                        className="w-full outline-none text-right disabled:bg-slate-100"
-                                    />
-                                </td>
-
-                                <td className="border border-slate-300 px-2 py-2 text-right font-bold text-slate-700">
-                                    {result ? formatNumber(line.usedEfficiency, 2) : '-'}
-                                </td>
-
-                                <td className="border border-slate-300 px-2 py-2 text-right font-bold text-blue-700">
-                                    {result ? formatNumber(line.adjustedSam, 2) : '-'}
-                                </td>
-
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        disabled={isViewMode}
-                                        value={line.sewingEmployee || ''}
-                                        onChange={(e) => updateLine(index, 'sewingEmployee', e.target.value)}
-                                        className="w-full min-w-[120px] outline-none disabled:bg-slate-100"
-                                    />
-                                </td>
-
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        disabled={isViewMode}
-                                        type="number"
-                                        step="0.0001"
-                                        value={numberInputValue(line.cbcTime)}
-                                        onChange={(e) =>
-                                            updateLine(index, 'cbcTime', toNumberOrNull(e.target.value))
-                                        }
-                                        className="w-full outline-none text-right disabled:bg-slate-100"
-                                    />
-                                </td>
-
-                                <td className="border border-slate-300 px-2 py-2">
-                                    <input
-                                        disabled={isViewMode}
-                                        value={line.note || ''}
-                                        onChange={(e) => updateLine(index, 'note', e.target.value)}
-                                        className="w-full min-w-[140px] outline-none disabled:bg-slate-100"
-                                    />
-                                </td>
-
-                                <td className="border border-slate-300 px-2 py-2 text-right">
-                                    {line.totalActions || 0}
-                                </td>
-
-                                {!isViewMode && (
-                                    <td className="border border-slate-300 px-2 py-2 text-center">
-                                        <button
-                                            type="button"
-                                            onClick={() => removeLine(index)}
-                                            className="text-red-600 font-bold hover:underline"
-                                        >
-                                            Xóa
-                                        </button>
+                                    <td className="border border-slate-300 px-2 py-2 text-right font-bold text-green-700">
+                                        {result ? formatSummaryMoney(line.standardPrice, 0) : '-'}
                                     </td>
-                                )}
-                            </tr>
-                        ))}
+
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <input
+                                            disabled={isViewMode}
+                                            type="number"
+                                            step="0.01"
+                                            value={numberInputValue(line.requiredEfficiency)}
+                                            onChange={(e) =>
+                                                updateLine(index, 'requiredEfficiency', toNumberOrNull(e.target.value))
+                                            }
+                                            className="w-full outline-none text-right disabled:bg-slate-100"
+                                        />
+                                    </td>
+
+                                    <td className="border border-slate-300 px-2 py-2 text-right font-bold text-slate-700">
+                                        {result ? formatNumber(line.usedEfficiency, 2) : '-'}
+                                    </td>
+
+                                    <td className="border border-slate-300 px-2 py-2 text-right font-bold text-blue-700">
+                                        {result ? formatNumber(line.adjustedSam, 2) : '-'}
+                                    </td>
+
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <input
+                                            disabled={isViewMode}
+                                            value={line.sewingEmployee || ''}
+                                            onChange={(e) => updateLine(index, 'sewingEmployee', e.target.value)}
+                                            className="w-full min-w-[120px] outline-none disabled:bg-slate-100"
+                                        />
+                                    </td>
+
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <input
+                                            disabled={isViewMode}
+                                            type="number"
+                                            step="0.0001"
+                                            value={numberInputValue(line.cbcTime)}
+                                            onChange={(e) =>
+                                                updateLine(index, 'cbcTime', toNumberOrNull(e.target.value))
+                                            }
+                                            className="w-full outline-none text-right disabled:bg-slate-100"
+                                        />
+                                    </td>
+
+                                    <td className="border border-slate-300 px-2 py-2">
+                                        <input
+                                            disabled={isViewMode}
+                                            value={line.note || ''}
+                                            onChange={(e) => updateLine(index, 'note', e.target.value)}
+                                            className="w-full min-w-[140px] outline-none disabled:bg-slate-100"
+                                        />
+                                    </td>
+
+                                    <td className="border border-slate-300 px-2 py-2 text-right">
+                                        {line.totalActions || 0}
+                                    </td>
+
+                                    {!isViewMode && (
+                                        <td className="border border-slate-300 px-2 py-2 text-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => removeLine(index)}
+                                                className="text-red-600 font-bold hover:underline"
+                                            >
+                                                Xóa
+                                            </button>
+                                        </td>
+                                    )}
+
+
+                                </tr>
+                            );
+                        })}
                     </tbody>
                 </table>
+
+                {previewGsdAnalysisImageUrl && (
+                    <ImagePreviewModal
+                        imageUrl={previewGsdAnalysisImageUrl}
+                        onClose={() => setPreviewGsdAnalysisImageUrl('')}
+                    />
+                )}
             </div>
         );
     };

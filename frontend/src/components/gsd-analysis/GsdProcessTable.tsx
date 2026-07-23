@@ -1,4 +1,7 @@
+import { useState } from 'react';
 import { GsdAnalysisSummary } from '../../types';
+import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../../services/gsdAnalysis.service';
+
 
 interface GsdProcessTableProps {
     analyses: GsdAnalysisSummary[];
@@ -49,6 +52,7 @@ export default function GsdProcessTable({
     showActionButtons = true,
 }: GsdProcessTableProps) {
     const columnCount = onDetailClick ? 8 : 7;
+    const [previewImageUrl, setPreviewImageUrl] = useState('');
 
     return (
         <div className="bg-white rounded-xl border border-slate-200 p-5">
@@ -125,6 +129,10 @@ export default function GsdProcessTable({
                                 </th>
                             )}
 
+                            <th className="px-4 py-1.5 border border-slate-200 text-center">
+                                Hình ảnh
+                            </th>
+
                             <th className="px-4 py-1.5 border border-slate-200 text-right">
                                 Bậc thợ
                             </th>
@@ -189,6 +197,9 @@ export default function GsdProcessTable({
                                     isSelected = false;
                                 }
 
+                                const imageFileName = item.imageFileName || item.imageUrl || '';
+                                const imageSrc = getGsdAnalysisImageUrl(imageFileName);
+
                                 return (
                                     <tr
                                         key={item.id}
@@ -228,6 +239,28 @@ export default function GsdProcessTable({
                                                 </button>
                                             </td>
                                         )}
+
+                                        <td className="border border-slate-200 px-3 py-2 text-center">
+                                            {imageSrc ? (
+                                                <button
+                                                    type="button"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setPreviewImageUrl(imageSrc);
+                                                    }}
+                                                    className="inline-flex items-center justify-center w-12 h-12 border border-slate-200 rounded-sm bg-slate-50 overflow-hidden hover:ring-2 hover:ring-blue-400"
+                                                    title="Xem hình"
+                                                >
+                                                    <img
+                                                        src={imageSrc}
+                                                        alt="Hình mã hàng"
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                </button>
+                                            ) : (
+                                                <span className="text-slate-400 text-xs">-</span>
+                                            )}
+                                        </td>
 
                                         <td className="px-4 py-3 border border-slate-200 text-right text-sm">
                                             {item.skillGrade ?? '-'}
@@ -274,6 +307,36 @@ export default function GsdProcessTable({
                     </tbody>
                 </table>
             </div>
+
+            {previewImageUrl && (
+                <ImagePreviewModal
+                    imageUrl={previewImageUrl}
+                    onClose={() => setPreviewImageUrl('')}
+                />
+            )}
+        </div>
+    );
+}
+
+
+function ImagePreviewModal({
+    imageUrl,
+    onClose,
+}: {
+    imageUrl: string;
+    onClose: () => void;
+}) {
+    return (
+        <div
+            className="fixed inset-0 z-[100] bg-black/75 flex items-center justify-center p-6"
+            onClick={onClose} // bấm ngoài ảnh, đóng pop up
+        >
+            <img
+                src={imageUrl}
+                alt="Hình mã hàng"
+                className="w-[30vw] h-[50vh] object-contain bg-white"
+                onClick={(e) => e.stopPropagation()} // bấm vào ảnh ko đóng pop up
+            />
         </div>
     );
 }

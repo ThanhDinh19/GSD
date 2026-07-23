@@ -22,6 +22,15 @@ type CopyAnalysisDraftResponse = {
 
 const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:9000').replace(/\/$/, '');
 
+export function getGsdAnalysisImageUrl(fileName?: string | null) {
+    if (!fileName) return '';
+
+    const cleanFileName = String(fileName).split('/').pop();
+
+    return `${API_URL}/gsd_analysis_images/${cleanFileName}`;
+}
+
+
 export const gsdAnalysisService = {
 
   getAnalysisById(id: number) {

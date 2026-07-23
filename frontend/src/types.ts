@@ -256,6 +256,16 @@ export interface GsdAnalysisPayload {
   productMultiplier?: number | null;
   note?: string | null;
   details: GsdAnalysisDetailPayload[];
+  images: MediaFile[];
+}
+
+export interface MediaFile {
+  id?: number;
+  imageUrl?: string;
+  imageFileName?: string;
+  note?: string | null;
+  createdAt?: string;
+  updatedAt?: string | null;
 }
 
 export interface GsdAnalysisCalculateResult {
@@ -323,30 +333,10 @@ export interface GsdAnalysisSummary {
   finalSmv: number;
   skillGrade?: number | null;
 
+  imageUrl?: string | null;
+  imageFileName?: string | null;
   createdAt?: string;
 }
-
-// export interface GsdAnalysisSummary {
-//   id: number;
-//   analysisNo: string;
-//   analysisDate?: string;
-//   operationName: string;
-
-//   sourceCode?: string | null;
-//   machineCode?: string | null;
-//   machineName?: string | null;
-//   codeMMTB?: string | null;
-
-//   totalTmu: number;
-//   totalManualSeconds: number;
-//   machineSeconds: number;
-//   totalSmvBeforeDifficulty: number;
-//   difficultySeconds: number;
-//   finalSmv: number;
-//   skillGrade?: number | null;
-
-//   createdAt?: string;
-// }
 
 
 export interface GsdAnalysisDetailRow {
@@ -741,34 +731,37 @@ export interface SewingProcessLine {
   sewingEmployee?: string | null;
   cbcTime?: number | null;
   note?: string | null;
+
+  imageFileName?: string | null;
+  imageUrl?: string | null;
 }
 
-export interface SewingProcessPayload {
-  id: number | null;
-  documentCode: string;
+// export interface SewingProcessPayload {
+//   id: number | null;
+//   documentCode: string;
 
-  customerId?: number | null;
-  customerCode?: string | null;
-  customerName?: string | null;
+//   customerId?: number | null;
+//   customerCode?: string | null;
+//   customerName?: string | null;
 
-  itemCode?: string | null;
-  productionLine?: string | null;
-  productionRound?: number | null;
+//   itemCode?: string | null;
+//   productionLine?: string | null;
+//   productionRound?: number | null;
 
-  workingHours: number;
-  manpower?: number | null;
-  productionManpower: number;
-  quantity?: number | null;
+//   workingHours: number;
+//   manpower?: number | null;
+//   productionManpower: number;
+//   quantity?: number | null;
 
-  effectiveDate?: string | null;
-  issuedDate?: string | null;
+//   effectiveDate?: string | null;
+//   issuedDate?: string | null;
 
-  priceMode: 'GSD' | 'ADJUSTED';
-  statusId: number;
-  note?: string | null;
+//   priceMode: 'GSD' | 'ADJUSTED';
+//   statusId: number;
+//   note?: string | null;
 
-  lines: SewingProcessLine[];
-}
+//   lines: SewingProcessLine[];
+// }
 
 export interface SewingProcessSummary {
   totalTime: number;
@@ -854,6 +847,7 @@ export interface SewingProcessImage {
 }
 
 export interface SewingProcessPayload {
+  // id: number;
   documentCode: string;
 
   customerId?: number | null;

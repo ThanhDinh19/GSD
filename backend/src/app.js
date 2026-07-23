@@ -6,7 +6,7 @@ const fs = require('fs');
 const apiRoutes = require('./routes');
 const { notFoundHandler, errorHandler } = require('./middlewares/error.middleware');
 const sewingProcessImageDir = require('./config/sewingProcessImageDir');
-
+const gsdAnalysisImageDir = require('./config/gsdAnalysisImageDir');
 const app = express();
 
 app.use(cors());
@@ -15,8 +15,14 @@ app.use(express.json());
 // 1. Serve hình ảnh upload trước SPA fallback
 app.use(
     '/sewing_process_images',
-    express.static(sewingProcessImageDir)
+    express.static(sewingProcessImageDir),
 );
+app.use(
+    '/gsd_analysis_images',
+    express.static(gsdAnalysisImageDir)
+);
+
+
 
 // 2. API routes
 app.use('/api', apiRoutes);

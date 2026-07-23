@@ -21,6 +21,14 @@ export function getSewingProcessImageUrl(fileName?: string | null) {
     return `${API_URL}/sewing_process_images/${cleanFileName}`;
 }
 
+export function getGsdAnalysisImageUrl(fileName?: string | null) {
+    if (!fileName) return '';
+
+    const cleanFileName = String(fileName).split('/').pop();
+
+    return `${API_URL}/gsd_analysis_images/${cleanFileName}`;
+}
+
 export const sewingProcessService = {
 
     async createFormTest(payload: FormTest){

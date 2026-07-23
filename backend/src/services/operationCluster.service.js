@@ -225,39 +225,71 @@ const getOperationClusterById = async (id) => {
     .input('id', sql.Int, id)
     .query(`
       SELECT
-        h.id,
-        h.document_code,
+    h.id,
+    h.document_code,
 
-        h.work_id,
-        w.work_code,
-        w.work_name,
+    h.work_id,
+    w.work_code,
+    w.work_name,
 
-        h.product_category_id,
-        pc.product_code,
-        pc.product_name,
+    h.product_category_id,
+    pc.product_code,
+    pc.product_name,
 
-        h.product_category_group_id,
-        pcg.category_group_code,
-        pcg.category_group_name,
+    h.product_category_group_id,
+    pcg.category_group_code,
+    pcg.category_group_name,
 
-        h.required_efficiency,
-        h.price_method,
-        h.note,
-        h.status_id,
-        ms.status_code,
-        ms.status_name,
-        h.created_at,
-        h.updated_at
-      FROM operation_cluster_headers h
-      LEFT JOIN works w
-        ON w.id = h.work_id
-      LEFT JOIN product_categories pc
-        ON pc.id = h.product_category_id
-      LEFT JOIN product_category_groups pcg
-        ON pcg.id = h.product_category_group_id
-      LEFT JOIN master_status ms
-        ON ms.id = h.status_id
-      WHERE h.id = @id
+    h.required_efficiency,
+    h.price_method,
+    h.note,
+    h.status_id,
+    ms.status_code,
+    ms.status_name,
+    h.created_at,
+    h.updated_at,
+
+    -- Lấy hình ảnh đầu tiên trong kho cụm
+    img.image_file_name,
+    img.image_url
+
+FROM operation_cluster_headers h
+
+LEFT JOIN works w
+    ON w.id = h.work_id
+
+LEFT JOIN product_categories pc
+    ON pc.id = h.product_category_id
+
+LEFT JOIN product_category_groups pcg
+    ON pcg.id = h.product_category_group_id
+
+LEFT JOIN master_status ms
+    ON ms.id = h.status_id
+
+OUTER APPLY (
+    SELECT TOP 1
+        mf.image_file_name,
+        mf.image_url
+    FROM operation_cluster_operations o
+
+    INNER JOIN gsd_analysis_image_links image_link
+        ON image_link.gsd_analysis_id =
+           o.gsd_analysis_id
+
+    INNER JOIN media_files mf
+        ON mf.id = image_link.media_file_id
+
+    WHERE o.header_id = h.id
+
+    ORDER BY
+        o.group_line_no ASC,
+        o.line_no ASC,
+        image_link.sort_order ASC,
+        image_link.media_file_id ASC
+) img
+
+WHERE h.id = @id;
     `);
 
   const header = headerResult.recordset[0];
@@ -296,66 +328,94 @@ const getOperationClusterById = async (id) => {
   const operationsResult = await pool.request()
     .input('header_id', sql.Int, id)
     .query(`
-            SELECT
-                o.id,
-                o.header_id,
-                o.group_id,
-                g.cluster_name,
-                g.line_no AS group_line_no_master,
+             SELECT
+      o.id,
+      o.header_id,
+      o.group_id,
 
-                o.line_no,
-                o.group_line_no,
-                o.line_balance_no,
+      g.cluster_name,
+      g.line_no AS group_line_no_master,
 
-                o.gsd_analysis_id,
-                gah.analysis_no,
-                gah.operation_name AS gsd_operation_name,
+      o.line_no,
+      o.group_line_no,
+      o.line_balance_no,
 
-                o.operation_code,
-                o.operation_name,
+      o.gsd_analysis_id,
 
-                o.skill_grade_id,
-                sg.level AS skill_level_master,
-                o.skill_level,
+      gah.analysis_no,
+      gah.operation_name AS gsd_operation_name,
 
-                o.machine_equipment_id,
-                m.machine_code AS machine_code_master,
-                m.machine_name AS machine_name_master,
-                m.code_mmtb,
+      o.operation_code,
+      o.operation_name,
 
-                o.machine_code,
-                o.machine_name,
+      o.skill_grade_id,
+      sg.level AS skill_level_master,
+      o.skill_level,
 
-                o.sam_gsd,
-                o.salary_coefficient,
-                o.manpower,
-                o.standard_price,
-                o.required_efficiency,
-                o.adjusted_sam,
-                o.utilization_rate,
-                o.total_action_seconds,
-                o.total_actions,
+      o.machine_equipment_id,
+      m.machine_code AS machine_code_master,
+      m.machine_name AS machine_name_master,
+      m.code_mmtb,
 
-                o.status_id,
-                ms.status_code,
-                ms.status_name,
-                o.created_at,
-                o.updated_at
-            FROM operation_cluster_operations o
-            LEFT JOIN operation_cluster_groups g
-                ON g.id = o.group_id
-            LEFT JOIN gsd_analysis_headers gah
-                ON gah.id = o.gsd_analysis_id
-            LEFT JOIN skill_grade sg
-                ON sg.id = o.skill_grade_id
-            LEFT JOIN machine_equipments_test m
-                ON m.id = o.machine_equipment_id
-            LEFT JOIN master_status ms
-                ON ms.id = o.status_id
-            WHERE o.header_id = @header_id
-            ORDER BY
-                o.group_line_no,
-                o.line_no;
+      o.machine_code,
+      o.machine_name,
+
+      o.sam_gsd,
+      o.salary_coefficient,
+      o.manpower,
+      o.standard_price,
+      o.required_efficiency,
+      o.adjusted_sam,
+      o.utilization_rate,
+      o.total_action_seconds,
+      o.total_actions,
+
+      -- Hình ảnh của công đoạn GSD
+      img.image_file_name AS image_file_name,
+      img.image_url AS image_url,
+
+      o.status_id,
+      ms.status_code,
+      ms.status_name,
+      o.created_at,
+      o.updated_at
+
+    FROM operation_cluster_operations o
+
+    LEFT JOIN operation_cluster_groups g
+      ON g.id = o.group_id
+
+    LEFT JOIN gsd_analysis_headers gah
+      ON gah.id = o.gsd_analysis_id
+
+    LEFT JOIN skill_grade sg
+      ON sg.id = o.skill_grade_id
+
+    LEFT JOIN machine_equipments_test m
+      ON m.id = o.machine_equipment_id
+
+    LEFT JOIN master_status ms
+      ON ms.id = o.status_id
+
+    OUTER APPLY (
+      SELECT TOP 1
+        mf.image_file_name,
+        mf.image_url
+      FROM gsd_analysis_image_links image_link
+      INNER JOIN media_files mf
+        ON mf.id = image_link.media_file_id
+      WHERE image_link.gsd_analysis_id =
+        o.gsd_analysis_id
+      ORDER BY
+        image_link.sort_order ASC,
+        image_link.media_file_id ASC
+    ) img
+
+    WHERE o.header_id = @header_id
+
+    ORDER BY
+      o.group_line_no,
+      o.line_no;
     `);
 
   const dashboardResult = await pool.request()

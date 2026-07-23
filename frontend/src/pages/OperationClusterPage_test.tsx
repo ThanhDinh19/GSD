@@ -11,7 +11,9 @@ import { useWorks } from '../hooks/useWorks';
 import { useProductCates } from '../hooks/useProductCate';
 import { useProductCateGroups } from '../hooks/useProductCateGroup';
 import { useSalaryCoefficients } from '../hooks/useSalaryCoefficient';
-
+import {
+    getGsdAnalysisImageUrl,
+} from '../services/sewingProcess.service';
 
 // form thông tin chứng từ
 type FormState = {
@@ -67,6 +69,8 @@ type OperationClusterDraft = {
     activeGroupIndex: number;
     viewAllGroups: boolean;
 };
+
+
 
 const readOperationClusterDraft = (): OperationClusterDraft | null => {
     try {
@@ -161,6 +165,8 @@ export default function OperationClusterPage_test() {
     // edit
     const [selectedSavedId, setSelectedSavedId] = useState<number | null>(null);
     const [editingId, setEditingId] = useState<number | null>(null);
+
+    const [previewImageUrl, setPreviewImageUrl] = useState('');
 
     const resetCreateData = () => {
         localStorage.removeItem(OPERATION_CLUSTER_DRAFT_KEY);
@@ -1197,7 +1203,8 @@ export default function OperationClusterPage_test() {
                         machine_equipment_id: op.machine_equipment_id ?? null,
                         machine_name: op.machine_name || op.machine_name_master || null,
                         machine_code: op.machine_code || op.machine_code_master || null,
-
+                        code_mmtb: op.code_mmtb ?? op.codeMMTB ?? op.code_mmtb_master ??
+                            null,
                         sam_gsd: Number(op.sam_gsd || 0),
                         salary_coefficient: Number(op.salary_coefficient || 0),
                         manpower:
@@ -1576,7 +1583,7 @@ export default function OperationClusterPage_test() {
                                         {saving
                                             ? 'Đang lưu...'
                                             : editingId
-                                                ? 'Cập nhật chứng từ' 
+                                                ? 'Cập nhật chứng từ'
                                                 : 'Lưu chứng từ'}
                                     </button>
 
@@ -2129,9 +2136,9 @@ export default function OperationClusterPage_test() {
                                                                         />
                                                                     </td>
                                                                     {/* 
-                                                        <td className="p-3 font-semibold text-blue-700">
-                                                            {op.operation_code || '-'}
-                                                        </td> */}
+                                                                    <td className="p-3 font-semibold text-blue-700">
+                                                                        {op.operation_code || '-'}
+                                                                    </td> */}
 
                                                                     <td className="p-3 border border-slate-200 text-left">
                                                                         <button
@@ -2435,6 +2442,10 @@ export default function OperationClusterPage_test() {
                                                 <th className="p-3 border border-slate-200 text-left w-[340px]">
                                                     Công đoạn
                                                 </th>
+
+                                                <th className="p-3 border border-slate-200 text-left w-[30px]">
+                                                    Hình ảnh
+                                                </th>
                                                 <th className="p-3 border border-slate-200 text-left">
                                                     Bậc
                                                 </th>
@@ -2481,75 +2492,109 @@ export default function OperationClusterPage_test() {
                                                     </tr>
                                                 )}
 
-                                            {(selectedDetail.operations || []).map((op: any, index: number) => (
-                                                <tr
-                                                    key={op.id || index}
-                                                    className="hover:bg-slate-50"
-                                                >
-                                                    <td className="p-3 border border-slate-200 text-slate-500">
-                                                        {index + 1}
-                                                    </td>
+                                            {(selectedDetail.operations || []).map((op: any, index: number) => {
+                                                const imageFileName = op.image_file_name || op.image_url || '';
+                                                const imageSrc = getGsdAnalysisImageUrl(imageFileName);
+                                                return (
+                                                    <tr
+                                                        key={op.id || index}
+                                                        className="hover:bg-slate-50"
+                                                    >
+                                                        <td className="p-3 border border-slate-200 text-slate-500">
+                                                            {index + 1}
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200 text-center">
-                                                        {op.line_balance_no || '-'}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-center">
+                                                            {op.line_balance_no || '-'}
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200">
-                                                        {op.cluster_name || `Cụm ${op.group_line_no || ''}`}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200">
+                                                            {op.cluster_name || `Cụm ${op.group_line_no || ''}`}
+                                                        </td>
 
-                                                    {/* <td className="p-3 border border-slate-200 text-blue-700">
+                                                        {/* <td className="p-3 border border-slate-200 text-blue-700">
                                                     {op.operation_code || '-'}
                                                 </td> */}
 
-                                                    <td className="p-3 border border-slate-200 text-slate-800">
-                                                        {op.operation_name || '-'}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-slate-800">
+                                                            {op.operation_name || '-'}
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200">
-                                                        {op.skill_level || '-'}
-                                                    </td>
+                                                        <td className="border border-slate-200 px-3 py-2 text-center">
+                                                            {imageSrc ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        setPreviewImageUrl(imageSrc);
+                                                                    }}
+                                                                    className="inline-flex items-center justify-center w-12 h-12 border border-slate-200 rounded-sm bg-slate-50 overflow-hidden hover:ring-2 hover:ring-blue-400"
+                                                                    title="Xem hình"
+                                                                >
+                                                                    <img
+                                                                        src={imageSrc}
+                                                                        alt="Hình mã hàng"
+                                                                        className="w-full h-full object-cover"
+                                                                    />
+                                                                </button>
+                                                            ) : (
+                                                                <span className="text-slate-400 text-xs">-</span>
+                                                            )}
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200">
-                                                        {op.code_mmtb || '-'}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200">
+                                                            {op.skill_level || '-'}
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200">
-                                                        {op.machine_name || '-'}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200">
+                                                            {op.code_mmtb || '-'}
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200 text-right">
-                                                        {Number(op.sam_gsd || 0).toFixed(2)}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200">
+                                                            {op.machine_name || '-'}
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200 text-right">
-                                                        {Number(op.salary_coefficient || 0).toFixed(2)}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-right">
+                                                            {Number(op.sam_gsd || 0).toFixed(2)}
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200 text-right">
-                                                        {Number(op.required_efficiency || 0).toFixed(2)}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-right">
+                                                            {Number(op.salary_coefficient || 0).toFixed(2)}
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200 text-right">
-                                                        {Number(op.standard_price || 0).toFixed(2)}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-right">
+                                                            {Number(op.required_efficiency || 0).toFixed(2)}
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200 text-right text-blue-700">
-                                                        {Number(op.adjusted_sam || 0).toFixed(2)}
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-right">
+                                                            {Number(op.standard_price || 0).toFixed(2)}
+                                                        </td>
+
+                                                        <td className="p-3 border border-slate-200 text-right text-blue-700">
+                                                            {Number(op.adjusted_sam || 0).toFixed(2)}
+                                                        </td>
 
 
-                                                    <td className="p-3 border border-slate-200 text-right text-blue-700">
-                                                        {(toNumber(op.utilization_rate, 0) * 100).toFixed(0)}%
-                                                    </td>
+                                                        <td className="p-3 border border-slate-200 text-right text-blue-700">
+                                                            {(toNumber(op.utilization_rate, 0) * 100).toFixed(0)}%
+                                                        </td>
 
-                                                    <td className="p-3 border border-slate-200 text-center">
-                                                        {op.total_actions || 0}
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                                        <td className="p-3 border border-slate-200 text-center">
+                                                            {op.total_actions || 0}
+                                                        </td>
+                                                    </tr>
+                                                );
+
+
+                                            })}
                                         </tbody>
                                     </table>
+                                    {previewImageUrl && (
+                                        <ImagePreviewModal
+                                            imageUrl={previewImageUrl}
+                                            onClose={() => setPreviewImageUrl('')}
+                                        />
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -3407,6 +3452,28 @@ export default function OperationClusterPage_test() {
                     </div>
                 </div>
             )}
+        </div>
+    );
+}
+
+function ImagePreviewModal({
+    imageUrl,
+    onClose,
+}: {
+    imageUrl: string;
+    onClose: () => void;
+}) {
+    return (
+        <div
+            className="fixed inset-0 z-[100] bg-black/75 flex items-center justify-center p-6"
+            onClick={onClose} // bấm ngoài ảnh, đóng pop up
+        >
+            <img
+                src={imageUrl}
+                alt="Hình mã hàng"
+                className="w-[30vw] h-[50vh] object-contain bg-white"
+                onClick={(e) => e.stopPropagation()} // bấm vào ảnh ko đóng pop up
+            />
         </div>
     );
 }

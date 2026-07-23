@@ -1,5 +1,5 @@
 import { GsdAnalysisDetail } from '../../types';
-
+import { getGsdAnalysisImageUrl } from '../../services/gsdAnalysis.service';
 interface GsdAnalysisDetailModalProps {
   analysis: GsdAnalysisDetail;
   onClose: () => void;
@@ -23,6 +23,10 @@ export default function GsdAnalysisDetailModal({
   analysis,
   onClose,
 }: GsdAnalysisDetailModalProps) {
+
+  const imageFileName = analysis.imageFileName || analysis.imageUrl || '';
+  const imageSrc = getGsdAnalysisImageUrl(imageFileName);
+
   return (
     <div className="fixed inset-0 bg-black/30 z-[120] flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-xl w-full max-w-7xl border border-slate-200 max-h-[90vh] overflow-hidden flex flex-col">
@@ -76,6 +80,19 @@ export default function GsdAnalysisDetailModal({
             <MetricCard label="Thời gian mức độ" sub_label={"tổng smv * mức độ phức tạp / 100"} value={formatNumber(analysis.difficultySeconds, 2)} />
             <MetricCard label="Tổng SMV" sub_label={"(tổng giây thao tác + thời gian MMTB) * hệ số SP"} value={formatNumber(analysis.totalSmvBeforeDifficulty, 2)} highlight />
             <MetricCard label="SMV cuối" sub_label={"(tổng smv + thời gian mức độ)"} value={formatNumber(analysis.finalSmv, 0)} highlight />
+            <div className="h-[180px] border border-dashed border-slate-300 rounded-sm flex items-center justify-center bg-slate-50 overflow-hidden">
+              {imageSrc ? (
+                <img
+                  src={imageSrc}
+                  alt="Hình mã hàng"
+                  className="w-full h-full object-contain"
+                />
+              ) : (
+                <span className="text-xs text-slate-400">
+                  Chưa có hình ảnh
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="border border-slate-200 rounded-lg overflow-x-auto">
@@ -190,8 +207,8 @@ function MetricCard({
 }) {
   return (
     <div className={`border rounded-lg p-3 ${highlight
-        ? 'bg-green-50 border-green-100 text-green-800'
-        : 'bg-blue-50 border-blue-100 text-blue-800'
+      ? 'bg-green-50 border-green-100 text-green-800'
+      : 'bg-blue-50 border-blue-100 text-blue-800'
       }`}>
       <div className="font-semibold">{label}</div>
       <label className="text-slate-400">{sub_label}</label>

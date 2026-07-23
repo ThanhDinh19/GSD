@@ -33,6 +33,26 @@ function generateAnalysisNo() {
     return `PT${yyyy}${mm}${dd}${hh}${mi}${ss}${ms}`;
 }
 
+function normalizeImages(payload) {
+    // Không gửi images => null, nghĩa là không cập nhật ảnh
+    if (!Object.prototype.hasOwnProperty.call(payload, 'images')) {
+        return null;
+    }
+
+    if (!Array.isArray(payload.images)) {
+        return [];
+    }
+
+    return payload.images
+        .filter((item) => item && item.imageUrl)
+        .map((item, index) => ({
+            imageUrl: item.imageUrl ?? item.image_url,
+            imageFileName: item.imageFileName ?? item.image_file_name ?? null,
+            sortOrder: toNumber(item.sortOrder ?? item.sort_order, index + 1),
+            note: item.note ?? null,
+        }));
+}
+
 async function getSourceActionsForAnalysis(sourceId) {
     const pool = getPool();
 
@@ -176,7 +196,7 @@ async function calculateAnalysis(payload) {
         ? (stitchCount / machineSpeed) * 60
         : 0;
 
-     // thời gian máy móc thiết bị = (vận tốc máy * đường may) + thao tác kèm theo + hao phí
+    // thời gian máy móc thiết bị = (vận tốc máy * đường may) + thao tác kèm theo + hao phí
     const machineSeconds =
         (machineVelocity * seamLength) + attachedActionTime + allowance;
 
@@ -228,6 +248,8 @@ async function createAnalysis(payload) {
     const operationName = String(payload.operationName || '').trim();
 
     const machineId = payload.machineId ? Number(payload.machineId) : null;
+
+    const images = normalizeImages(payload) || [];
 
     if (!operationName) {
         const err = new Error('Tên công đoạn là bắt buộc.');
@@ -379,6 +401,8 @@ async function createAnalysis(payload) {
         `);
         }
 
+        await insertImages(transaction, analysisId, images);
+
         await transaction.commit();
 
         return {
@@ -396,7 +420,7 @@ async function getAnalyses() {
     const pool = getPool();
 
     const result = await pool.request().query(`
-    SELECT
+        SELECT
       a.id AS [id],
       a.analysis_no AS [analysisNo],
       a.analysis_date AS [analysisDate],
@@ -414,10 +438,14 @@ async function getAnalyses() {
       a.difficulty_seconds AS [difficultySeconds],
       a.final_smv AS [finalSmv],
       a.skill_grade AS [skillGrade],
-      a.created_at AS [createdAt]
+      a.created_at AS [createdAt],
+      files.image_url as [imageUrl],
+      files.image_file_name as [imageFileName]
     FROM gsd_analysis_headers a
     LEFT JOIN sources s ON a.source_id = s.id
     LEFT JOIN machine_equipments_test m ON a.machine_id = m.id
+    LEFT JOIN gsd_analysis_image_links links ON links.gsd_analysis_id = a.id
+    LEFT JOIN media_files files ON links.media_file_id = files.id
     ORDER BY a.id DESC
   `);
 
@@ -465,10 +493,14 @@ async function getAnalysisById(id) {
 
         a.note AS [note],
         a.created_at AS [createdAt],
-        a.updated_at AS [updatedAt]
+        a.updated_at AS [updatedAt],
+        files.image_file_name AS [imageFileName],
+        files.image_url AS [imageUrl]
       FROM gsd_analysis_headers a
       LEFT JOIN sources s ON a.source_id = s.id
       LEFT JOIN machine_equipments_test m ON a.machine_id = m.id
+      LEFT JOIN gsd_analysis_image_links links ON links.gsd_analysis_id = a.id
+      LEFT JOIN media_files files ON files.id = links.media_file_id
       WHERE a.id = @id
     `);
 
@@ -622,6 +654,8 @@ async function updateAnalysis(id, payload) {
     const analysisId = Number(id);
     const operationName = String(payload.operationName || '').trim();
 
+    const images = normalizeImages(payload)
+
     if (!Number.isInteger(analysisId) || analysisId <= 0) {
         const err = new Error('Mã phân tích công đoạn không hợp lệ.');
         err.statusCode = 400;
@@ -677,6 +711,7 @@ async function updateAnalysis(id, payload) {
     const machineId = payload.machineId
         ? Number(payload.machineId)
         : null;
+
 
     const transaction = new sql.Transaction(pool);
 
@@ -893,6 +928,11 @@ async function updateAnalysis(id, payload) {
                 `);
         }
 
+        if (images !== null) {
+            await deleteImages(transaction, analysisId);
+            await insertImages(transaction, analysisId, images);
+        }
+        
         await transaction.commit();
 
         // Trả lại đầy đủ header + details sau cập nhật
@@ -903,6 +943,141 @@ async function updateAnalysis(id, payload) {
     }
 }
 
+async function insertImages(
+    transaction,
+    gsdAnalysisId,
+    images
+) {
+    if (!Array.isArray(images) || images.length === 0) {
+        return;
+    }
+
+    if (!gsdAnalysisId) {
+        throw new Error(
+            'Thiếu gsdAnalysisId khi lưu hình ảnh quy trình may.'
+        );
+    }
+
+    for (let index = 0; index < images.length; index++) {
+        const item = images[index];
+
+        const imageUrl =
+            item.imageUrl ||
+            item.image_url ||
+            item.imageFileName ||
+            item.image_file_name;
+
+        const imageFileName =
+            item.imageFileName ||
+            item.image_file_name ||
+            null;
+
+        if (!imageUrl) {
+            continue;
+        }
+
+        const sortOrder =
+            item.sortOrder ??
+            item.sort_order ??
+            index + 1;
+
+        const note = item.note ?? null;
+
+        // Bước 1: lưu thông tin file vào media_files
+        const mediaResult = await new sql.Request(transaction)
+            .input('image_url', sql.NVarChar(500), imageUrl)
+            .input('image_file_name', sql.NVarChar(255), imageFileName)
+            .input('note', sql.NVarChar(255), note)
+            .query(`
+                INSERT INTO dbo.media_files (
+                    image_url,
+                    image_file_name,
+                    note
+                )
+                OUTPUT INSERTED.id
+                VALUES (
+                    @image_url,
+                    @image_file_name,
+                    @note
+                );
+            `);
+
+        const mediaFileId =
+            mediaResult.recordset[0]?.id;
+
+        if (!mediaFileId) {
+            throw new Error(
+                'Không lấy được ID của hình ảnh vừa tạo.'
+            );
+        }
+
+        // Bước 2: liên kết file với quy trình may
+        await new sql.Request(transaction)
+            .input('gsd_analysis_id', sql.Int, gsdAnalysisId)
+            .input('media_file_id', sql.Int, mediaFileId)
+            .input('sort_order', sql.Int, sortOrder)
+            .query(`
+                INSERT INTO dbo.gsd_analysis_image_links (
+                    gsd_analysis_id,
+                    media_file_id,
+                    sort_order
+                )
+                VALUES (
+                    @gsd_analysis_id,
+                    @media_file_id,
+                    @sort_order
+                );
+            `);
+    }
+}
+
+async function deleteImages(
+    transaction,
+    gsdAnalysisId
+) {
+    const mediaResult = await new sql.Request(transaction)
+        .input('gsd_analysis_id', sql.Int, gsdAnalysisId)
+        .query(`
+                SELECT media_file_id
+                FROM dbo.gsd_analysis_image_links
+                WHERE gsd_analysis_id = @gsd_analysis_id;
+            `);
+
+    const mediaFileIds = mediaResult.recordset.map(
+        (row) => row.media_file_id
+    );
+
+    await new sql.Request(transaction)
+        .input('gsd_analysis_id', sql.Int, gsdAnalysisId)
+        .query(`
+            DELETE
+            FROM dbo.gsd_analysis_image_links
+            WHERE gsd_analysis_id = @gsd_analysis_id;
+        `);
+
+    for (const mediaFileId of mediaFileIds) {
+        await new sql.Request(transaction)
+            .input('media_file_id', sql.Int, mediaFileId)
+            .query(`
+                DELETE m
+                FROM dbo.media_files m
+                WHERE m.id = @media_file_id
+
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM dbo.sewing_process_image_links sp
+                      WHERE sp.media_file_id = m.id
+                  )
+
+                  AND NOT EXISTS (
+                      SELECT 1
+                      FROM dbo.gsd_analysis_image_links ga
+                      WHERE ga.media_file_id = m.id
+                  );
+            `);
+    }
+}
+
 module.exports = {
     getSourceActionsForAnalysis,
     calculateAnalysis,
@@ -910,7 +1085,8 @@ module.exports = {
     getAnalyses,
     getAnalysisById,
     updateAnalysis,
-    getAnalysisCopyDraft
+    getAnalysisCopyDraft,
+    insertImages
 };
 
 

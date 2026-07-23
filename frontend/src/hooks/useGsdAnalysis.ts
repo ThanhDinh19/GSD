@@ -16,6 +16,7 @@ import { gsdAnalysisService } from '../services/gsdAnalysis.service';
 type SourceActionMap = Record<number, GsdAnalysisRow[]>;
 
 export function useGsdAnalysis() {
+    const [form, setForm] = useState<GsdAnalysisPayload>();
     const [sources, setSources] = useState<SourceMaster[]>([]);
     const [machines, setMachines] = useState<MachineEquipment[]>([]);
     const [machines_test, setMachines_test] = useState<MachineEquipment_test[]>([]);
@@ -295,6 +296,7 @@ export function useGsdAnalysis() {
                 note: row.note,
                 isSelected: true,
             })),
+            images: form.images ?? []
         };
     };
 

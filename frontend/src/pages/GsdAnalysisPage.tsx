@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { GsdAnalysisPayload } from '../types';
 import { useGsdAnalysis } from '../hooks/useGsdAnalysis';
 import SourceActionPickerModal from '../components/gsd-analysis/SourceActionPickerModal';
+import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../services/gsdAnalysis.service';
+
 
 // Omit lấy type GsdAnalysisPayload, bỏ cột sourceId, details
 const initialForm: Omit<GsdAnalysisPayload, 'sourceId' | 'details'> = {
@@ -15,6 +17,7 @@ const initialForm: Omit<GsdAnalysisPayload, 'sourceId' | 'details'> = {
     difficultyPercent: 0,
     productMultiplier: 1,
     note: '',
+    images: []
 };
 
 type GsdAnalysisPageProps = {
@@ -99,9 +102,14 @@ export default function GsdAnalysisPage({
 
     } = useGsdAnalysis();
 
+    const [imageUploading, setImageUploading] = useState(false);
+    const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
+    const [localImagePreview, setLocalImagePreview] = useState('');
+
     const [attachedAcTime, setAttachedAcTime] = useState(0);
 
     const [form, setForm] = useState(initialForm);
+
     const [isPickerOpen, setIsPickerOpen] = useState(false);
 
     const selectedMachine = useMemo(() => {
@@ -121,6 +129,17 @@ export default function GsdAnalysisPage({
     );
 
     const selectedRows = analysisRows;
+
+    const mainImage = form.images?.[0] || null;
+
+    const serverImageSrc = getGsdAnalysisImageUrl(
+        mainImage?.imageUrl ||
+        mainImage?.imageFileName
+    );
+
+    const mainImageSrc =
+        localImagePreview || serverImageSrc;
+
 
     const previewTotalTmu = analysisRows.reduce((sum, item) => {
         return sum + Number(item.tmu || 0) * Number(item.frequency || 0);
@@ -181,37 +200,105 @@ export default function GsdAnalysisPage({
         if (!validateBeforeCalculate()) return;
 
         try {
-            // Chế độ copy: editAnalysisId = null
-            // nên save sẽ gọi createAnalysis.
+            let formToSave = form;
+            let nextImages = form.images ?? [];
+
+            if (selectedImageFile) {
+                const uploaded =
+                    await gsdAnalysisService.uploadImage(
+                        selectedImageFile
+                    );
+
+                nextImages = [
+                    {
+                        imageUrl: uploaded.imageUrl,
+                        imageFileName: uploaded.imageFileName,
+                    },
+                ];
+
+                formToSave = {
+                    ...form,
+                    images: nextImages,
+                };
+            }
+
             const response = await save(
-                form,
+                formToSave,
                 editAnalysisId
             );
+
+            setForm((prev) => prev
+                ? {
+                    ...prev,
+                    images: nextImages,
+                }
+                : prev);
 
             alert(
                 `${response.message}\nMã phân tích: ${response.data.analysisNo || ''
                 }`
             );
 
+            setSelectedImageFile(null);
+
+            setLocalImagePreview((oldUrl) => {
+                if (oldUrl) {
+                    URL.revokeObjectURL(oldUrl);
+                }
+
+                return '';
+            });
+
             onSaveSuccess?.();
         } catch (err) {
             alert(
                 err instanceof Error
                     ? err.message
-                    : editAnalysisId
-                        ? 'Cập nhật phân tích thất bại.'
-                        : copyAnalysisId
-                            ? 'Lưu công đoạn sao chép thất bại.'
-                            : 'Lưu phân tích thất bại.'
+                    : 'Lưu phân tích thất bại.'
             );
         }
     };
 
-    const updateForm = (
-        updater: (prev: typeof form) => typeof form
+
+    const handleSelectMainImage = (
+        e: React.ChangeEvent<HTMLInputElement>
     ) => {
-        clearResult();
-        setForm(updater);
+        const file = e.target.files?.[0];
+
+        if (!file) return;
+
+        setSelectedImageFile(file);
+
+        setLocalImagePreview((oldUrl) => {
+            if (oldUrl) {
+                URL.revokeObjectURL(oldUrl);
+            }
+
+            return URL.createObjectURL(file);
+        });
+    };
+
+    const handleRemoveMainImage = () => {
+        const confirmed = window.confirm(
+            'Bạn có chắc muốn xóa hình ảnh này?'
+        );
+
+        if (!confirmed) return;
+
+        setSelectedImageFile(null);
+
+        setLocalImagePreview((oldUrl) => {
+            if (oldUrl) {
+                URL.revokeObjectURL(oldUrl);
+            }
+
+            return '';
+        });
+
+        setForm((prev) => ({
+            ...prev,
+            images: [],
+        }));
     };
 
     useEffect(() => {
@@ -277,6 +364,19 @@ export default function GsdAnalysisPage({
 
                     note:
                         detail.note ?? '',
+
+                    images: detail.imageFileName
+                        ? [
+                            {
+                                imageUrl:
+                                    detail.imageUrl ??
+                                    detail.imageFileName,
+
+                                imageFileName:
+                                    detail.imageFileName,
+                            },
+                        ]
+                        : [],
                 });
             } catch (err) {
                 if (cancelled) return;
@@ -477,6 +577,43 @@ export default function GsdAnalysisPage({
                             onChange={(e) => setForm({ ...form, note: e.target.value })}
                             className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                         />
+                    </div>
+
+                    <div>
+                        <div className="h-[180px] border border-dashed border-slate-300 rounded-sm flex items-center justify-center bg-slate-50 overflow-hidden">
+                            {mainImageSrc ? (
+                                <img
+                                    src={mainImageSrc}
+                                    alt="Hình mã hàng"
+                                    className="w-full h-full object-contain"
+                                />
+                            ) : (
+                                <span className="text-xs text-slate-400">
+                                    Chưa có hình ảnh
+                                </span>
+                            )}
+                        </div>
+
+                        <label className="px-3 py-2 rounded-sm border border-blue-300 text-blue-700 text-xs font-bold hover:bg-blue-50 cursor-pointer">
+                            {imageUploading ? "Đang upload..." : "Upload hình"}
+                            <input
+                                type="file"
+                                accept="image/*"
+                                hidden
+                                disabled={imageUploading}
+                                onChange={handleSelectMainImage}
+                            />
+                        </label>
+
+                        {mainImageSrc && (
+                            <button
+                                type="button"
+                                onClick={handleRemoveMainImage}
+                                className="px-3 py-2 rounded-sm border border-red-300 text-red-600 text-xs font-bold hover:bg-red-50"
+                            >
+                                Xóa hình
+                            </button>
+                        )}
                     </div>
                 </div>
 
