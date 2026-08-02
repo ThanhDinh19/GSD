@@ -1,0 +1,23 @@
+hiện tại đây là đường dẫn http://localhost:9000/api/auth/login đăng nhập
+{
+    "username": "admin",
+    "password": "Aa@123456"
+}
+
+vậy viết giúp màn hình đăng nhập, và cấu hình permission trước
+còn navigation để làm sao
+chỉ cần bọc lại là user nếu ko có quyền thì sẽ ko nhìn thấy button, radio, table, view....
+ví dụ: {permissions.canCreate && (
+                            <Button
+                                variant="primary"
+                                onClick={openCreate}
+                            >
+                                Thêm mới
+                            </Button>
+                        )}
+>> chỗ nào có bọc thì sẽ kiểm tra, nếu có quyền thì sẽ thấy, ko thì k nhìn thấy
+
+
+
+
+

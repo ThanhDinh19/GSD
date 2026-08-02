@@ -1,7 +1,16 @@
 import { useState } from 'react';
 import { GsdAnalysisSummary } from '../../types';
 import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../../services/gsdAnalysis.service';
+import {
+    usePermissions,
+} from '../../../src/features/auth/hooks/usePermissions';
+import {
+    SCREEN,
+} from '../../../src/features/auth/constants/permission.constants';
 
+import {
+    Button
+} from '../../shared/components';
 
 interface GsdProcessTableProps {
     analyses: GsdAnalysisSummary[];
@@ -51,6 +60,7 @@ export default function GsdProcessTable({
 
     showActionButtons = true,
 }: GsdProcessTableProps) {
+    const permissions = usePermissions(SCREEN.GSD_ANALYSIS);
     const columnCount = onDetailClick ? 8 : 7;
     const [previewImageUrl, setPreviewImageUrl] = useState('');
 
@@ -61,55 +71,53 @@ export default function GsdProcessTable({
                     <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
                         Quy trình công đoạn
                     </h2>
-
-                    <p className="text-xs text-slate-500 mt-1">
-                        Chọn một công đoạn rồi bấm Sửa hoặc Sao chép.
-                    </p>
                 </div>
 
                 {showActionButtons && (
                     <div className="flex items-center gap-2">
-                        {onCreate && (
-                            <button
-                                type="button"
+                        {permissions.canCreate && onCreate && (
+                            <Button
+                                variant='primary'
                                 onClick={onCreate}
-                                className="px-4 py-2 bg-blue-700 text-white rounded-sm text-xs font-bold hover:bg-blue-800"
+
                             >
-                                + Khai báo công đoạn mới
-                            </button>
+                                New
+                            </Button>
                         )}
 
-                        {onEdit && (
-                            <button
-                                type="button"
+                        {permissions.canUpdate && onEdit && (
+                            <Button
+                                variant='warning'
                                 onClick={onEdit}
                                 disabled={!selectedId}
-                                className="px-4 py-2 border border-amber-300 text-amber-700 rounded-sm text-xs font-bold hover:bg-amber-50 disabled:opacity-50 disabled:cursor-not-allowed"
+
                             >
-                                Sửa
-                            </button>
+                                Edit
+                            </Button>
                         )}
 
-                        {onCopy && (
-                            <button
+                        {permissions.canCreate && onCopy && (
+
+                            <Button
                                 type="button"
                                 onClick={onCopy}
                                 disabled={!selectedId}
-                                className="px-4 py-2 border border-indigo-300 text-indigo-700 rounded-sm text-xs font-bold hover:bg-indigo-50 disabled:opacity-50 disabled:cursor-not-allowed"
+
                             >
-                                Sao chép
-                            </button>
+                                Copy
+                            </Button>
+
                         )}
 
                         {onRefresh && (
-                            <button
-                                type="button"
+                            <Button
+
                                 onClick={onRefresh}
                                 disabled={loading}
-                                className="px-4 py-2 border border-slate-300 text-slate-700 rounded-sm text-xs font-bold hover:bg-slate-50 disabled:opacity-50"
+
                             >
-                                {loading ? 'Đang tải...' : 'Tải lại'}
-                            </button>
+                                {loading ? 'Loading...' : 'Refresh'}
+                            </Button>
                         )}
                     </div>
                 )}
@@ -307,6 +315,7 @@ export default function GsdProcessTable({
                     </tbody>
                 </table>
             </div>
+
 
             {previewImageUrl && (
                 <ImagePreviewModal

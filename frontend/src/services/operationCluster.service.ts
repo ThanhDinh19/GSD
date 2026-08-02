@@ -7,63 +7,71 @@ import {
     OperationClusterGroupPayload,
     CreateOperationClusterPayload,
     OperationClusterDetail,
-    GsdActionDetail
+    GsdActionDetail,
+    ApiResponse,
 } from '../types';
 
-async function request<T>(url: string, options?: RequestInit): Promise<T> {
-    const res = await fetch(url, {
-        headers: {
-            'Content-Type': 'application/json',
-            ...(options?.headers || {}),
-        },
-        ...options,
-    });
+import {
+  request,
+} from './httpClient';
 
-    if (!res.ok) {
-        const error = await res.json().catch(() => null);
-        throw new Error(error?.message || 'Có lỗi xảy ra');
-    }
+// async function request<T>(url: string, options?: RequestInit): Promise<T> {
+//     const res = await fetch(url, {
+//         headers: {
+//             'Content-Type': 'application/json',
+//             ...(options?.headers || {}),
+//         },
+//         ...options,
+//     });
 
-    return res.json();
-}
+//     if (!res.ok) {
+//         const error = await res.json().catch(() => null);
+//         throw new Error(error?.message || 'Có lỗi xảy ra');
+//     }
+
+//     return res.json();
+// }
 
 export const operationClusterService = {
-    getAll() {
-        return request<OperationClusterHeader[]>('/api/operation-clusters');
+
+    async getAll() {
+        const res = await request<ApiResponse<OperationClusterHeader[]>>('/api/operation-clusters');
+        return res.data;
     },
 
-    getById(id: number) {
-        return request<OperationClusterDetail>(`/api/operation-clusters/${id}`);
+    async getById(id: number) {
+        const res = await request<ApiResponse<OperationClusterDetail>>(`/api/operation-clusters/${id}`);
+        return res.data;
     },
 
-    getGsdOptions() {
-        return request<GsdOption[]>('/api/operation-clusters/gsd-options');
+    async getGsdOptions() {
+        const res = await request<ApiResponse<GsdOption[]>>('/api/operation-clusters/gsd-options');
+        return res.data;
     },
 
-    getGsdActions(id: number) {
-        return request<GsdActionDetail[]>(
-            `/api/operation-clusters/gsd-options/${id}/actions`
-        );
+    async getGsdActions(id: number) {
+        const res = await request<ApiResponse<GsdActionDetail[]>>(`/api/operation-clusters/gsd-options/${id}/actions`);
+        return res.data;
     },
 
     create(payload: CreateOperationClusterPayload) {
         return request<OperationClusterDetail>('/api/operation-clusters', {
             method: 'POST',
-            body: JSON.stringify(payload),
+            body: payload,
         });
     },
 
     update(id: number, payload: CreateOperationClusterPayload) {
         return request(`/api/operation-clusters/${id}`, {
             method: 'PUT',
-            body: JSON.stringify(payload),
+            body: payload,
         });
     },
 
     copy(payload: CreateOperationClusterPayload) {
         return request('/api/operation-clusters/copy', {
             method: 'POST',
-            body: JSON.stringify(payload),
+            body: payload,
         });
     }
 };

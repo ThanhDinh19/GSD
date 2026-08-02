@@ -15,6 +15,17 @@ import {
     getGsdAnalysisImageUrl,
 } from '../services/sewingProcess.service';
 
+import {
+    usePermissions,
+} from '../../src/features/auth/hooks/usePermissions';
+import {
+    SCREEN,
+} from '../../src/features/auth/constants/permission.constants';
+
+import {
+    Button
+} from '../shared/components';
+
 // form thông tin chứng từ
 type FormState = {
     document_code: string;
@@ -97,6 +108,7 @@ const readOperationClusterDraft = (): OperationClusterDraft | null => {
 
 // -------------------------------- bản nháp ----------------------------------------
 export default function OperationClusterPage_test() {
+    const permissions = usePermissions(SCREEN.OPERATION_CLUSTER);
     const initialDraft = useMemo(() => readOperationClusterDraft(), []);
 
     const {
@@ -981,6 +993,14 @@ export default function OperationClusterPage_test() {
                 return;
             }
 
+            const documentCode = form.document_code.trim();
+
+            if (documentCode.length > 16) {
+                alert(`Mã chứng từ tối đa 16 ký tự. Mã hiện tại có ${documentCode.length} ký tự.`);
+                return;
+            }
+
+
             if (!form.work_id) {
                 alert('Vui lòng chọn nhóm công việc');
                 return;
@@ -1247,6 +1267,14 @@ export default function OperationClusterPage_test() {
         setLoadingActionIds([]);
     };
 
+    if (!permissions.canView) {
+        return (
+            <div className="p-6 text-sm text-red-600">
+                Bạn không có quyền xem màn hình này.
+            </div>
+        );
+    }
+
     return (
         <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto">
             <div className="max-w-[1720px] mx-auto space-y-4">
@@ -1254,58 +1282,56 @@ export default function OperationClusterPage_test() {
                 <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-5">
                     <div className="flex items-center justify-between mb-4">
                         <div>
-                            {/* <h2 className="text-base font-bold text-slate-800">
-                                    Chứng từ đã lưu
-                                </h2> */}
-                            <p className="text-xs text-slate-500 mt-0.5">
+                            <h1 className="text-base font-bold text-slate-800">
+                                DANH SÁCH KHO CỤM CÔNG ĐOẠN
+                            </h1>
+                            {/* <p className="text-xs text-slate-500 mt-0.5">
                                 Danh sách mã chứng từ kho cụm công đoạn đã được lưu.
-                            </p>
+                            </p> */}
                         </div>
 
                         <div className="flex items-center gap-2">
+                            {permissions.canCreate && (
+                                <Button
+                                    variant='primary'
+                                    onClick={handleOpenCreateModal}
+                                >
+                                    New
+                                </Button>
+                            )}
 
-                            <button
-                                type="button"
+                            {permissions.canUpdate && (
+                                <Button
+                                    variant='warning'
+                                    onClick={handleEdit}
+                                    disabled={!selectedSavedId}
+                                >
+                                    Edit
+                                </Button>
+                            )}
+
+                            {permissions.canCreate && (
+                                <Button
+                                    onClick={handleCopy}
+                                >
+                                    Copy
+                                </Button>
+                            )}
+
+                            {permissions.canExport && (
+                                <Button
+                                    onClick={handleExportExcel}
+                                >
+                                    Export
+                                </Button>
+                            )}
+                            <Button
                                 onClick={loadItems}
-                                className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm hover:bg-slate-50"
+                                loading={loading}
+                                loadingText="Loading..."
                             >
-                                Tải lại
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={handleExportExcel}
-                                className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm text-slate-700 hover:bg-slate-50"
-                            >
-                                Xuất Excel
-                            </button>
-
-
-                            <button
-                                type="button"
-                                onClick={handleCopy}
-                                className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm hover:bg-slate-50"
-                            >
-                                Sao chép
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={handleEdit}
-                                className="px-4 py-2 rounded-sm border border-slate-300 bg-white text-sm hover:bg-slate-50"
-                            >
-                                Sửa
-                            </button>
-
-                            <button
-                                type="button"
-                                onClick={handleOpenCreateModal}
-                                className="px-5 py-2 rounded-sm bg-blue-600 text-white text-sm hover:bg-blue-700"
-                            >
-                                + Khai báo cụm công đoạn
-                            </button>
-
-
+                                Refresh
+                            </Button>
                         </div>
                     </div>
 
@@ -1447,106 +1473,6 @@ export default function OperationClusterPage_test() {
                         </table>
                     </div>
 
-
-
-                    {/* {selectedDetail && (
-                            <div className="mt-5 border border-slate-200 rounded-sm overflow-hidden">
-                                <div className="bg-slate-50 px-4 py-3 border-b border-slate-200 flex items-center justify-between">
-                                    <div>
-                                        <div className="text-sm font-bold text-slate-800">
-                                            Chi tiết chứng từ: {selectedDetail.header?.document_code || '-'}
-                                        </div>
-                                        <div className="text-xs text-slate-500 mt-0.5">
-                                            Danh sách cụm và công đoạn đã lưu.
-                                        </div>
-                                    </div>
-
-                                    <button
-                                        type="button"
-                                        onClick={() => setSelectedDetail(null)}
-                                        className="text-sm text-slate-500 hover:text-rose-600"
-                                    >
-                                        Đóng
-                                    </button>
-                                </div>
-
-                                <div className="overflow-auto">
-                                    <table className="w-full text-sm min-w-[1300px]">
-                                        <thead className="bg-white">
-                                            <tr className="text-xs text-slate-500 uppercase">
-                                                <th className="p-3 border-b border-slate-200 text-left w-[70px]">STT</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[120px]">Cụm</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[140px]">Mã GSD</th>
-                                                <th className="p-3 border-b border-slate-200 text-left">Công đoạn</th>
-                                                <th className="p-3 border-b border-slate-200 text-left w-[180px]">MMTB</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[100px]">SAM GSD</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[100px]">Hệ số</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[120px]">Đơn giá</th>
-                                                <th className="p-3 border-b border-slate-200 text-right w-[120px]">SAM ĐC</th>
-                                                <th className="p-3 border-b border-slate-200 text-center w-[100px]">Bước</th>
-                                            </tr>
-                                        </thead>
-
-                                        <tbody>
-                                            {(!selectedDetail.operations || selectedDetail.operations.length === 0) && (
-                                                <tr>
-                                                    <td colSpan={10} className="p-8 text-center text-slate-400">
-                                                        Chứng từ này chưa có công đoạn hoặc API chưa trả operations.
-                                                    </td>
-                                                </tr>
-                                            )}
-
-                                            {(selectedDetail.operations || []).map((op: any, index: number) => (
-                                                <tr
-                                                    key={op.id || index}
-                                                    className="border-b border-slate-100 hover:bg-slate-50"
-                                                >
-                                                    <td className="p-3 text-slate-500">
-                                                        {index + 1}
-                                                    </td>
-
-                                                    <td className="p-3">
-                                                        {op.cluster_name || `Cụm ${op.group_line_no || ''}`}
-                                                    </td>
-
-                                                    <td className="p-3 font-bold text-blue-700">
-                                                        {op.operation_code || '-'}
-                                                    </td>
-
-                                                    <td className="p-3 font-bold text-slate-800">
-                                                        {op.operation_name || '-'}
-                                                    </td>
-
-                                                    <td className="p-3">
-                                                        {op.machine_name || '-'}
-                                                    </td>
-
-                                                    <td className="p-3 text-right">
-                                                        {Number(op.sam_gsd || 0).toFixed(2)}
-                                                    </td>
-
-                                                    <td className="p-3 text-right">
-                                                        {Number(op.salary_coefficient || 0).toFixed(2)}
-                                                    </td>
-
-                                                    <td className="p-3 text-right font-bold">
-                                                        {Number(op.standard_price || 0).toFixed(2)}
-                                                    </td>
-
-                                                    <td className="p-3 text-right font-bold text-blue-700">
-                                                        {Number(op.adjusted_sam || 0).toFixed(2)}
-                                                    </td>
-
-                                                    <td className="p-3 text-center">
-                                                        {op.total_actions || 0}
-                                                    </td>
-                                                </tr>
-                                            ))}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        )} */}
                 </div>
                 {/* khai báo cụm công đoạn */}
                 {isCreateModalOpen && (
@@ -2510,9 +2436,7 @@ export default function OperationClusterPage_test() {
                                                             {op.cluster_name || `Cụm ${op.group_line_no || ''}`}
                                                         </td>
 
-                                                        {/* <td className="p-3 border border-slate-200 text-blue-700">
-                                                    {op.operation_code || '-'}
-                                                </td> */}
+
 
                                                         <td className="p-3 border border-slate-200 text-slate-800">
                                                             {op.operation_name || '-'}

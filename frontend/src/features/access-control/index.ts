@@ -1,0 +1,1 @@
+export { default as UserPermissionsPage } from './pages/UserPermissionsPage';

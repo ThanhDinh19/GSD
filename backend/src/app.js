@@ -3,14 +3,37 @@ const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
 
+// dinh 25/07/2026
+const cookieParser = require('cookie-parser');
+const {
+notFoundHandler,
+    errorHandler,
+} = require('./middlewares/error.middleware');
+
 const apiRoutes = require('./routes');
-const { notFoundHandler, errorHandler } = require('./middlewares/error.middleware');
 const sewingProcessImageDir = require('./config/sewingProcessImageDir');
 const gsdAnalysisImageDir = require('./config/gsdAnalysisImageDir');
 const app = express();
 
-app.use(cors());
-app.use(express.json());
+// dinh 25/07/2026
+app.set('trust proxy', 1);
+
+app.use(
+    cors({
+        origin:
+            process.env.FRONTEND_ORIGIN,
+        credentials: true,
+    })
+);
+
+app.use(express.json({
+    limit: '10mb',
+}));
+
+app.use(cookieParser());
+
+
+
 
 // 1. Serve hình ảnh upload trước SPA fallback
 app.use(
@@ -22,13 +45,12 @@ app.use(
     express.static(gsdAnalysisImageDir)
 );
 
-
-
 // 2. API routes
 app.use('/api', apiRoutes);
 
 // 3. API not found
 app.use('/api', notFoundHandler);
+
 
 // 4. Serve frontend build nếu có
 const frontendDistPath = path.join(__dirname, '../../frontend/dist');

@@ -25,30 +25,7 @@ export const gsdCodeService = {
         });
     },
 
-    // importGsdCodesFromExcel(file: File, sheetName = 'GSD') {
-    //     const formData = new FormData();
-    //     formData.append('file', file);
-    //     formData.append('sheetName', sheetName);
-
-    //     return fetch(`${API_BASE_URL}/api/gsd-codes/import-gsd`, {
-    //         method: 'POST',
-    //         body: formData,
-    //     }).then(async (response) => {
-    //         const data = await response.json().catch(() => null);
-
-    //         if (!response.ok) {
-    //             throw new Error(data?.error || 'Import Excel thất bại.');
-    //         }
-
-    //         return data as {
-    //             inserted: number;
-    //             skippedDuplicate: number;
-    //             skippedEmpty: number;
-    //             totalRead: number;
-    //             message: string;
-    //         };
-    //     });
-    // },
+  
 
 
     importGsdCodesExcel(file: File) {

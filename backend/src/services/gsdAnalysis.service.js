@@ -241,7 +241,36 @@ async function calculateAnalysis(payload) {
     };
 }
 
-async function createAnalysis(payload) {
+async function createAnalysis(
+    payload,
+    context = {}
+) {
+    const userId = Number(context.userId);
+
+    if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+    ) {
+        const err = new Error(
+            'Bạn chưa đăng nhập.'
+        );
+
+        err.statusCode = 401;
+        throw err;
+    }
+
+    const employeeId =
+        context.employeeId
+            ? Number(context.employeeId)
+            : null;
+
+    const departmentCode =
+        context.departmentCode
+            ? String(
+                context.departmentCode
+            ).trim()
+            : null;
+
     const pool = getPool();
     const transaction = new sql.Transaction(pool);
 
@@ -287,76 +316,214 @@ async function createAnalysis(payload) {
         //     `);
 
 
-        const headerResult = await new sql.Request(transaction)
-            .input('analysis_no', sql.NVarChar, analysisNo)
-            .input('source_id', sql.Int, payload.sourceId ? Number(payload.sourceId) : null)
-            .input('machine_id', sql.Int, payload.machineId ? Number(payload.machineId) : null)
-            .input('operation_name', sql.NVarChar, operationName)
-            .input('seam_length', sql.Decimal(18, 4), toNumber(payload.seamLength, 0))
-            .input('attached_action_time', sql.Decimal(18, 4), toNumber(payload.attachedActionTime, 0))
-            .input('difficulty_percent', sql.Decimal(18, 4), toNumber(payload.difficultyPercent, 0))
-            .input('product_multiplier', sql.Decimal(18, 4), toNumber(payload.productMultiplier, 1))
-            .input('stitch_count', sql.Decimal(18, 4), calculated.stitchCount)
-            .input('machine_speed', sql.Decimal(18, 4), calculated.machineSpeed)
-            .input('machine_velocity', sql.Decimal(18, 4), calculated.machineVelocity)
-            .input('allowance', sql.Decimal(18, 4), calculated.allowance)
-            .input('total_tmu', sql.Decimal(18, 4), calculated.totalTmu)
-            .input('total_manual_seconds', sql.Decimal(18, 4), calculated.totalManualSeconds)
-            .input('machine_seconds', sql.Decimal(18, 4), calculated.machineSeconds)
-            .input('total_smv_before_difficulty', sql.Decimal(18, 4), calculated.totalSmvBeforeDifficulty)
-            .input('difficulty_seconds', sql.Decimal(18, 4), calculated.difficultySeconds)
-            .input('final_smv', sql.Decimal(18, 4), calculated.finalSmv)
-            .input('skill_grade', sql.TinyInt, calculated.skillGrade)
-            .input('note', sql.NVarChar, payload.note ? String(payload.note).trim() : null)
-            .query(`
-        INSERT INTO gsd_analysis_headers (
-          analysis_no,
-          source_id,
-          machine_id,
-          operation_name,
-          seam_length,
-          attached_action_time,
-          difficulty_percent,
-          product_multiplier,
-          stitch_count,
-          machine_speed,
-          machine_velocity,
-          allowance,
-          total_tmu,
-          total_manual_seconds,
-          machine_seconds,
-          total_smv_before_difficulty,
-          difficulty_seconds,
-          final_smv,
-          skill_grade,
-          note
-        )
-        OUTPUT INSERTED.id
-        VALUES (
-          @analysis_no,
-          @source_id,
-          @machine_id,
-          @operation_name,
-          @seam_length,
-          @attached_action_time,
-          @difficulty_percent,
-          @product_multiplier,
-          @stitch_count,
-          @machine_speed,
-          @machine_velocity,
-          @allowance,
-          @total_tmu,
-          @total_manual_seconds,
-          @machine_seconds,
-          @total_smv_before_difficulty,
-          @difficulty_seconds,
-          @final_smv,
-          @skill_grade,
-          @note
-        )
-      `);
+        const headerResult =
+            await new sql.Request(
+                transaction
+            )
+                .input(
+                    'analysis_no',
+                    sql.NVarChar,
+                    analysisNo
+                )
+                .input(
+                    'source_id',
+                    sql.Int,
+                    payload.sourceId
+                        ? Number(payload.sourceId)
+                        : null
+                )
+                .input(
+                    'machine_id',
+                    sql.Int,
+                    payload.machineId
+                        ? Number(payload.machineId)
+                        : null
+                )
+                .input(
+                    'operation_name',
+                    sql.NVarChar,
+                    operationName
+                )
+                .input(
+                    'seam_length',
+                    sql.Decimal(18, 4),
+                    toNumber(
+                        payload.seamLength,
+                        0
+                    )
+                )
+                .input(
+                    'attached_action_time',
+                    sql.Decimal(18, 4),
+                    toNumber(
+                        payload.attachedActionTime,
+                        0
+                    )
+                )
+                .input(
+                    'difficulty_percent',
+                    sql.Decimal(18, 4),
+                    toNumber(
+                        payload.difficultyPercent,
+                        0
+                    )
+                )
+                .input(
+                    'product_multiplier',
+                    sql.Decimal(18, 4),
+                    toNumber(
+                        payload.productMultiplier,
+                        1
+                    )
+                )
+                .input(
+                    'stitch_count',
+                    sql.Decimal(18, 4),
+                    calculated.stitchCount
+                )
+                .input(
+                    'machine_speed',
+                    sql.Decimal(18, 4),
+                    calculated.machineSpeed
+                )
+                .input(
+                    'machine_velocity',
+                    sql.Decimal(18, 4),
+                    calculated.machineVelocity
+                )
+                .input(
+                    'allowance',
+                    sql.Decimal(18, 4),
+                    calculated.allowance
+                )
+                .input(
+                    'total_tmu',
+                    sql.Decimal(18, 4),
+                    calculated.totalTmu
+                )
+                .input(
+                    'total_manual_seconds',
+                    sql.Decimal(18, 4),
+                    calculated.totalManualSeconds
+                )
+                .input(
+                    'machine_seconds',
+                    sql.Decimal(18, 4),
+                    calculated.machineSeconds
+                )
+                .input(
+                    'total_smv_before_difficulty',
+                    sql.Decimal(18, 4),
+                    calculated
+                        .totalSmvBeforeDifficulty
+                )
+                .input(
+                    'difficulty_seconds',
+                    sql.Decimal(18, 4),
+                    calculated.difficultySeconds
+                )
+                .input(
+                    'final_smv',
+                    sql.Decimal(18, 4),
+                    calculated.finalSmv
+                )
+                .input(
+                    'skill_grade',
+                    sql.TinyInt,
+                    calculated.skillGrade
+                )
+                .input(
+                    'note',
+                    sql.NVarChar,
+                    payload.note
+                        ? String(
+                            payload.note
+                        ).trim()
+                        : null
+                )
+                .input(
+                    'created_by_user_id',
+                    sql.BigInt,
+                    userId
+                )
+                .input(
+                    'owner_user_id',
+                    sql.BigInt,
+                    userId
+                )
+                .input(
+                    'owner_employee_id',
+                    sql.BigInt,
+                    employeeId
+                )
+                .input(
+                    'owner_department_code',
+                    sql.VarChar(32),
+                    departmentCode
+                )
+                .query(`
+            INSERT INTO gsd_analysis_headers (
+                analysis_no,
+                source_id,
+                machine_id,
+                operation_name,
+                seam_length,
+                attached_action_time,
+                difficulty_percent,
+                product_multiplier,
+                stitch_count,
+                machine_speed,
+                machine_velocity,
+                allowance,
+                total_tmu,
+                total_manual_seconds,
+                machine_seconds,
+                total_smv_before_difficulty,
+                difficulty_seconds,
+                final_smv,
+                skill_grade,
+                note,
+
+                created_by_user_id,
+                owner_user_id,
+                owner_employee_id,
+                owner_department_code,
+                workflow_status_code
+            )
+            OUTPUT INSERTED.id
+            VALUES (
+                @analysis_no,
+                @source_id,
+                @machine_id,
+                @operation_name,
+                @seam_length,
+                @attached_action_time,
+                @difficulty_percent,
+                @product_multiplier,
+                @stitch_count,
+                @machine_speed,
+                @machine_velocity,
+                @allowance,
+                @total_tmu,
+                @total_manual_seconds,
+                @machine_seconds,
+                @total_smv_before_difficulty,
+                @difficulty_seconds,
+                @final_smv,
+                @skill_grade,
+                @note,
+
+                @created_by_user_id,
+                @owner_user_id,
+                @owner_employee_id,
+                @owner_department_code,
+                'DRAFT'
+            );
+        `);
 
         const analysisId = headerResult.recordset[0].id;
+
+
 
         for (const item of calculated.details) {
             await new sql.Request(transaction)
@@ -403,6 +570,37 @@ async function createAnalysis(payload) {
 
         await insertImages(transaction, analysisId, images);
 
+        // await new sql.Request(transaction)
+        //     .input('created_by_user_id', sql.BigInt, context.userId)
+        //     .input('owner_user_id', sql.BigInt, context.userId
+        //     )
+        //     .input('owner_employee_id', sql.BigInt, context.employeeId)
+        //     .input('owner_department_code', sql.VarChar(32), context.departmentCode)
+        //     .query(`
+        //         INSERT INTO gsd_analysis_headers (
+        //             analysis_no,
+        //             operation_name,
+
+        //             created_by_user_id,
+        //             owner_user_id,
+        //             owner_employee_id,
+        //             owner_department_code,
+
+        //             workflow_status_code
+        //         )
+        //         VALUES (
+        //             @analysis_no,
+        //             @operation_name,
+
+        //             @created_by_user_id,
+        //             @owner_user_id,
+        //             @owner_employee_id,
+        //             @owner_department_code,
+
+        //             'DRAFT'
+        //         );
+        //     `)
+
         await transaction.commit();
 
         return {
@@ -420,34 +618,37 @@ async function getAnalyses() {
     const pool = getPool();
 
     const result = await pool.request().query(`
-        SELECT
-      a.id AS [id],
-      a.analysis_no AS [analysisNo],
-      a.analysis_date AS [analysisDate],
-      a.operation_name AS [operationName],
+           SELECT
+            a.is_deleted,
+            a.id AS [id],
+            a.analysis_no AS [analysisNo],
+            a.analysis_date AS [analysisDate],
+            a.operation_name AS [operationName],
 
-      s.source_code AS [sourceCode],
-      m.machine_code AS [machineCode],
-      m.machine_name AS [machineName],
-      m.code_mmtb AS [codeMMTB],
+            s.source_code AS [sourceCode],
+            m.machine_code AS [machineCode],
+            m.machine_name AS [machineName],
+            m.code_mmtb AS [codeMMTB],
 
-      a.total_tmu AS [totalTmu],
-      a.total_manual_seconds AS [totalManualSeconds],
-      a.machine_seconds AS [machineSeconds],
-      a.total_smv_before_difficulty AS [totalSmvBeforeDifficulty],
-      a.difficulty_seconds AS [difficultySeconds],
-      a.final_smv AS [finalSmv],
-      a.skill_grade AS [skillGrade],
-      a.created_at AS [createdAt],
-      files.image_url as [imageUrl],
-      files.image_file_name as [imageFileName]
-    FROM gsd_analysis_headers a
-    LEFT JOIN sources s ON a.source_id = s.id
-    LEFT JOIN machine_equipments_test m ON a.machine_id = m.id
-    LEFT JOIN gsd_analysis_image_links links ON links.gsd_analysis_id = a.id
-    LEFT JOIN media_files files ON links.media_file_id = files.id
-    ORDER BY a.id DESC
-  `);
+            a.total_tmu AS [totalTmu],
+            a.total_manual_seconds AS [totalManualSeconds],
+            a.machine_seconds AS [machineSeconds],
+            a.total_smv_before_difficulty AS [totalSmvBeforeDifficulty],
+            a.difficulty_seconds AS [difficultySeconds],
+            a.final_smv AS [finalSmv],
+            a.skill_grade AS [skillGrade],
+            a.created_at AS [createdAt],
+            files.image_url as [imageUrl],
+            files.image_file_name as [imageFileName]
+
+        FROM gsd_analysis_headers a
+        LEFT JOIN sources s ON a.source_id = s.id
+        LEFT JOIN machine_equipments_test m ON a.machine_id = m.id
+        LEFT JOIN gsd_analysis_image_links links ON links.gsd_analysis_id = a.id
+        LEFT JOIN media_files files ON links.media_file_id = files.id
+        WHERE a.is_deleted = 0
+        ORDER BY a.id DESC
+    `);
 
     return result.recordset;
 }
@@ -932,7 +1133,7 @@ async function updateAnalysis(id, payload) {
             await deleteImages(transaction, analysisId);
             await insertImages(transaction, analysisId, images);
         }
-        
+
         await transaction.commit();
 
         // Trả lại đầy đủ header + details sau cập nhật

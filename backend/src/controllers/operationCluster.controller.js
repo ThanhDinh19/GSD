@@ -3,17 +3,29 @@ const operationClusterService = require('../services/operationCluster.service');
 const getOperationClusterHeaders = async (req, res) => {
   try {
     const data = await operationClusterService.getOperationClusterHeaders();
-    res.json(data);
+
+    return res.status(200).json({
+      success: true,
+      data,
+    })
+
   } catch (error) {
     console.error('getOperationClusterHeaders error:', error);
-    res.status(500).json({ message: 'Không lấy được danh sách kho cụm công đoạn' });
+    return res.status(500).json({
+      success: false,
+      message: 'Không lấy được danh sách kho cụm công đoạn'
+    });
   }
 };
 
 const getGsdOptions = async (req, res) => {
   try {
     const data = await operationClusterService.getGsdOptions();
-    res.json(data);
+
+    return res.status(200).json({
+      success: true,
+      data,
+    })
   } catch (error) {
     console.error('getGsdOptions error:', error);
     res.status(500).json({ message: 'Không lấy được danh sách công đoạn GSD' });
@@ -31,7 +43,11 @@ const getGsdActions = async (req, res) => {
     }
 
     const data = await operationClusterService.getGsdActions(id);
-    res.json(data);
+
+    return res.status(200).json({
+      success: true,
+      data,
+    })
   } catch (error) {
     console.error('getGsdActions error:', error);
     res.status(500).json({
@@ -48,16 +64,32 @@ const getOperationClusterById = async (req, res) => {
       return res.status(404).json({ message: 'Không tìm thấy chứng từ' });
     }
 
-    res.json(data);
+    return res.status(200).json({
+      success: true,
+      data,
+    })
+
   } catch (error) {
     console.error('getOperationClusterById error:', error);
     res.status(500).json({ message: 'Không lấy được chi tiết chứng từ' });
-  } 
+  }
 };
 
 const createOperationCluster = async (req, res) => {
   try {
-    const data = await operationClusterService.createOperationCluster(req.body);
+    const data = await operationClusterService.createOperationCluster(req.body, {
+      userId:
+        req.user.id,
+        
+      employeeId:
+        req.user
+          .employeeId,
+
+      departmentCode:
+        req.user
+          .departmentCode,
+
+    });
     res.status(201).json(data);
   } catch (error) {
     console.error('createOperationCluster error:', error);
@@ -93,17 +125,30 @@ const updateOperationCluster = async (req, res) => {
   }
 };
 
-const copyOperationCluster = async (req, res) => {
+const copyOperationCluster = async (req, res, next) => {
   try {
     const data = await operationClusterService.copyOperationCluster(req.body);
 
     res.status(201).json(data);
   } catch (error) {
-    console.error('copyOperationCluster error:', error);
+    console.error(
+      'copyOperationCluster original error:',
+      error
+    );
 
-    res.status(400).json({
-      message: error.message || 'Không sao chép được chứng từ kho cụm công đoạn',
-    });
+    try {
+      await transaction.rollback();
+    } catch (rollbackError) {
+      if (rollbackError.code !== 'EABORT') {
+        console.error(
+          'Rollback error:',
+          rollbackError
+        );
+      }
+      next(error);
+    }
+
+    throw error;
   }
 };
 

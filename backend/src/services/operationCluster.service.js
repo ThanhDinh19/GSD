@@ -224,72 +224,72 @@ const getOperationClusterById = async (id) => {
   const headerResult = await pool.request()
     .input('id', sql.Int, id)
     .query(`
-      SELECT
-    h.id,
-    h.document_code,
+            SELECT
+              h.id,
+              h.document_code,
 
-    h.work_id,
-    w.work_code,
-    w.work_name,
+              h.work_id,
+              w.work_code,
+              w.work_name,
 
-    h.product_category_id,
-    pc.product_code,
-    pc.product_name,
+              h.product_category_id,
+              pc.product_code,
+              pc.product_name,
 
-    h.product_category_group_id,
-    pcg.category_group_code,
-    pcg.category_group_name,
+              h.product_category_group_id,
+              pcg.category_group_code,
+              pcg.category_group_name,
 
-    h.required_efficiency,
-    h.price_method,
-    h.note,
-    h.status_id,
-    ms.status_code,
-    ms.status_name,
-    h.created_at,
-    h.updated_at,
+              h.required_efficiency,
+              h.price_method,
+              h.note,
+              h.status_id,
+              ms.status_code,
+              ms.status_name,
+              h.created_at,
+              h.updated_at,
 
-    -- Lấy hình ảnh đầu tiên trong kho cụm
-    img.image_file_name,
-    img.image_url
+              -- Lấy hình ảnh đầu tiên trong kho cụm
+              img.image_file_name,
+              img.image_url
 
-FROM operation_cluster_headers h
+          FROM operation_cluster_headers h
 
-LEFT JOIN works w
-    ON w.id = h.work_id
+          LEFT JOIN works w
+              ON w.id = h.work_id
 
-LEFT JOIN product_categories pc
-    ON pc.id = h.product_category_id
+          LEFT JOIN product_categories pc
+              ON pc.id = h.product_category_id
 
-LEFT JOIN product_category_groups pcg
-    ON pcg.id = h.product_category_group_id
+          LEFT JOIN product_category_groups pcg
+              ON pcg.id = h.product_category_group_id
 
-LEFT JOIN master_status ms
-    ON ms.id = h.status_id
+          LEFT JOIN master_status ms
+              ON ms.id = h.status_id
 
-OUTER APPLY (
-    SELECT TOP 1
-        mf.image_file_name,
-        mf.image_url
-    FROM operation_cluster_operations o
+          OUTER APPLY (
+              SELECT TOP 1
+                  mf.image_file_name,
+                  mf.image_url
+              FROM operation_cluster_operations o
 
-    INNER JOIN gsd_analysis_image_links image_link
-        ON image_link.gsd_analysis_id =
-           o.gsd_analysis_id
+              INNER JOIN gsd_analysis_image_links image_link
+                  ON image_link.gsd_analysis_id =
+                    o.gsd_analysis_id
 
-    INNER JOIN media_files mf
-        ON mf.id = image_link.media_file_id
+              INNER JOIN media_files mf
+                  ON mf.id = image_link.media_file_id
 
-    WHERE o.header_id = h.id
+              WHERE o.header_id = h.id
 
-    ORDER BY
-        o.group_line_no ASC,
-        o.line_no ASC,
-        image_link.sort_order ASC,
-        image_link.media_file_id ASC
-) img
+              ORDER BY
+                  o.group_line_no ASC,
+                  o.line_no ASC,
+                  image_link.sort_order ASC,
+                  image_link.media_file_id ASC
+          ) img
 
-WHERE h.id = @id;
+          WHERE h.id = @id;
     `);
 
   const header = headerResult.recordset[0];
@@ -452,7 +452,34 @@ WHERE h.id = @id;
 };
 
 // tạo chứng từ
-const createOperationCluster = async (payload) => {
+const createOperationCluster = async (payload, context = {}) => {
+
+  const userId = Number(context.userId)
+
+  if (
+    !Number.isInteger(userId) ||
+    userId <= 0
+  ) {
+    const err = new Error(
+      'Bạn chưa đăng nhập.'
+    );
+
+    err.statusCode = 401;
+    throw err;
+  }
+
+  const employeeId =
+    context.employeeId
+      ? Number(context.employeeId)
+      : null;
+
+  const departmentCode =
+    context.departmentCode
+      ? String(
+        context.departmentCode
+      ).trim()
+      : null;
+
   const pool = await getPool();
   const transaction = new sql.Transaction(pool);
 
@@ -503,6 +530,26 @@ const createOperationCluster = async (payload) => {
       .input('price_method', sql.VarChar(20), priceMethod)
       .input('note', sql.NVarChar(500), payload.note || null)
       .input('status_id', sql.TinyInt, payload.status_id ?? 0)
+      .input(
+        'created_by_user_id',
+        sql.BigInt,
+        userId
+      )
+      .input(
+        'owner_user_id',
+        sql.BigInt,
+        userId
+      )
+      .input(
+        'owner_employee_id',
+        sql.BigInt,
+        employeeId
+      )
+      .input(
+        'owner_department_code',
+        sql.VarChar(32),
+        departmentCode
+      )
       .query(`
         INSERT INTO operation_cluster_headers (
           document_code,
@@ -512,7 +559,12 @@ const createOperationCluster = async (payload) => {
           required_efficiency,
           price_method,
           note,
-          status_id
+          status_id,
+          created_by_user_id,
+          owner_user_id,
+          owner_employee_id,
+          owner_department_code,
+          workflow_status_code
         )
         OUTPUT INSERTED.*
         VALUES (
@@ -523,7 +575,12 @@ const createOperationCluster = async (payload) => {
           @required_efficiency,
           @price_method,
           @note,
-          @status_id
+          @status_id,
+          @created_by_user_id,
+          @owner_user_id,
+          @owner_employee_id,
+          @owner_department_code,
+          'DRAFT'
         )
       `);
 
@@ -1012,6 +1069,15 @@ const copyOperationCluster = async (payload) => {
     }
 
     const documentCode = payload.document_code.trim();
+
+    if (documentCode.length > 16) {
+      const err = new Error(
+        `Mã chứng từ tối đa 16 ký tự. Mã hiện tại có ${documentCode.length} ký tự.`
+      );
+      err.statusCode = 400;
+      throw err;
+    }
+
     const priceMethod = payload.price_method || 'GSD';
 
     const headerEfficiency =
@@ -1254,6 +1320,7 @@ const copyOperationCluster = async (payload) => {
     throw error;
   }
 };
+
 module.exports = {
   getOperationClusterHeaders,
   getGsdOptions,

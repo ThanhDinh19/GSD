@@ -16,7 +16,18 @@ const calculateAnalysis = asyncHandler(async (req, res) => {
 });
 
 const createAnalysis = asyncHandler(async (req, res) => {
-  const data = await gsdAnalysisService.createAnalysis(req.body);
+  const data = await gsdAnalysisService.createAnalysis(req.body, {
+                        userId:
+                            req.user.id,
+
+                        employeeId:
+                            req.user
+                                .employeeId,
+
+                        departmentCode:
+                            req.user
+                                .departmentCode,
+                    });
 
   return res.json({
     message: 'Đã phân tích công đoạn thành công.',

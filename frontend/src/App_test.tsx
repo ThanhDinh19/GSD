@@ -16,7 +16,14 @@ import OrganizationChartPage_test from './pages/OrganizationChartPage_test';
 import OperationClusterPage from './pages/OperationClusterPage';
 import MasterDataPage_test from './pages/MasterDataPage_test';
 import OperationClusterPage_test from './pages/OperationClusterPage_test';
-import SewingProcessPage from './pages/SewingProcessPage';
+import SewingProcessPage from './pages/SewingProcessPage'; // chưa tách file
+import SewingProcessPage_test from '../src/features/sewing-process/pages/SewingProcessPage'; // đã tách file
+import OperationClusterPage_test_v2 from '../src/features/operation-cluster/pages/operationClusterPage';
+import UserPermissionsPage from '../src/features/access-control/pages/UserPermissionsPage';
+import { useAuth } from './features/auth/hooks/useAuth';
+import SystemUsersPage from './features/system-users/pages/SystemUsersPage';
+import RoleManagementPage from './features/role-management/pages/RoleManagementPage';
+import SystemEmployeesPage from './features/system-employees/pages/SystemEmployeesPage';
 
 // Import Syncfusion Spreadsheet CSS files
 import "@syncfusion/ej2-base/styles/material.css";
@@ -29,6 +36,14 @@ import "@syncfusion/ej2-popups/styles/material.css";
 import "@syncfusion/ej2-dropdowns/styles/material.css";
 import "@syncfusion/ej2-grids/styles/material.css";
 import "@syncfusion/ej2-spreadsheet/styles/material.css";
+import { access } from 'fs';
+
+import {
+  usePermissions,
+} from '../src/features/auth/hooks/usePermissions';
+import {
+  SCREEN,
+} from '../src/features/auth/constants/permission.constants';
 
 const getBackendUrl = () => {
   const metaEnv = (import.meta as any).env;
@@ -38,13 +53,22 @@ const getBackendUrl = () => {
 const API_BASE_URL = getBackendUrl();
 
 export default function App_test() {
+  const permissions = usePermissions(SCREEN.SYSTEM_SCREENS);
+  const {
+    session,
+    logout,
+  } = useAuth();
+
+  const [isLoggingOut, setIsLoggingOut] =
+    useState(false);
+
   // Initialize state with assigned workers
   const [appState, setAppState] = useState<{ styles: Style[]; workers: Worker[] }>(() => {
     return initializeAssignments(defaultStyles, defaultWorkers);
   });
 
   const [currentStyleCode, setCurrentStyleCode] = useState<string>('DOWN-JK-2201');
-  const [activeTab, setActiveTab] = useState<string>('gsd-routing');
+  const [activeTab, setActiveTab] = useState<string>('gsd-analysis');
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
@@ -193,9 +217,38 @@ export default function App_test() {
     }));
   };
 
+  const handleLogout = async (): Promise<void> => {
+    if (isLoggingOut) {
+      return;
+    }
+
+    const confirmed = window.confirm(
+      'Bạn có chắc chắn muốn đăng xuất?'
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      setIsLoggingOut(true);
+
+      await logout();
+    } catch (error) {
+      console.error('Đăng xuất thất bại:', error);
+    } finally {
+      setIsLoggingOut(false);
+
+      /*
+       * Dùng replace để người dùng không bấm Back
+       * quay lại trang đã đăng nhập.
+       */
+      window.location.replace('/login');
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-[#f0f2f5] text-slate-800 font-sans">
-
       {/* Sidebar navigation panel */}
       <aside className={`bg-[#0d47a1] text-white flex flex-col fixed h-full z-50 transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'w-20' : 'w-64'
         } ${mobileMenuOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
@@ -234,7 +287,7 @@ export default function App_test() {
             </h3>
             <ul className="space-y-0.5">
               <li>
-                <button
+                {/* <button
                   onClick={() => { setActiveTab('gsd-routing'); setMobileMenuOpen(false); }}
                   className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'gsd-routing' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
                     }`}
@@ -244,21 +297,23 @@ export default function App_test() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2H6a2 2 0 01-2-2v-4zM14 16a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 01-2-2v-4z" />
                   </svg>
                   {!isSidebarCollapsed && <span className="whitespace-nowrap">GSD / SAM Routing</span>}
-                </button>
+                </button> */}
 
-                <button
-                  onClick={() => { setActiveTab('gsd-analysis'); setMobileMenuOpen(false); }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'gsd-analysis'
-                    ? 'bg-[#1e40af] border-r-4 border-white font-bold'
-                    : 'hover:bg-blue-800/40 text-blue-100'
-                    }`}
-                  title="Tổng quan GSD"
-                >
-                  <span className="h-4 w-4 shrink-0">∑</span>
-                  {!isSidebarCollapsed && (
-                    <span className="whitespace-nowrap">Tổng quan GSD</span>
-                  )}
-                </button>
+                {permissions.canView && (
+                  <button
+                    onClick={() => { setActiveTab('gsd-analysis'); setMobileMenuOpen(false); }}
+                    className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'gsd-analysis'
+                      ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                      : 'hover:bg-blue-800/40 text-blue-100'
+                      }`}
+                    title="GSD chuyền may"
+                  >
+                    <span className="h-4 w-4 shrink-0">∑</span>
+                    {!isSidebarCollapsed && (
+                      <span className="whitespace-nowrap">GSD chuyền may</span>
+                    )}
+                  </button>
+                )}
               </li>
             </ul>
           </div>
@@ -269,108 +324,76 @@ export default function App_test() {
             </h3>
             <ul className="space-y-0.5">
 
-              {/* <li>
-                <button
-                  onClick={() => {
-                    setActiveTab('Khai báo cụm công đoạn cho chủng loại hàng');
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng'
-                    ? 'bg-[#1e40af] border-r-4 border-white font-bold'
-                    : 'hover:bg-blue-800/40 text-blue-100'
-                    }`}
-                  title="Kho cụm công đoạn"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h8M4 18h16"
-                    />
-                  </svg>
-
-                  {!isSidebarCollapsed && (
-                    <span className="whitespace-nowrap">Kho cụm công đoạn</span>
-                  )}
-                </button>
-              </li> */}
-
-
               <li>
-                <button
-                  onClick={() => {
-                    setActiveTab('Khai báo cụm công đoạn cho chủng loại hàng');
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng'
-                    ? 'bg-[#1e40af] border-r-4 border-white font-bold'
-                    : 'hover:bg-blue-800/40 text-blue-100'
-                    }`}
-                  title="Kho cụm công đoạn test"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 6h16M4 12h8M4 18h16"
-                    />
-                  </svg>
-
-                  {!isSidebarCollapsed && (
-                    <span className="whitespace-nowrap">Kho cụm công đoạn</span>
-                  )}
-                </button>
-              </li>
-
-
-              <li>
-                <button
-                  onClick={() => {
-                    setActiveTab('Bảng quy trình may');
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Bảng quy trình may'
+                {permissions.canView && (
+                  <button
+                    onClick={() => {
+                      setActiveTab('Khai báo cụm công đoạn cho chủng loại hàng');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng'
                       ? 'bg-[#1e40af] border-r-4 border-white font-bold'
                       : 'hover:bg-blue-800/40 text-blue-100'
-                    }`}
-                  title="Bảng quy trình may"
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-4 w-4 shrink-0"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                      }`}
+                    title="Kho cụm công đoạn test"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M9 5h6m-7 4h8m-8 4h8m-8 4h5M7 3h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"
-                    />
-                  </svg>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h8M4 18h16"
+                      />
+                    </svg>
 
-                  {!isSidebarCollapsed && (
-                    <span className="whitespace-nowrap">Bảng quy trình may</span>
-                  )}
-                </button>
+                    {!isSidebarCollapsed && (
+                      <span className="whitespace-nowrap">Kho cụm công đoạn</span>
+                    )}
+                  </button>
+                )}
+              </li>
+              <li>
+                {permissions.canView && (
+                  <button
+                    onClick={() => {
+                      setActiveTab('Bảng quy trình may');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Bảng quy trình may'
+                      ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                      : 'hover:bg-blue-800/40 text-blue-100'
+                      }`}
+                    title="Bảng quy trình may"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5h6m-7 4h8m-8 4h8m-8 4h5M7 3h10a2 2 0 012 2v14a2 2 0 01-2 2H7a2 2 0 01-2-2V5a2 2 0 012-2z"
+                      />
+                    </svg>
+
+                    {!isSidebarCollapsed && (
+                      <span className="whitespace-nowrap">Bảng quy trình may</span>
+                    )}
+                  </button>
+                )}
               </li>
 
-              <li>
+              {/* <li>
                 <button
                   onClick={() => { setActiveTab('sam-db'); setMobileMenuOpen(false); }}
                   className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'sam-db' ? 'bg-[#1e40af] border-r-4 border-white font-bold' : 'hover:bg-blue-800/40 text-blue-100'
@@ -421,7 +444,7 @@ export default function App_test() {
                   </svg>
                   {!isSidebarCollapsed && <span className="whitespace-nowrap">Capacity Planning</span>}
                 </button>
-              </li>
+              </li> */}
             </ul>
           </div>
 
@@ -462,7 +485,7 @@ export default function App_test() {
               </li>
 
 
-              <li>
+              {/* <li>
                 <button
                   type="button"
                   onClick={() => {
@@ -542,9 +565,9 @@ export default function App_test() {
                     })}
                   </div>
                 )}
-              </li>
+              </li> */}
 
-              <li>
+              {/* <li>
                 <button
                   onClick={() => {
                     setActiveTab('organization-chart');
@@ -575,7 +598,7 @@ export default function App_test() {
                     <span className="whitespace-nowrap">Sơ đồ tổ chức (old)</span>
                   )}
                 </button>
-              </li>
+              </li> */}
             </ul>
           </div>
 
@@ -617,13 +640,237 @@ export default function App_test() {
                   )}
                 </button>
               </li>
+
+              {/* <li>
+                <button
+                  onClick={() => {
+                    setActiveTab('employees');
+                    setMobileMenuOpen(false);
+                  }}
+                  className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'organization-chart-test'
+                    ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                    : 'hover:bg-blue-800/40 text-blue-100'
+                    }`}
+                  title="Quản lý nhân viên"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-4 w-4 shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 3h12v6H6V3zM6 15h5v6H6v-6zM13 15h5v6h-5v-6zM12 9v3m-3 0h6m-6 0v3m6-3v3"
+                    />
+                  </svg>
+
+                  {!isSidebarCollapsed && (
+                    <span className="whitespace-nowrap">Quản lý nhân viên</span>
+                  )}
+                </button>
+              </li> */}
             </ul>
           </div>
 
-
-
-
           <div>
+            <h3
+              className={`
+                px-5 mb-1.5
+                text-[9px] font-extrabold
+                text-blue-300 uppercase
+                tracking-widest opacity-50
+                whitespace-nowrap
+                ${isSidebarCollapsed
+                  ? 'hidden'
+                  : 'block'
+                }
+              `}
+            >
+              Phân quyền sử dụng
+            </h3>
+
+            <ul className="space-y-0.5">
+              {/* Phân quyền người dùng */}
+              <li>
+                {permissions.canView && (
+                  <button
+                    onClick={() => {
+                      setActiveTab(
+                        'Phân quyền sử dụng'
+                      );
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`
+                    w-full px-5 py-2.5
+                    flex items-center gap-2.5
+                    text-left outline-none
+                    cursor-pointer transition-all
+                    ${activeTab ===
+                        'Phân quyền sử dụng'
+                        ? 'bg-[#1e40af] border-r-4 border-white font-bold text-white'
+                        : 'text-blue-100 hover:bg-blue-800/40'
+                      }
+                  `}
+                    title="Phân quyền người dùng"
+                  >
+                    {/* Icon khiên + dấu check */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="
+                        M12 3
+                        4.5 6v5.25
+                        c0 4.64 3.18 8.8 7.5 9.75
+                        4.32-.95 7.5-5.11 7.5-9.75V6
+                        L12 3z
+                        m-3 9 2 2 4-4
+                      "
+                      />
+                    </svg>
+
+                    {!isSidebarCollapsed && (
+                      <span className="whitespace-nowrap">
+                        Phân quyền người dùng
+                      </span>
+                    )}
+                  </button>
+                )}
+              </li>
+
+              {/* Quản lý người dùng */}
+              <li>
+                {permissions.canView && (
+                  <button
+                    onClick={() => {
+                      setActiveTab(
+                        'Quản lý người dùng'
+                      );
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`
+                    w-full px-5 py-2.5
+                    flex items-center gap-2.5
+                    text-left outline-none
+                    cursor-pointer transition-all
+                    ${activeTab ===
+                        'Quản lý người dùng'
+                        ? 'bg-[#1e40af] border-r-4 border-white font-bold text-white'
+                        : 'text-blue-100 hover:bg-blue-800/40'
+                      }
+                  `}
+                    title="Quản lý người dùng"
+                  >
+                    {/* Icon nhóm người dùng */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="
+                      M16 21v-2
+                      a4 4 0 0 0-4-4H6
+                      a4 4 0 0 0-4 4v2
+                      M9 11
+                      a4 4 0 1 0 0-8
+                      a4 4 0 0 0 0 8
+                      M22 21v-2
+                      a4 4 0 0 0-3-3.87
+                      M16 3.13
+                      a4 4 0 0 1 0 7.75
+                    "
+                      />
+                    </svg>
+
+                    {!isSidebarCollapsed && (
+                      <span className="whitespace-nowrap">
+                        Quản lý người dùng
+                      </span>
+                    )}
+                  </button>
+                )}
+
+              </li>
+
+
+
+              {/* Cấu hình vai trò */}
+              <li>
+                {permissions.canView && (
+                  <button
+                    onClick={() => {
+                      setActiveTab(
+                        'Cấu hình vai trò'
+                      );
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`
+                    w-full px-5 py-2.5
+                    flex items-center gap-2.5
+                    text-left outline-none
+                    cursor-pointer transition-all
+                    ${activeTab ===
+                        'Cấu hình vai trò'
+                        ? 'bg-[#1e40af] border-r-4 border-white font-bold text-white'
+                        : 'text-blue-100 hover:bg-blue-800/40'
+                      }
+                  `}
+                    title="Cấu hình vai trò"
+                  >
+                    {/* Icon chìa khóa */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="
+                        M15.5 7.5
+                        a4.5 4.5 0 1 1-6.36 6.36
+                        A4.5 4.5 0 0 1 15.5 7.5z
+                        M14 10
+                        l7-7
+                        M18 3h3v3
+                        M17 7l2 2
+                      "
+                      />
+                    </svg>
+
+                    {!isSidebarCollapsed && (
+                      <span className="whitespace-nowrap">
+                        Cấu hình vai trò
+                      </span>
+                    )}
+                  </button>
+                )}
+
+              </li>
+            </ul>
+          </div>
+
+          {/* <div>
             <h3 className={`px-5 text-[9px] font-extrabold text-blue-300 uppercase tracking-widest mb-1.5 opacity-50 whitespace-nowrap ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
               Nhà xưởng module
             </h3>
@@ -642,9 +889,9 @@ export default function App_test() {
                 </button>
               </li>
             </ul>
-          </div>
+          </div> */}
 
-          <div>
+          {/* <div>
             <h3 className={`px-5 text-[9px] font-extrabold text-blue-300 uppercase tracking-widest mb-1.5 opacity-50 whitespace-nowrap ${isSidebarCollapsed ? 'hidden' : 'block'}`}>
               QUẢN TRỊ EXCEL (CSDL)
             </h3>
@@ -676,7 +923,7 @@ export default function App_test() {
                 </button>
               </li>
             </ul>
-          </div>
+          </div> */}
         </nav>
 
         {/* Sidebar Footer info */}
@@ -733,12 +980,75 @@ export default function App_test() {
             {/* Profile operator element */}
             <div className="flex items-center gap-3 border-l border-slate-200 pl-4 select-none">
               <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-800 leading-none">IE User Representative</p>
-                <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">Industrial Engineering</p>
+                <p className="text-xs font-bold text-slate-800 leading-none">
+                  {session?.user.fullName ?? 'Người dùng'}
+                </p>
+
+                <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
+                  {session?.user.departmentCode ??
+                    session?.user.username ??
+                    'IE Planning System'}
+                </p>
               </div>
-              <div className="w-9 h-9 bg-slate-200 text-slate-500 rounded-full flex items-center justify-center font-bold font-mono">
-                IE
+
+              <div
+                className="
+                  w-9 h-9
+                  bg-slate-200 text-slate-500
+                  rounded-full
+                  flex items-center justify-center
+                  font-bold font-mono
+                "
+                title={session?.user.fullName}
+              >
+                {session?.user.fullName
+                  ?.trim()
+                  .split(/\s+/)
+                  .slice(-2)
+                  .map((word) => word.charAt(0))
+                  .join('')
+                  .toUpperCase() || 'IE'}
               </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  void handleLogout();
+                }}
+                disabled={isLoggingOut}
+                className="
+                  flex items-center gap-2
+                  px-3 py-2
+                  rounded-md
+                  text-xs font-bold
+                  text-rose-600
+                  hover:bg-rose-50
+                  disabled:opacity-50
+                  disabled:cursor-not-allowed
+                  transition-colors
+                  cursor-pointer
+                "
+                title="Đăng xuất"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-4 h-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 16l4-4m0 0-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
+                  />
+                </svg>
+
+                <span className="hidden lg:inline">
+                  {isLoggingOut ? 'Đang thoát...' : 'Đăng xuất'}
+                </span>
+              </button>
             </div>
           </div>
         </header>
@@ -839,7 +1149,23 @@ export default function App_test() {
           )}
 
           {activeTab === 'Bảng quy trình may' && (
-            <SewingProcessPage />
+            <SewingProcessPage_test />
+          )}
+
+          {activeTab === 'Phân quyền sử dụng' && (
+            <UserPermissionsPage />
+          )}
+
+          {activeTab === 'Quản lý người dùng' && (
+            <SystemUsersPage />
+          )}
+
+          {activeTab === 'Cấu hình vai trò' && (
+            <RoleManagementPage />
+          )}
+
+          {activeTab === 'employees' && (
+            <SystemEmployeesPage/>
           )}
 
         </div>

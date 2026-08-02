@@ -199,153 +199,7 @@ function formatActionCode(numberValue) {
   return `TT${String(numberValue).padStart(6, '0')}`;
 }
 
-// async function importGsdCodesFromExcel(filePath, sheetName = 'GSD') {
-//   const pool = getPool();
 
-//   const workbook = XLSX.readFile(filePath);
-//   const worksheet = workbook.Sheets[sheetName] || workbook.Sheets[workbook.SheetNames[0]];
-
-//   if (!worksheet) {
-//     const err = new Error(`Không tìm thấy sheet ${sheetName}.`);
-//     err.statusCode = 400;
-//     throw err;
-//   }
-
-//   const rows = XLSX.utils.sheet_to_json(worksheet, {
-//     header: 1,
-//     defval: '',
-//     raw: false,
-//   });
-
-//   const existingResult = await pool.request().query(`
-//     SELECT
-//       gsd_code AS gsdCode,
-//       action_name AS actionName,
-//       code_new AS codeNew,
-//       tmu AS tmu
-//     FROM gsd_codes
-//   `);
-
-//   const existingKeys = new Set(
-//     existingResult.recordset.map((row) => buildImportKey(row))
-//   );
-
-//   const fileKeys = new Set();
-//   const validRows = [];
-//   let skippedEmpty = 0;
-//   let skippedDuplicate = 0;
-
-//   for (const row of rows) {
-//     const sourceCode = normalizeText(row[0]);
-//     const stt = normalizeText(row[1]);
-//     const actionName = normalizeText(row[2]);
-//     const gsdCode = normalizeText(row[3]);
-//     const frequency = toNumberOrNull(row[5]);
-//     const tmu = toNumberOrNull(row[6]);
-//     const note = normalizeText(row[7]);
-//     const codeNew = normalizeText(row[8]);
-
-//     const isHeaderRow =
-//       sourceCode.toLowerCase() === 'source.name' ||
-//       sourceCode.toLowerCase() === 'source' ||
-//       stt.toLowerCase() === 'stt' ||
-//       actionName.toLowerCase() === 'thaotac' ||
-//       actionName.toLowerCase() === 'thao tác';
-
-//     if (isHeaderRow) continue;
-
-//     if (!actionName || !gsdCode) {
-//       skippedEmpty += 1;
-//       continue;
-//     }
-
-//     const item = {
-//       actionName,
-//       gsdCode,
-//       codeNew,
-//       frequency,
-//       tmu: tmu ?? 0,
-//       note,
-//     };
-
-//     const key = buildImportKey(item);
-
-//     if (existingKeys.has(key) || fileKeys.has(key)) {
-//       skippedDuplicate += 1;
-//       continue;
-//     }
-
-//     fileKeys.add(key);
-//     validRows.push(item);
-//   }
-
-//   if (validRows.length === 0) {
-//     return {
-//       inserted: 0,
-//       skippedDuplicate,
-//       skippedEmpty,
-//       totalRead: rows.length,
-//       message: 'Không có thao tác mới để import.',
-//     };
-//   }
-
-//   const transaction = new sql.Transaction(pool);
-//   await transaction.begin();
-
-//   try {
-//     let nextNumber = await getNextActionCodeStart(pool);
-
-//     for (const item of validRows) {
-//       const actionCode = formatActionCode(nextNumber);
-//       nextNumber += 1;
-
-//       await new sql.Request(transaction)
-//         .input('action_code', sql.NVarChar, actionCode)
-//         .input('action_name', sql.NVarChar, item.actionName)
-//         .input('gsd_code', sql.NVarChar, item.gsdCode)
-//         .input('code_new', sql.NVarChar, item.codeNew || null)
-//         .input('frequency', sql.Int, item.frequency)
-//         .input('tmu', sql.Int, item.tmu)
-//         .input('note', sql.NVarChar, item.note || null)
-//         .input('status_id', sql.TinyInt, 0)
-//         .query(`
-//           INSERT INTO gsd_codes (
-//             action_code,
-//             action_name,
-//             gsd_code,
-//             code_new,
-//             frequency,
-//             tmu,
-//             note,
-//             status_id
-//           )
-//           VALUES (
-//             @action_code,
-//             @action_name,
-//             @gsd_code,
-//             @code_new,
-//             @frequency,
-//             @tmu,
-//             @note,
-//             @status_id
-//           )
-//         `);
-//     }
-
-//     await transaction.commit();
-
-//     return {
-//       inserted: validRows.length,
-//       skippedDuplicate,
-//       skippedEmpty,
-//       totalRead: rows.length,
-//       message: `Đã import ${validRows.length} thao tác mới.`,
-//     };
-//   } catch (err) {
-//     await transaction.rollback();
-//     throw err;
-//   }
-// }
 
 
 
@@ -445,7 +299,7 @@ async function importGsdCodesFromExcel_ver2(fileBuffer) {
   // Sheet này header nằm ở dòng 2, dòng 1 trống
   const rows = xlsx.utils.sheet_to_json(worksheet, {
     defval: null,
-    range: 1,
+    range: 0,
   });
 
   const pool = getPool();
@@ -469,7 +323,7 @@ async function importGsdCodesFromExcel_ver2(fileBuffer) {
       const row = rows[index];
 
       // Vì range: 1 nên data bắt đầu từ dòng Excel số 3
-      const excelRowNumber = index + 3;
+      const excelRowNumber = index + 2;
 
       const actionCode = normalizeText(
         getCellValue(row, [

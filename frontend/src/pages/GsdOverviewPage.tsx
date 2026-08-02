@@ -5,10 +5,17 @@ import { useGsdOverview } from '../hooks/useGsdOverview';
 import { GsdAnalysisDetail } from '../types';
 import { gsdAnalysisService } from '../services/gsdAnalysis.service';
 import GsdAnalysisDetailModal from '../components/gsd-analysis/GsdAnalysisDetailModal';
+import {
+    usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+    SCREEN,
+} from '../features/auth/constants/permission.constants';
 
 type WorkTab = 'analysis' | 'process';
 
 export default function GsdOverviewPage() {
+    const permissions = usePermissions(SCREEN.GSD_ANALYSIS);
     const {
         analyses,
         loading,
@@ -123,6 +130,14 @@ export default function GsdOverviewPage() {
         }
     };
 
+    if (!permissions.canView) {
+        return (
+            <div className="p-6 text-sm text-red-600">
+                Bạn không có quyền xem màn hình này.
+            </div>
+        );
+    }
+
     return (
         <div className="space-y-5">
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
@@ -189,54 +204,19 @@ export default function GsdOverviewPage() {
                 </div>
             </div>
 
-            {!isWorkspaceOpen && (
-                // <div className="space-y-3">
-                //     <div className="flex justify-end gap-2">
-                //         <button
-                //             type="button"
-                //             onClick={handleEditSelected}
-                //             disabled={!selectedAnalysisId}
-                //             className="px-4 py-2 border border-amber-300 text-amber-700 rounded-sm text-xs font-bold hover:bg-amber-50 disabled:opacity-50"
-                //         >
-                //             Sửa
-                //         </button>
-
-                //         <button
-                //             type="button"
-                //             onClick={handleCopySelected}
-                //             disabled={!selectedAnalysisId}
-                //             className="px-4 py-2 border border-indigo-300 text-indigo-700 rounded-sm text-xs font-bold hover:bg-indigo-50 disabled:opacity-50"
-                //         >
-                //             Sao chép
-                //         </button>
-
-                //         <button
-                //             type="button"
-                //             onClick={loadAnalyses}
-                //             disabled={loading}
-                //             className="px-4 py-2 border border-slate-300 text-slate-700 rounded-sm text-xs font-bold hover:bg-slate-50 disabled:opacity-50"
-                //         >
-                //             {loading
-                //                 ? 'Đang tải...'
-                //                 : 'Tải lại'}
-                //         </button>
-                //     </div>
-
-                    <GsdProcessTable
-                        analyses={analyses}
-                        loading={loading}
-                        selectedId={selectedAnalysisId}
-                        onRowClick={(analysisId) => {
-                            setSelectedAnalysisId(analysisId);
-                        }}
-                        onDetailClick={handleOpenAnalysisDetail}
-                        onCreate={openNewOperationWorkspace}
-                        onEdit={handleEditSelected}
-                        onCopy={handleCopySelected}
-                        onRefresh={loadAnalyses}
-                        showActionButtons
-                    />
-                // </div>
+            {!isWorkspaceOpen && permissions.canView && (
+                <GsdProcessTable
+                    analyses={analyses}
+                    loading={loading}
+                    selectedId={selectedAnalysisId}
+                    onRowClick={(analysisId) => setSelectedAnalysisId(analysisId)}
+                    onDetailClick={handleOpenAnalysisDetail}
+                    onCreate={openNewOperationWorkspace}
+                    onEdit={handleEditSelected}
+                    onCopy={handleCopySelected}
+                    onRefresh={loadAnalyses}
+                    showActionButtons
+                />
             )}
 
             {isWorkspaceOpen && (
@@ -319,26 +299,23 @@ export default function GsdOverviewPage() {
 
                         <div
                             style={{
-                                display:
-                                    activeTab === 'process'
-                                        ? 'block'
-                                        : 'none',
+                                display: activeTab === 'process' ? 'block' : 'none',
                             }}
                         >
-                            <GsdProcessTable
-                                analyses={analyses}
-                                loading={loading}
-                                onRefresh={loadAnalyses}
-                                selectedId={selectedAnalysisId}
-                                onRowClick={(analysisId) => {
-                                    setSelectedAnalysisId(
-                                        analysisId
-                                    );
-                                }}
-                                onDetailClick={
-                                    handleOpenAnalysisDetail
-                                }
-                            />
+                            {permissions.canView ? (
+                                <GsdProcessTable
+                                    analyses={analyses}
+                                    loading={loading}
+                                    onRefresh={loadAnalyses}
+                                    selectedId={selectedAnalysisId}
+                                    onRowClick={(analysisId) => setSelectedAnalysisId(analysisId)}
+                                    onDetailClick={handleOpenAnalysisDetail}
+                                />
+                            ) : (
+                                <div className="rounded-sm border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700">
+                                    Bạn không có quyền xem xét quy trình GSD.
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>

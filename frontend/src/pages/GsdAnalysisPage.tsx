@@ -3,6 +3,7 @@ import { GsdAnalysisPayload } from '../types';
 import { useGsdAnalysis } from '../hooks/useGsdAnalysis';
 import SourceActionPickerModal from '../components/gsd-analysis/SourceActionPickerModal';
 import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../services/gsdAnalysis.service';
+import { MetricCard } from '../shared/components';
 
 
 // Omit lấy type GsdAnalysisPayload, bỏ cột sourceId, details
@@ -465,155 +466,312 @@ export default function GsdAnalysisPage({
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-4 mb-5">
-                    <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">
-                            Tên công đoạn <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                            value={form.operationName}
-                            onChange={(e) => setForm({ ...form, operationName: e.target.value })}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                            placeholder="VD: Ráp"
-                        />
-                    </div>
+                <div className="mb-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_200px]">
+                    {/* Thông tin công đoạn */}
+                    <div className="rounded-xl border border-slate-200 bg-slate-50/50 p-4">
+                        <div className="mb-4">
+                            <h3 className="text-sm font-bold text-slate-800">
+                                Thông tin công đoạn
+                            </h3>
 
-                    <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">
-                            Loại máy / MMTB
-                        </label>
-                        <select
-                            value={form.machineId ?? ''}
+                            <p className="mt-1 text-xs text-slate-500">
+                                Nhập thông tin cơ bản và thông số tính SMV.
+                            </p>
+                        </div>
 
-                            // Dinh, 28/06/2026
-                            onChange={(e) => {
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold text-slate-600">
+                                    Tên công đoạn
+                                    <span className="ml-1 text-red-500">*</span>
+                                </label>
 
-                                const machineId = e.target.value ? Number(e.target.value) : null
-
-                                const machine = machines_test.find((item) => item.id === machineId) || null;
-
-                                setForm((prev) => ({
-                                    ...prev,
-                                    machineId: machineId,
-                                    attachedActionTime: machine?.attachedActionTime ?? 0,
-                                    stitchCount: machine?.stitchCount ?? 0,
-                                    machineSpeed: machine?.machineSpeed ?? 0,
-                                    allowance: machine?.allowance ?? 0,
-                                }));
-                            }}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                        >
-                            <option value="">-- Chọn máy --</option>
-                            {machines_test.map((machine) => (
-                                <option key={machine.id} value={machine.id}>
-                                    {machine.codeMmtb} - {machine.machineName}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">
-                            Mức độ phức tạp (%)
-                        </label>
-                        <select
-                            value={form.difficultyPercent ?? 0}
-                            onChange={(e) => handleNumberChange('difficultyPercent', e.target.value)}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                        >
-                            <option value={0}>0%</option>
-                            <option value={5}>5%</option>
-                            <option value={10}>10%</option>
-                            <option value={15}>15%</option>
-                            <option value={20}>20%</option>
-                        </select>
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">
-                            Đường may
-                        </label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={form.seamLength ?? ''}
-                            onChange={(e) => handleNumberChange('seamLength', e.target.value)}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                        />
-                    </div>
-
-                    {/* <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">
-                            Thao tác kèm theo
-                        </label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={form.attachedActionTime ?? ''}
-                            onChange={(e) => handleNumberChange('attachedActionTime', e.target.value)}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                        />
-                    </div> */}
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">
-                            Hệ số nhân SP
-                        </label>
-                        <input
-                            type="number"
-                            step="0.01"
-                            value={form.productMultiplier ?? 1}
-                            onChange={(e) => handleNumberChange('productMultiplier', e.target.value)}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-xs font-bold text-slate-600 mb-1">
-                            Ghi chú
-                        </label>
-                        <input
-                            value={form.note || ''}
-                            onChange={(e) => setForm({ ...form, note: e.target.value })}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                        />
-                    </div>
-
-                    <div>
-                        <div className="h-[180px] border border-dashed border-slate-300 rounded-sm flex items-center justify-center bg-slate-50 overflow-hidden">
-                            {mainImageSrc ? (
-                                <img
-                                    src={mainImageSrc}
-                                    alt="Hình mã hàng"
-                                    className="w-full h-full object-contain"
+                                <input
+                                    value={form.operationName}
+                                    onChange={(e) =>
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            operationName:
+                                                e.target.value,
+                                        }))
+                                    }
+                                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    placeholder="VD: Ráp sườn"
                                 />
-                            ) : (
-                                <span className="text-xs text-slate-400">
-                                    Chưa có hình ảnh
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold text-slate-600">
+                                    Loại máy / MMTB
+                                </label>
+
+                                <select
+                                    value={form.machineId ?? ''}
+                                    onChange={(e) => {
+                                        const machineId =
+                                            e.target.value
+                                                ? Number(
+                                                    e.target.value
+                                                )
+                                                : null;
+
+                                        const machine =
+                                            machines_test.find(
+                                                (item) =>
+                                                    item.id ===
+                                                    machineId
+                                            ) || null;
+
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            machineId,
+                                            attachedActionTime:
+                                                machine
+                                                    ?.attachedActionTime ??
+                                                0,
+                                            stitchCount:
+                                                machine
+                                                    ?.stitchCount ??
+                                                0,
+                                            machineSpeed:
+                                                machine
+                                                    ?.machineSpeed ??
+                                                0,
+                                            allowance:
+                                                machine
+                                                    ?.allowance ??
+                                                0,
+                                        }));
+                                    }}
+                                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                >
+                                    <option value="">
+                                        -- Chọn máy --
+                                    </option>
+
+                                    {machines_test.map(
+                                        (machine) => (
+                                            <option
+                                                key={machine.id}
+                                                value={machine.id}
+                                            >
+                                                {machine.codeMmtb} -{' '}
+                                                {
+                                                    machine.machineName
+                                                }
+                                            </option>
+                                        )
+                                    )}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold text-slate-600">
+                                    Mức độ phức tạp
+                                </label>
+
+                                <select
+                                    value={
+                                        form.difficultyPercent ??
+                                        0
+                                    }
+                                    onChange={(e) =>
+                                        handleNumberChange(
+                                            'difficultyPercent',
+                                            e.target.value
+                                        )
+                                    }
+                                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                >
+                                    <option value={0}>
+                                        0%
+                                    </option>
+                                    <option value={5}>
+                                        5%
+                                    </option>
+                                    <option value={10}>
+                                        10%
+                                    </option>
+                                    <option value={15}>
+                                        15%
+                                    </option>
+                                    <option value={20}>
+                                        20%
+                                    </option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold text-slate-600">
+                                    Đường may
+                                </label>
+
+                                <div className="relative">
+                                    <input
+                                        type="number"
+                                        step="0.01"
+                                        min="0"
+                                        value={
+                                            form.seamLength ?? ''
+                                        }
+                                        onChange={(e) =>
+                                            handleNumberChange(
+                                                'seamLength',
+                                                e.target.value
+                                            )
+                                        }
+                                        className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 pr-10 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    />
+
+                                    <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs text-slate-400">
+                                        cm
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold text-slate-600">
+                                    Hệ số nhân SP
+                                </label>
+
+                                <input
+                                    type="number"
+                                    step="0.01"
+                                    min="0"
+                                    value={
+                                        form.productMultiplier ??
+                                        1
+                                    }
+                                    onChange={(e) =>
+                                        handleNumberChange(
+                                            'productMultiplier',
+                                            e.target.value
+                                        )
+                                    }
+                                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                />
+                            </div>
+
+                            <div>
+                                <label className="mb-1.5 block text-xs font-bold text-slate-600">
+                                    Ghi chú
+                                </label>
+
+                                <input
+                                    value={form.note || ''}
+                                    onChange={(e) =>
+                                        setForm((prev) => ({
+                                            ...prev,
+                                            note: e.target.value,
+                                        }))
+                                    }
+                                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                                    placeholder="Nhập ghi chú"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Hình ảnh */}
+                    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+                        <div className="flex items-start justify-between gap-3">
+                            <div>
+                                <h3 className="text-sm font-bold text-slate-800">
+                                    Hình ảnh
+                                </h3>
+                            </div>
+
+                            {mainImageSrc && (
+                                <span className="shrink-0 rounded-full bg-green-50 px-2 py-1 text-[10px] font-bold text-green-700">
+                                    Đã chọn
                                 </span>
                             )}
                         </div>
 
-                        <label className="px-3 py-2 rounded-sm border border-blue-300 text-blue-700 text-xs font-bold hover:bg-blue-50 cursor-pointer">
-                            {imageUploading ? "Đang upload..." : "Upload hình"}
-                            <input
-                                type="file"
-                                accept="image/*"
-                                hidden
-                                disabled={imageUploading}
-                                onChange={handleSelectMainImage}
-                            />
-                        </label>
+                        <div className="relative mt-4 aspect-[4/3] overflow-hidden rounded-xl border border-dashed border-slate-300 bg-slate-50">
+                            {mainImageSrc ? (
+                                <img
+                                    src={mainImageSrc}
+                                    alt="Hình ảnh công đoạn"
+                                    className="h-full w-full object-contain p-2"
+                                />
+                            ) : (
+                                <div className="flex h-full flex-col items-center justify-center px-4 text-center">
+                                    <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-2xl shadow-sm">
+                                        🖼️
+                                    </div>
 
-                        {mainImageSrc && (
-                            <button
-                                type="button"
-                                onClick={handleRemoveMainImage}
-                                className="px-3 py-2 rounded-sm border border-red-300 text-red-600 text-xs font-bold hover:bg-red-50"
+                                    <div className="mt-3 text-xs font-bold text-slate-600">
+                                        Chưa có hình ảnh
+                                    </div>
+
+                                    <div className="mt-1 text-[11px] leading-4 text-slate-400">
+                                        Chọn một hình để xem trước
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* {(selectedImageFile ||
+                            mainImage?.imageFileName) && (
+                                <div
+                                    className="mt-3 truncate rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500"
+                                    title={
+                                        selectedImageFile?.name ||
+                                        mainImage?.imageFileName ||
+                                        ''
+                                    }
+                                >
+                                    {selectedImageFile?.name ||
+                                        mainImage?.imageFileName}
+                                </div>
+                            )} */}
+
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                            <label
+                                className={`
+                                    flex h-10 cursor-pointer items-center justify-center
+                                    rounded-lg border border-blue-300 px-3
+                                    text-xs font-bold text-blue-700
+                                    transition hover:bg-blue-50
+                                    ${!mainImageSrc
+                                        ? 'col-span-2'
+                                        : ''
+                                    }
+                                    ${saving
+                                        ? 'pointer-events-none opacity-50'
+                                        : ''
+                                    }
+                                `}
                             >
-                                Xóa hình
-                            </button>
-                        )}
+                                {mainImageSrc
+                                    ? 'Đổi hình'
+                                    : 'Chọn hình'}
+
+                                <input
+                                    type="file"
+                                    accept="image/png,image/jpeg,image/webp"
+                                    hidden
+                                    disabled={saving}
+                                    onChange={
+                                        handleSelectMainImage
+                                    }
+                                />
+                            </label>
+
+                            {mainImageSrc && (
+                                <button
+                                    type="button"
+                                    onClick={
+                                        handleRemoveMainImage
+                                    }
+                                    disabled={saving}
+                                    className="h-10 rounded-lg border border-red-300 px-3 text-xs font-bold text-red-600 transition hover:bg-red-50 disabled:opacity-50"
+                                >
+                                    Xóa hình
+                                </button>
+                            )}
+                        </div>
                     </div>
                 </div>
 
@@ -713,47 +871,138 @@ export default function GsdAnalysisPage({
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-3 mb-5 text-xs">
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                <div className="grid grid-cols-1 md:grid-cols-7 gap-3 mb-5 text-xs">
+                    {/* <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                         <div className="text-blue-600">Tổng thao tác</div>
                         <div className="font-black text-blue-900 text-lg">{selectedRows.length}</div>
-                    </div>
+                    </div> */}
 
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                    <MetricCard
+                        label="Tổng thao tác"
+                        value={selectedRows.length}
+                        tone="blue"
+                    />
+
+
+
+                    {/* <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                         <div className="text-blue-600">Tổng TMU</div>
                         <div className="font-black text-blue-900 text-lg">
                             {result ? formatNumber(result.totalTmu, 2) : formatNumber(previewTotalTmu, 2)}
                         </div>
-                    </div>
+                    </div> */}
 
-                    <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                    <MetricCard
+                        label="Tổng TMU"
+                        subLabel={"SUM(Thời gian thao tác * 27.8)"}
+                        value={
+                            result
+                                ? formatNumber(
+                                    result.totalTmu,
+                                    2
+                                )
+                                : '0.00'
+                        }
+                        tone="blue"
+                    />
+
+                    {/* <div className="bg-blue-50 border border-blue-100 rounded-lg p-3">
                         <div className="text-blue-600">Tổng giây thao tác</div>
                         <div className="font-black text-blue-900 text-lg">
                             {result ? formatNumber(result.totalManualSeconds, 4) : formatNumber(previewManualSeconds, 4)}
                         </div>
-                    </div>
+                    </div> */}
 
-                    <div className="bg-orange-50 border border-orange-100 rounded-lg p-3">
+                    <MetricCard
+                        label="Tổng giây thao tác"
+                        value={
+                            result
+                                ? formatNumber(
+                                    result.totalManualSeconds,
+                                    4
+                                )
+                                : '0.0000'
+                        }
+                        tone="blue"
+                    />
+
+                    {/* <div className="bg-orange-50 border border-orange-100 rounded-lg p-3">
 
                         <div className="text-orange-600">Thời gian MMTB</div>
                         <div className="font-black text-orange-900 text-lg">
                             {result ? formatNumber(result.machineSeconds, 4) : '0.0000'}
                         </div>
-                    </div>
+                    </div> */}
 
-                    <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
+                    <MetricCard
+                        label="Thời gian MMTB"
+                        subLabel={"(Vận tốc máy × đường may) + thao tác kèm theo + hao phí"}
+                        value={
+                            result
+                                ? formatNumber(
+                                    result.machineSeconds,
+                                    4
+                                )
+                                : '0.0000'
+                        }
+                        tone="orange"
+                    />
+
+                    {/* <div className="bg-amber-50 border border-amber-100 rounded-lg p-3">
                         <div className="text-amber-600">Thời gian mức độ</div>
                         <div className="font-black text-amber-900 text-lg">
                             {result ? formatNumber(result.difficultySeconds, 4) : '0.0000'}
                         </div>
-                    </div>
+                    </div> */}
 
-                    <div className="bg-green-50 border border-green-100 rounded-lg p-3">
+                    <MetricCard
+                        label="Thời gian mức độ"
+                        subLabel={"Tổng SMV × mức độ phức tạp / 100"}
+                        value={
+                            result
+                                ? formatNumber(
+                                    result.difficultySeconds,
+                                    4
+                                )
+                                : '0.0000'
+                        }
+                        tone="amber"
+                    />
+
+                    {/* <div className="bg-green-50 border border-green-100 rounded-lg p-3">
                         <div className="text-green-600">SMV cuối</div>
                         <div className="font-black text-green-900 text-lg">
                             {result ? formatNumber(result.finalSmv, 0) : '-'}
                         </div>
-                    </div>
+                    </div> */}
+
+                    <MetricCard
+                        label="Tổng SMV"
+                        subLabel={"(Tổng giây thao tác + thời gian MMTB) × hệ số SP"}
+                        value={
+                            result
+                                ? formatNumber(
+                                    result.totalSmvBeforeDifficulty,
+                                    4
+                                )
+                                : '-'
+                        }
+                        tone="green"
+                    />
+
+                    <MetricCard
+                        label="SMV cuối"
+                        subLabel={"Tổng SMV + thời gian mức độ"}
+                        value={
+                            result
+                                ? formatNumber(
+                                    result.finalSmv,
+                                    0
+                                )
+                                : '-'
+                        }
+                        tone="green"
+                    />
                 </div>
 
                 <div className="overflow-x-auto border border-slate-200 rounded-lg">

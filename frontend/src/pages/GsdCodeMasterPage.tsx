@@ -160,14 +160,6 @@ export default function GsdCodeMasterPage() {
                             className="hidden"
                         />
 
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept=".xlsx,.xls"
-                            className="hidden"
-                            onChange={handleImportExcel}
-                        />
-
                         <button
                             onClick={() => fileInputRef.current?.click()}
                             disabled={importing}

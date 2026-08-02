@@ -3,7 +3,7 @@ const dbConfig = {
   password: process.env.DB_PASSWORD,
   server: process.env.DB_SERVER || 'localhost',
   port: parseInt(process.env.DB_PORT || '1433', 10),
-  database: process.env.DB_NAME || 'demo_db',
+  database: process.env.DB_NAME || 'demo_db_test',
   options: {
     encrypt: true,
     trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true',

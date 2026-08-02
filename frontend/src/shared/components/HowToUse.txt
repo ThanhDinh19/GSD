@@ -1,0 +1,44 @@
+# RadioGroup:
+
+<RadioGroup<'GSD' | 'ADJUSTED'>
+  name="price_method"
+  label="Phương pháp tính"
+  value={form.price_method}
+  options={[
+    {
+      value: 'GSD',
+      label: 'GSD',
+      description: 'Tính theo thời gian GSD gốc',
+    },
+    {
+      value: 'ADJUSTED',
+      label: 'Điều chỉnh',
+      description: 'Tính theo SMV đã điều chỉnh',
+    },
+  ]}
+  onValueChange={(value) => onUpdate('price_method', value)}
+/>
+
+- dạng dọc: 
+<RadioGroup<'GSD' | 'ADJUSTED'>
+  name="price_method"
+  value={form.price_method}
+  direction="vertical"
+  options={[
+    { value: 'GSD', label: 'GSD' },
+    { value: 'ADJUSTED', label: 'Điều chỉnh' },
+  ]}
+  onValueChange={(value) => onUpdate('price_method', value)}
+/>
+
+- dùng với số:
+<RadioGroup<number>
+  name="status_id"
+  label="Trạng thái"
+  value={form.status_id}
+  options={[
+    { value: 0, label: 'Hoạt động' },
+    { value: 1, label: 'Ngừng hoạt động' },
+  ]}
+  onValueChange={(value) => onUpdate('status_id', value)}
+/>
