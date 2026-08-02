@@ -110,6 +110,7 @@ async function getUsers() {
                   )
             ) role_data
         ) role_summary
+        WHERE is_delete = 0
 
         ORDER BY
             u.status_id ASC,
