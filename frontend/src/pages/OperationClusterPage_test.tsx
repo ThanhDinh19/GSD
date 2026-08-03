@@ -25,6 +25,9 @@ import {
 import {
     Button
 } from '../shared/components';
+import { useToast } from '../shared/notifications/ToastProvider';
+
+
 
 // form thông tin chứng từ
 type FormState = {
@@ -110,7 +113,7 @@ const readOperationClusterDraft = (): OperationClusterDraft | null => {
 export default function OperationClusterPage_test() {
     const permissions = usePermissions(SCREEN.OPERATION_CLUSTER);
     const initialDraft = useMemo(() => readOperationClusterDraft(), []);
-
+    const toast = useToast();
     const {
         items,
         loading,
@@ -949,7 +952,11 @@ export default function OperationClusterPage_test() {
     };
 
     const handleExportExcel = () => {
-        alert('Do you have a boyfriend ?');
+        toast.success('Do you have a boyfriend ?',
+            {
+                duration: 2000,
+            }
+        )
     }
 
     /**
@@ -989,14 +996,16 @@ export default function OperationClusterPage_test() {
     const handleSave = async () => {
         try {
             if (!form.document_code.trim()) {
-                alert('Vui lòng nhập mã chứng từ');
+                // alert('Vui lòng nhập mã chứng từ');
+                toast.warning('Vui lòng nhập mã chứng từ');
                 return;
             }
 
             const documentCode = form.document_code.trim();
 
             if (documentCode.length > 16) {
-                alert(`Mã chứng từ tối đa 16 ký tự. Mã hiện tại có ${documentCode.length} ký tự.`);
+                // alert(`Mã chứng từ tối đa 16 ký tự. Mã hiện tại có ${documentCode.length} ký tự.`);
+                toast.warning(`Mã chứng từ tối đa 16 ký tự. Mã hiện tại có ${documentCode.length} ký tự.`);
                 return;
             }
 
@@ -1279,183 +1288,184 @@ export default function OperationClusterPage_test() {
         <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto">
             <div className="max-w-[1720px] mx-auto space-y-4">
                 {/* màn hình chính  */}
-                <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-5">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <h1 className="text-base font-bold text-slate-800">
-                                DANH SÁCH KHO CỤM CÔNG ĐOẠN
-                            </h1>
-                            {/* <p className="text-xs text-slate-500 mt-0.5">
+                {/* <div className="bg-white border border-slate-200 rounded-sm shadow-sm p-5"> */}
+                <div className="flex items-center justify-between mb-4">
+                    <div>
+                        <h1 className="text-lg font-bold uppercase text-slate-800">
+                            DANH SÁCH KHO CỤM CÔNG ĐOẠN
+                        </h1>
+                        {/* <p className="text-xs text-slate-500 mt-0.5">
                                 Danh sách mã chứng từ kho cụm công đoạn đã được lưu.
                             </p> */}
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            {permissions.canCreate && (
-                                <Button
-                                    variant='primary'
-                                    onClick={handleOpenCreateModal}
-                                >
-                                    New
-                                </Button>
-                            )}
-
-                            {permissions.canUpdate && (
-                                <Button
-                                    variant='warning'
-                                    onClick={handleEdit}
-                                    disabled={!selectedSavedId}
-                                >
-                                    Edit
-                                </Button>
-                            )}
-
-                            {permissions.canCreate && (
-                                <Button
-                                    onClick={handleCopy}
-                                >
-                                    Copy
-                                </Button>
-                            )}
-
-                            {permissions.canExport && (
-                                <Button
-                                    onClick={handleExportExcel}
-                                >
-                                    Export
-                                </Button>
-                            )}
-                            <Button
-                                onClick={loadItems}
-                                loading={loading}
-                                loadingText="Loading..."
-                            >
-                                Refresh
-                            </Button>
-                        </div>
                     </div>
 
-                    <div className="h-[630px] overflow-auto border border-slate-200 rounded-sm">
-                        <table className="w-full text-sm min-w-[1100px] border-collapse">
-                            <thead className="bg-slate-50 sticky top-0 z-10">
-                                <tr className="text-xs text-slate-500 uppercase">
-                                    <th className="p-3 border border-slate-200 text-left w-[20px]">
-                                        STT
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-left w-[115px]">
-                                        Mã chứng từ
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-left">
-                                        Nhóm công việc
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-left">
-                                        Chủng loại
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-left">
-                                        Nhóm chủng loại
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-right w-[100px]">
-                                        SMV
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-right w-[100px]">
-                                        SMV ĐC
-                                    </th>
-                                    <th className="p-3 border border-slate-200 text-center w-[140px]">
-                                        Trạng thái
-                                    </th>
-                                    {/* <th className="p-3 border border-slate-200 text-center w-[100px]">
+                    <div className="flex items-center gap-2">
+                        {permissions.canCreate && (
+                            <Button
+                                variant='primary'
+                                onClick={handleOpenCreateModal}
+                            >
+                                New
+                            </Button>
+                        )}
+
+                        {permissions.canUpdate && (
+                            <Button
+                                variant='warning'
+                                onClick={handleEdit}
+                                disabled={!selectedSavedId}
+                            >
+                                Edit
+                            </Button>
+                        )}
+
+                        {permissions.canCreate && (
+                            <Button
+                                onClick={handleCopy}
+                            >
+                                Copy
+                            </Button>
+                        )}
+
+                        {permissions.canExport && (
+                            <Button
+                                onClick={handleExportExcel}
+                            >
+                                Export
+                            </Button>
+                        )}
+
+                        <Button
+                            onClick={loadItems}
+                            loading={loading}
+                            loadingText="Loading..."
+                        >
+                            Refresh
+                        </Button>
+                    </div>
+                </div>
+
+                <div className="h-[630px] overflow-auto border border-slate-200 rounded-sm">
+                    <table className="w-full text-sm min-w-[1100px] border-collapse">
+                        <thead className="bg-slate-50 sticky top-0 z-10">
+                            <tr className="text-xs text-slate-500 uppercase">
+                                <th className="p-3 border border-slate-200 text-left w-[20px]">
+                                    STT
+                                </th>
+                                <th className="p-3 border border-slate-200 text-left w-[115px]">
+                                    Mã chứng từ
+                                </th>
+                                <th className="p-3 border border-slate-200 text-left">
+                                    Nhóm công việc
+                                </th>
+                                <th className="p-3 border border-slate-200 text-left">
+                                    Chủng loại
+                                </th>
+                                <th className="p-3 border border-slate-200 text-left">
+                                    Nhóm chủng loại
+                                </th>
+                                <th className="p-3 border border-slate-200 text-right w-[100px]">
+                                    SMV
+                                </th>
+                                <th className="p-3 border border-slate-200 text-right w-[100px]">
+                                    SMV ĐC
+                                </th>
+                                <th className="p-3 border border-slate-200 text-center w-[140px]">
+                                    Trạng thái
+                                </th>
+                                {/* <th className="p-3 border border-slate-200 text-center w-[100px]">
                                         Thao tác
                                     </th> */}
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            {loading && (
+                                <tr>
+                                    <td
+                                        colSpan={9}
+                                        className="p-8 border border-slate-200 text-center text-slate-400"
+                                    >
+                                        Đang tải danh sách chứng từ...
+                                    </td>
                                 </tr>
-                            </thead>
+                            )}
 
-                            <tbody>
-                                {loading && (
-                                    <tr>
-                                        <td
-                                            colSpan={9}
-                                            className="p-8 border border-slate-200 text-center text-slate-400"
-                                        >
-                                            Đang tải danh sách chứng từ...
+                            {!loading && items.length === 0 && (
+                                <tr>
+                                    <td
+                                        colSpan={9}
+                                        className="p-8 border border-slate-200 text-center text-slate-400"
+                                    >
+                                        Chưa có chứng từ nào được lưu.
+                                    </td>
+                                </tr>
+                            )}
+
+                            {!loading &&
+                                items.map((item, index) => (
+                                    <tr
+                                        key={item.id}
+                                        onClick={() => setSelectedSavedId(item.id)}
+                                        className={`cursor-pointer hover:bg-blue-100 ${selectedSavedId === item.id ? 'bg-blue-100' : ''
+                                            }`}
+                                    >
+                                        <td className="p-3 border border-slate-200 text-slate-500">
+                                            {index + 1}
                                         </td>
-                                    </tr>
-                                )}
 
-                                {!loading && items.length === 0 && (
-                                    <tr>
-                                        <td
-                                            colSpan={9}
-                                            className="p-8 border border-slate-200 text-center text-slate-400"
-                                        >
-                                            Chưa có chứng từ nào được lưu.
+                                        <td className="p-3 border border-slate-200">
+                                            <button
+                                                type="button"
+                                                onClick={(event) => {
+                                                    event.stopPropagation();
+                                                    setSelectedSavedId(item.id)
+                                                    handleViewSavedDocument(item.id);
+                                                }}
+                                                className=" text-blue-700 hover:underline"
+                                            >
+                                                {item.document_code}
+                                            </button>
                                         </td>
-                                    </tr>
-                                )}
 
-                                {!loading &&
-                                    items.map((item, index) => (
-                                        <tr
-                                            key={item.id}
-                                            onClick={() => setSelectedSavedId(item.id)}
-                                            className={`cursor-pointer hover:bg-blue-100 ${selectedSavedId === item.id ? 'bg-blue-100' : ''
-                                                }`}
-                                        >
-                                            <td className="p-3 border border-slate-200 text-slate-500">
-                                                {index + 1}
-                                            </td>
+                                        <td className="p-3 border border-slate-200">
+                                            {item.work_code && item.work_name
+                                                ? `${item.work_name}`
+                                                : item.work_id}
+                                        </td>
 
-                                            <td className="p-3 border border-slate-200">
-                                                <button
-                                                    type="button"
-                                                    onClick={(event) => {
-                                                        event.stopPropagation();
-                                                        setSelectedSavedId(item.id)
-                                                        handleViewSavedDocument(item.id);
-                                                    }}
-                                                    className=" text-blue-700 hover:underline"
-                                                >
-                                                    {item.document_code}
-                                                </button>
-                                            </td>
+                                        <td className="p-3 border border-slate-200">
+                                            {item.product_code && item.product_name
+                                                ? `${item.product_code} - ${item.product_name}`
+                                                : item.product_name || item.product_category_id}
+                                        </td>
 
-                                            <td className="p-3 border border-slate-200">
-                                                {item.work_code && item.work_name
-                                                    ? `${item.work_name}`
-                                                    : item.work_id}
-                                            </td>
+                                        <td className="p-3 border border-slate-200">
+                                            {item.category_group_code && item.category_group_name
+                                                ? `${item.category_group_code} - ${item.category_group_name}`
+                                                : item.category_group_name || item.product_category_group_id}
+                                        </td>
 
-                                            <td className="p-3 border border-slate-200">
-                                                {item.product_code && item.product_name
-                                                    ? `${item.product_code} - ${item.product_name}`
-                                                    : item.product_name || item.product_category_id}
-                                            </td>
+                                        <td className="p-3 border border-slate-200 text-right font-bold">
+                                            {Number(item.total_sam_gsd || 0).toFixed(2)}
+                                        </td>
 
-                                            <td className="p-3 border border-slate-200">
-                                                {item.category_group_code && item.category_group_name
-                                                    ? `${item.category_group_code} - ${item.category_group_name}`
-                                                    : item.category_group_name || item.product_category_group_id}
-                                            </td>
+                                        <td className="p-3 border border-slate-200 text-right text-blue-700">
+                                            {Number(item.total_adjusted_sam || 0).toFixed(2)}
+                                        </td>
 
-                                            <td className="p-3 border border-slate-200 text-right font-bold">
-                                                {Number(item.total_sam_gsd || 0).toFixed(2)}
-                                            </td>
+                                        <td className="p-3 border border-slate-200 text-center">
+                                            <span
+                                                className={`px-3 py-1 rounded-full text-xs font-bold ${item.status_id === 0
+                                                    ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
+                                                    : 'bg-slate-100 text-slate-500 border border-slate-200'
+                                                    }`}
+                                            >
+                                                {item.status_id === 0 ? 'Đang sử dụng' : 'Không sử dụng'}
+                                            </span>
+                                        </td>
 
-                                            <td className="p-3 border border-slate-200 text-right text-blue-700">
-                                                {Number(item.total_adjusted_sam || 0).toFixed(2)}
-                                            </td>
-
-                                            <td className="p-3 border border-slate-200 text-center">
-                                                <span
-                                                    className={`px-3 py-1 rounded-full text-xs font-bold ${item.status_id === 0
-                                                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-100'
-                                                        : 'bg-slate-100 text-slate-500 border border-slate-200'
-                                                        }`}
-                                                >
-                                                    {item.status_id === 0 ? 'Đang sử dụng' : 'Không sử dụng'}
-                                                </span>
-                                            </td>
-
-                                            {/* <td className="p-3 border border-slate-200 text-center">
+                                        {/* <td className="p-3 border border-slate-200 text-center">
                                                 <button
                                                     type="button"
                                                     onClick={(event) => {
@@ -1467,13 +1477,13 @@ export default function OperationClusterPage_test() {
                                                     Xem
                                                 </button>
                                             </td> */}
-                                        </tr>
-                                    ))}
-                            </tbody>
-                        </table>
-                    </div>
-
+                                    </tr>
+                                ))}
+                        </tbody>
+                    </table>
                 </div>
+
+                {/* </div> */}
                 {/* khai báo cụm công đoạn */}
                 {isCreateModalOpen && (
                     <div className="fixed inset-0 z-[80] bg-slate-900/40 flex items-center justify-center p-3">

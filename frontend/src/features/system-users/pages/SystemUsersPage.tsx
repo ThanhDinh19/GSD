@@ -143,6 +143,18 @@ export default function SystemUsersPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
+
+                    {permissions.canCreate && (
+                        <Button
+                            variant='primary'
+                            onClick={() =>
+                                void handleOpenCreate()
+                            }
+                        >
+                            New
+                        </Button>
+                    )}
+
                     {permissions.canUpdate && (
                         <Button
                             variant='warning'
@@ -160,19 +172,8 @@ export default function SystemUsersPage() {
                         >
                             {loadingUserDetail &&
                                 editingUserId === selectedRowUserId
-                                ? 'Đang tải...'
-                                : 'Sửa'}
-                        </Button>
-                    )}
-
-                    {permissions.canCreate && (
-                        <Button
-                            variant='primary'
-                            onClick={() =>
-                                void handleOpenCreate()
-                            }
-                        >
-                            Thêm
+                                ? 'Loading...'
+                                : 'Edit'}
                         </Button>
                     )}
                 </div>
@@ -188,7 +189,7 @@ export default function SystemUsersPage() {
                     />
 
                     <button type="button" onClick={() => void loadUsers()} className="rounded-sm border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-                        Làm mới
+                        Refresh
                     </button>
                 </div>
 

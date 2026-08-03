@@ -5,6 +5,7 @@ import { useGsdOverview } from '../hooks/useGsdOverview';
 import { GsdAnalysisDetail } from '../types';
 import { gsdAnalysisService } from '../services/gsdAnalysis.service';
 import GsdAnalysisDetailModal from '../components/gsd-analysis/GsdAnalysisDetailModal';
+import {Button} from '../shared/components';
 import {
     usePermissions,
 } from '../features/auth/hooks/usePermissions';
@@ -241,13 +242,11 @@ export default function GsdOverviewPage() {
                                 </p>
                             </div>
 
-                            <button
-                                type="button"
+                            <Button
                                 onClick={handleCloseWorkspace}
-                                className="px-4 py-2 border border-slate-300 text-slate-600 rounded-lg text-xs font-bold hover:bg-slate-50"
                             >
-                                Đóng
-                            </button>
+                                Close
+                            </Button>
                         </div>
 
                         <div className="border-b border-slate-200 flex gap-2">

@@ -25,6 +25,10 @@ import type {
   UpdateRolePayload,
 } from '../types/roleManagement.type';
 
+import {
+  Button
+} from '../../../shared/components'
+
 type FormMode =
   | 'create'
   | 'edit'
@@ -202,15 +206,14 @@ export default function RoleManagementPage() {
             </div>
 
             {permissions.canManage && (
-              <button
-                type="button"
+              <Button
+                variant='primary'
                 onClick={() =>
                   setFormMode('create')
                 }
-                className="rounded-sm bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-700"
               >
-                Thêm mới
-              </button>
+                New
+              </Button>
             )}
           </div>
 
@@ -226,16 +229,14 @@ export default function RoleManagementPage() {
               className="min-w-0 flex-1 rounded-sm border border-slate-300 px-3 py-2 text-sm outline-none focus:border-blue-500"
             />
 
-            <button
-              type="button"
+            <Button
               onClick={() => {
                 void loadRoles();
               }}
               disabled={loading}
-              className="rounded-sm border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
             >
-              Làm mới
-            </button>
+              Refresh
+            </Button>
           </div>
         </div>
 
@@ -353,8 +354,8 @@ export default function RoleManagementPage() {
           {selectedRole && (
             <div className="flex flex-wrap items-center gap-2">
               {permissions.canManage  && (
-                <button
-                  type="button"
+                <Button
+                  variant='warning'
                   onClick={() =>
                     setFormMode('edit')
                   }
@@ -362,16 +363,15 @@ export default function RoleManagementPage() {
                     savingRole ||
                     loadingDetail
                   }
-                  className="rounded-sm border border-blue-300 bg-white px-3 py-2 text-sm font-semibold text-blue-700 hover:bg-blue-50 disabled:opacity-50"
                 >
-                  Sửa thông tin
-                </button>
+                  Edit
+                </Button>
               )}
 
               {permissions.canManage  &&
                 !selectedRole.isSystemRole && (
-                  <button
-                    type="button"
+                  <Button
+                    variant='danger'
                     onClick={() => {
                       void handleDeactivateRole();
                     }}
@@ -379,12 +379,11 @@ export default function RoleManagementPage() {
                       deactivatingRole ||
                       loadingDetail
                     }
-                    className="rounded-sm border border-red-300 bg-white px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
                   >
                     {deactivatingRole
-                      ? 'Đang xử lý...'
-                      : 'Ngừng sử dụng'}
-                  </button>
+                      ? 'Processing...'
+                      : 'Deactivate'}
+                  </Button>
                 )}
             </div>
           )}

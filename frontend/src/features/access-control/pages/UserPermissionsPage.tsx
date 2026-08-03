@@ -12,6 +12,10 @@ import {
   useUserPermissions,
 } from '../hooks/useUserPermissions';
 
+import {
+  Button
+} from '../../../shared/components';
+
 export default function UserPermissionsPage() {
   const permissions = usePermissions(
     'SYSTEM.USER_PERMISSIONS'
@@ -118,16 +122,15 @@ export default function UserPermissionsPage() {
           </div>
 
           {permissions.canManage && (
-            <button
-              type="button"
+            <Button
+              variant='primary'
               onClick={() => void save()}
               disabled={saving || changes.length === 0}
-              className="rounded-sm bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
             >
               {saving
-                ? 'Đang lưu...'
-                : `Lưu thay đổi (${changes.length})`}
-            </button>
+                ? 'Saving...'
+                : `Save (${changes.length})`}
+            </Button>
           )}
         </div>
 

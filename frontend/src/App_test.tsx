@@ -1172,8 +1172,8 @@ export default function App_test() {
 
         {/* Footer info brand elements */}
         <footer className="mt-auto px-6 py-4 bg-white border-t border-slate-200 flex flex-wrap justify-between items-center text-[10px] text-slate-400 gap-2 select-none">
-          <p>© 2026 IE Planning System - Apparel Manufacturing Solution</p>
-          <p className="font-medium">All rights reserved by Manufacturing Technology Group.</p>
+          <p>© 2026 IE Planning System - HQ5 VSN</p>
+          <p className="font-medium">All rights reserved by HQ5 VSN.</p>
         </footer>
       </div>
     </div>

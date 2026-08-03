@@ -3,6 +3,7 @@ import { ProductCate, ProductCatePayload } from '../types';
 import { useProductCates } from '../hooks/useProductCate';
 import ProductCateFormModal from '../components/productCate/productCateFormModal';
 import ProductCateTable from '../components/productCate/productCateTable';
+import {Button} from '../shared/components';
 
 export default function ProductCateMasterPage() {
     const {
@@ -53,12 +54,12 @@ export default function ProductCateMasterPage() {
                         </p>
                     </div>
 
-                    <button
+                    <Button
+                        variant='primary'
                         onClick={openCreateForm}
-                        className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
                     >
-                        + Thêm mới
-                    </button>
+                        New
+                    </Button>
                 </div>
 
                 <ProductCateTable

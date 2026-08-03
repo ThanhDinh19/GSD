@@ -82,10 +82,14 @@ import {
     SCREEN,
 } from '../../auth/constants/permission.constants';
 
+import {
+    useToast
+} from '../../../shared/notifications/ToastProvider';
+
 
 export default function SewingProcessPage() {
     const permissions = usePermissions(SCREEN.SEWING_PROCESS);
-
+    const toast = useToast();
     const sewingProcess =
         useSewingProcess();
 
@@ -513,7 +517,13 @@ export default function SewingProcessPage() {
         }
 
         if (!selectedId) {
-            alert('Vui lòng chọn chứng từ cần sửa.');
+            
+            toast.warning(
+                "Vui lòng chọn chứng từ cần sửa.",
+                {
+                    duration: 2000
+                }
+            )
             return;
         }
 
@@ -567,9 +577,19 @@ export default function SewingProcessPage() {
             return;
         }
 
-        alert(response.message || 'Lưu thành công.');
+       
+        toast.success( 
+            String(response.message),
+            {
+                duration: 3000
+            }
+        )
         setModalMode(null);
     };
+
+    const handleExportExcel = () => {
+        alert('Do you have a boyfriend ?');
+    }
 
     const canModify =
         modalMode === 'create'
@@ -598,7 +618,7 @@ export default function SewingProcessPage() {
         <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto">
             <div className="ax-w-[1720px] mx-auto space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                    <div>
+                   <div>    
                         <h2 className="text-lg font-bold uppercase text-slate-800">
                             Danh sách quy trình may
                         </h2>
@@ -623,7 +643,7 @@ export default function SewingProcessPage() {
                                 Edit
                             </Button>
                         )}
-                        
+
                         {/* 
                         {permissions.canDelete && (
                             <Button
@@ -636,6 +656,14 @@ export default function SewingProcessPage() {
                                 Trash
                             </Button>
                         )} */}
+
+                        {permissions.canExport && (
+                            <Button
+                                onClick={handleExportExcel}
+                            >
+                                Export
+                            </Button>
+                        )}
 
                         <Button
                             onClick={() => {

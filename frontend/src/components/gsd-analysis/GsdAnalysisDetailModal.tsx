@@ -1,5 +1,6 @@
 import { GsdAnalysisDetail } from '../../types';
 import { getGsdAnalysisImageUrl } from '../../services/gsdAnalysis.service';
+import {Button} from '../../shared/components';
 interface GsdAnalysisDetailModalProps {
   analysis: GsdAnalysisDetail;
   onClose: () => void;
@@ -446,17 +447,12 @@ export default function GsdAnalysisDetailModal({
 
         {/* Footer */}
         <div className="flex shrink-0 justify-end border-t border-slate-200 bg-white px-5 py-3 sm:px-6">
-          <button
-            type="button"
+          <Button
+            variant='default'
             onClick={onClose}
-            className="
-            h-10 rounded-lg border border-slate-300
-            px-5 text-xs font-bold text-slate-700
-            transition hover:bg-slate-50
-          "
           >
-            Đóng
-          </button>
+            Close
+          </Button>
         </div>
       </div>
     </div>
