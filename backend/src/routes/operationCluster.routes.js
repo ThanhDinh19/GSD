@@ -20,7 +20,7 @@ const PERMISSIONS = {
 
 router.use(authenticate);
 
-router.get('/', operationClusterController.getOperationClusterHeaders);
+router.get('/', requirePermission(PERMISSIONS.VIEW), operationClusterController.getOperationClusterHeaders);
 router.get('/gsd-options', requirePermission(PERMISSIONS.VIEW), operationClusterController.getGsdOptions);
 router.get('/gsd-options/:id/actions', requirePermission(PERMISSIONS.VIEW), operationClusterController.getGsdActions);
 router.get('/:id', requirePermission(PERMISSIONS.VIEW), operationClusterController.getOperationClusterById);
