@@ -849,7 +849,22 @@ async function getAnalysisCopyDraft(id) {
     };
 }
 
-async function updateAnalysis(id, payload) {
+async function updateAnalysis(id, payload, context = {}) {
+
+    const userId = Number(context.userId)
+
+    if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+    ) {
+        const err = new Error(
+            'Bạn chưa đăng nhập.'
+        );
+
+        err.statusCode = 401;
+        throw err;
+    }
+
     const pool = getPool();
 
     const analysisId = Number(id);
@@ -1006,6 +1021,7 @@ async function updateAnalysis(id, payload) {
                     ? String(payload.note).trim()
                     : null
             )
+            .input('updated_by_user_id', sql.BigInt, userId)
             .query(`
                 UPDATE gsd_analysis_headers
                 SET
@@ -1023,12 +1039,12 @@ async function updateAnalysis(id, payload) {
                     total_tmu = @total_tmu,
                     total_manual_seconds = @total_manual_seconds,
                     machine_seconds = @machine_seconds,
-                    total_smv_before_difficulty =
-                        @total_smv_before_difficulty,
+                    total_smv_before_difficulty = @total_smv_before_difficulty,
                     difficulty_seconds = @difficulty_seconds,
                     final_smv = @final_smv,
                     skill_grade = @skill_grade,
                     note = @note,
+                    updated_by_user_id = @updated_by_user_id,
                     updated_at = SYSDATETIME()
                 WHERE id = @id
             `);

@@ -236,3 +236,7 @@ export interface SewingProcessMutationResult {
   id?: number;
   documentCode?: string;
 }
+
+export interface DeactivateResponse {
+  message?: string;
+}

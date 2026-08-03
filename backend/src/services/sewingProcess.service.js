@@ -121,7 +121,7 @@ function normalizeLine(row, index) {
         cbcTime: row.cbcTime ?? row.cbc_time ?? null,
         note: row.note ?? null,
 
-         // Giữ lại thông tin ảnh
+        // Giữ lại thông tin ảnh
         imageFileName:
             row.imageFileName ??
             row.image_file_name ??
@@ -583,7 +583,24 @@ async function ensureDocumentCodeNotExists(pool, documentCode, exceptId = null) 
     }
 }
 
-async function createSewingProcess(payload) {
+async function createSewingProcess(payload, context = {}) {
+
+    const userId = Number(context.userId)
+    const employeeId = Number(context.employeeId)
+    const departmentCode = String(context.departmentCode)
+
+    if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+    ) {
+        const err = new Error(
+            'Bạn chưa đăng nhập.'
+        );
+
+        err.statusCode = 401;
+        throw err;
+    }
+
     const pool = await getPool();
 
     const calculated = calculateSewingProcess(payload);
@@ -598,7 +615,7 @@ async function createSewingProcess(payload) {
     await transaction.begin();
 
     try {
-        const sewingProcessId = await insertHeader(transaction, header);
+        const sewingProcessId = await insertHeader(transaction, header, userId, employeeId, departmentCode);
 
         await insertSummary(transaction, header.documentCode, summary);
         await insertLines(transaction, header.documentCode, lines);
@@ -618,7 +635,24 @@ async function createSewingProcess(payload) {
     }
 }
 
-async function updateSewingProcess(id, payload) {
+async function updateSewingProcess(id, payload, context = {}) {
+
+    const userId = Number(context.userId)
+    const employeeId = Number(context.employeeId)
+    const departmentCode = String(context.departmentCode)
+
+    if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+    ) {
+        const err = new Error(
+            'Bạn chưa đăng nhập.'
+        );
+
+        err.statusCode = 401;
+        throw err;
+    }
+
     const pool = await getPool();
 
     const currentResult = await pool.request()
@@ -653,7 +687,7 @@ async function updateSewingProcess(id, payload) {
     await transaction.begin();
 
     try {
-        await updateHeader(transaction, id, header);
+        await updateHeader(transaction, id, header, userId);
 
         await deleteChildData(transaction, oldDocumentCode);
 
@@ -681,7 +715,7 @@ async function updateSewingProcess(id, payload) {
     }
 }
 
-async function insertHeader(transaction, header) {
+async function insertHeader(transaction, header, userId, employeeId, departmentCode) {
     const result = await new sql.Request(transaction)
         .input('document_code', sql.VarChar(32), header.documentCode)
         .input('customer_id', sql.Int, header.customerId)
@@ -699,6 +733,9 @@ async function insertHeader(transaction, header) {
         .input('price_mode', sql.VarChar(32), header.priceMode)
         .input('status_id', sql.TinyInt, header.statusId)
         .input('note', sql.NVarChar(500), header.note)
+        .input('created_by_user_id', sql.BigInt, userId)
+        .input('owner_employee_id', sql.BigInt, employeeId)
+        .input('owner_department_code', sql.VarChar(32), departmentCode)
         .query(`
             INSERT INTO sewing_process_headers (
                 document_code,
@@ -716,7 +753,12 @@ async function insertHeader(transaction, header) {
                 issued_date,
                 price_mode,
                 status_id,
-                note
+                note,
+                created_by_user_id,
+                owner_user_id,
+                owner_employee_id,
+                owner_department_code,
+                deleted_by_user_id
             )
             OUTPUT INSERTED.id AS id
             VALUES (
@@ -735,14 +777,19 @@ async function insertHeader(transaction, header) {
                 @issued_date,
                 @price_mode,
                 @status_id,
-                @note
+                @note,
+                @created_by_user_id,
+                @created_by_user_id,
+                @owner_employee_id,
+                @owner_department_code,
+                0
             )
         `);
     console.log('Kết quả insert header:', result);
     return result.recordset?.[0]?.id;
 }
 
-async function updateHeader(transaction, id, header) {
+async function updateHeader(transaction, id, header, userId) {
     await new sql.Request(transaction)
         .input('id', sql.Int, id)
         .input('document_code', sql.VarChar(32), header.documentCode)
@@ -761,6 +808,8 @@ async function updateHeader(transaction, id, header) {
         .input('price_mode', sql.VarChar(32), header.priceMode)
         .input('status_id', sql.TinyInt, header.statusId)
         .input('note', sql.NVarChar(500), header.note)
+        .input('updated_by_user_id', sql.BigInt, userId)
+
         .query(`
             UPDATE sewing_process_headers
             SET
@@ -780,6 +829,7 @@ async function updateHeader(transaction, id, header) {
                 price_mode = @price_mode,
                 status_id = @status_id,
                 note = @note,
+                updated_by_user_id = @updated_by_user_id,
                 updated_at = SYSDATETIME()
             WHERE id = @id
         `);
@@ -1261,6 +1311,47 @@ async function getActionDetailsByOperationClusterLineId(operationLineId) {
     return result.recordset;
 }
 
+async function deactivate(id, context = {}) {
+    const pool = getPool();
+
+    const userId = Number(context.userId);
+
+    if (
+        !Number.isInteger(userId) ||
+        userId <= 0
+    ) {
+        const err = new Error(
+            'Bạn chưa đăng nhập.'
+        );
+
+        err.statusCode = 401;
+        throw err;
+    }
+
+    const result = await pool.request()
+        .input('id', sql.Int, id)
+        .query(`
+            UPDATE sewing_process_headers
+            SET 
+                is_deleted = 1,
+                deleted_at = SYSDATETIME()
+            WHERE id = @id    
+                AND is_deleted = 0
+        `);
+
+    const userUpdated = await pool.request()
+        .input('id', sql.Int, id)
+        .input('deleted_by_user_id', sql.Int, userId)
+        .query(`
+                UPDATE sewing_process_headers
+                SET deleted_by_user_id = @deleted_by_user_id
+                WHERE id = @id
+            `)
+
+
+    return result.rowsAffected[0] > 0;
+}
+
 module.exports = {
     getSewingProcesses,
     getSewingProcessById,
@@ -1272,5 +1363,6 @@ module.exports = {
     deleteSewingProcessImage,
     getActionDetailsById,
     getActionDetailsById,
-    getActionDetailsByOperationClusterLineId
+    getActionDetailsByOperationClusterLineId,
+    deactivate,
 };

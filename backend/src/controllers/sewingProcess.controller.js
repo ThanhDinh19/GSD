@@ -1,4 +1,5 @@
 const sewingProcessService = require('../services/sewingProcess.service');
+const asyncHandler = require('../utils/asyncHandler');
 
 async function getSewingProcesses(req, res) {
     try {
@@ -82,7 +83,19 @@ async function calculateMachineNeeds(req, res) {
 
 async function createSewingProcess(req, res) {
     try {
-        const data = await sewingProcessService.createSewingProcess(req.body);
+        const data = await sewingProcessService.createSewingProcess(req.body, {
+            userId:
+                req.user.id,
+
+            employeeId:
+                req.user
+                    .employeeId,
+
+            departmentCode:
+                req.user
+                    .departmentCode,
+
+        });
 
         return res.status(201).json({
             success: true,
@@ -110,7 +123,19 @@ async function updateSewingProcess(req, res) {
             });
         }
 
-        const data = await sewingProcessService.updateSewingProcess(id, req.body);
+        const data = await sewingProcessService.updateSewingProcess(id, req.body, {
+            userId:
+                req.user.id,
+
+            employeeId:
+                req.user
+                    .employeeId,
+
+            departmentCode:
+                req.user
+                    .departmentCode,
+
+        });
 
         return res.status(200).json({
             success: true,
@@ -216,6 +241,33 @@ async function getActionDetailsByOperationClusterLineId(req, res, next) {
     }
 }
 
+const deactivate = async (req, res) => {
+    const { id } = req.params;
+
+    const updated = await sewingProcessService.deactivate(Number(id), {
+        userId:
+            req.user.id,
+
+        employeeId:
+            req.user
+                .employeeId,
+
+        departmentCode:
+            req.user
+                .departmentCode,
+    });
+
+    if (!updated) {
+        return res.status(404).json({
+            error: 'Không tìm thấy chứng từ'
+        })
+    }
+
+    return res.json({
+        message: 'Đã chuyển vào thùng rác'
+    });
+};
+
 module.exports = {
     getSewingProcesses,
     getSewingProcessById,
@@ -227,4 +279,5 @@ module.exports = {
     getActionDetailsById,
     getGsdActionDetailsById,
     getActionDetailsByOperationClusterLineId,
+    deactivate,
 };

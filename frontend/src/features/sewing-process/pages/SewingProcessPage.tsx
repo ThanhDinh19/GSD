@@ -161,6 +161,7 @@ export default function SewingProcessPage() {
         loading,
         calculating,
         saving,
+        deactivatingId,
 
         refresh,
         loadDetailToForm,
@@ -175,6 +176,7 @@ export default function SewingProcessPage() {
 
         createSewingProcess,
         updateSewingProcess,
+        deactivateSewingProcess,
     } = sewingProcess;
 
     const mainImage =
@@ -519,6 +521,30 @@ export default function SewingProcessPage() {
         setModalMode('edit');
     };
 
+    const handleMoveToTrash =
+        async (id: number) => {
+            const confirmed = window.confirm(
+                'Bạn có chắc muốn chuyển chứng từ này vào thùng rác?'
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const response =
+                    await deactivateSewingProcess(id);
+
+                alert(response.message);
+            } catch (error) {
+                alert(
+                    error instanceof Error
+                        ? error.message
+                        : 'Không thể chuyển vào thùng rác'
+                );
+            }
+        };
+
     const save = async () => {
         const isEdit =
             Boolean(selectedId) &&
@@ -597,6 +623,19 @@ export default function SewingProcessPage() {
                                 Edit
                             </Button>
                         )}
+                        
+                        {/* 
+                        {permissions.canDelete && (
+                            <Button
+                                variant='danger'
+                                disabled={!selectedId}
+                                onClick={() =>
+                                    void handleMoveToTrash(Number(selectedId))
+                                }
+                            >
+                                Trash
+                            </Button>
+                        )} */}
 
                         <Button
                             onClick={() => {

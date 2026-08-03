@@ -18,6 +18,8 @@ const {
 
 const router = express.Router();
 
+router.use(authenticate);
+
 const SEWING_PROCESS_PERMISSIONS = {
     VIEW:
         'SEWING.PROCESS.VIEW',
@@ -156,6 +158,11 @@ router.post(
 router.put(
     '/:id',
     controller.updateSewingProcess
+);
+
+router.put(
+    '/deactivate/:id',
+    controller.deactivate
 );
 
 module.exports = router;

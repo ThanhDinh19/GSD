@@ -14,6 +14,7 @@ import type {
   SewingProcessPayload,
   SewingProcessResult,
   SewingProcessUploadResult,
+  DeactivateResponse,
 } from '../types/sewingProcess.types';
 
 import type {
@@ -74,8 +75,17 @@ export const sewingProcessService = {
     >(
       `/api/sewing-processes/${id}`,
     );
-
     return response.data;
+  },
+
+  async deactivate(id: number): Promise<DeactivateResponse> {
+    const response = await request<ApiResponse<DeactivateResponse>>(
+      `/api/sewing-processes/deactivate/${id}`,
+      {
+        method: 'PUT'
+      }
+    );
+    return response;
   },
 
   async calculateSewingProcess(

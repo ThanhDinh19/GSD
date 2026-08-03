@@ -2,51 +2,51 @@ const asyncHandler = require('../utils/asyncHandler');
 const gsdAnalysisService = require('../services/gsdAnalysis.service');
 
 const getSourceActionsForAnalysis = asyncHandler(async (req, res) => {
-  const { sourceId } = req.params;
+    const { sourceId } = req.params;
 
-  const data = await gsdAnalysisService.getSourceActionsForAnalysis(Number(sourceId));
+    const data = await gsdAnalysisService.getSourceActionsForAnalysis(Number(sourceId));
 
-  return res.json(data);
+    return res.json(data);
 });
 
 const calculateAnalysis = asyncHandler(async (req, res) => {
-  const data = await gsdAnalysisService.calculateAnalysis(req.body);
+    const data = await gsdAnalysisService.calculateAnalysis(req.body);
 
-  return res.json(data);
+    return res.json(data);
 });
 
 const createAnalysis = asyncHandler(async (req, res) => {
-  const data = await gsdAnalysisService.createAnalysis(req.body, {
-                        userId:
-                            req.user.id,
+    const data = await gsdAnalysisService.createAnalysis(req.body, {
+        userId:
+            req.user.id,
 
-                        employeeId:
-                            req.user
-                                .employeeId,
+        employeeId:
+            req.user
+                .employeeId,
 
-                        departmentCode:
-                            req.user
-                                .departmentCode,
-                    });
+        departmentCode:
+            req.user
+                .departmentCode,
+    });
 
-  return res.json({
-    message: 'Đã phân tích công đoạn thành công.',
-    data,
-  });
+    return res.json({
+        message: 'Đã phân tích công đoạn thành công.',
+        data,
+    });
 });
 
 const getAnalyses = asyncHandler(async (req, res) => {
-  const data = await gsdAnalysisService.getAnalyses();
+    const data = await gsdAnalysisService.getAnalyses();
 
-  return res.json(data);
+    return res.json(data);
 });
 
 const getAnalysisById = asyncHandler(async (req, res) => {
-  const { id } = req.params;
+    const { id } = req.params;
 
-  const data = await gsdAnalysisService.getAnalysisById(Number(id));
+    const data = await gsdAnalysisService.getAnalysisById(Number(id));
 
-  return res.json(data);
+    return res.json(data);
 });
 
 const updateAnalysis = asyncHandler(async (req, res, next) => {
@@ -60,11 +60,18 @@ const updateAnalysis = asyncHandler(async (req, res, next) => {
             });
         }
 
-        const data =
-            await gsdAnalysisService.updateAnalysis(
-                id,
-                req.body
-            );
+        const data = await gsdAnalysisService.updateAnalysis(id, req.body, {
+            userId:
+                req.user.id,
+
+            employeeId:
+                req.user
+                    .employeeId,
+
+            departmentCode:
+                req.user
+                    .departmentCode,
+        });
 
         return res.json({
             success: true,
@@ -129,12 +136,12 @@ async function uploadGsdAnalysisImage(req, res) {
 }
 
 module.exports = {
-  getSourceActionsForAnalysis,
-  calculateAnalysis,
-  createAnalysis,
-  getAnalyses,
-  getAnalysisById,
-  updateAnalysis,
-  getAnalysisCopyDraft,
-  uploadGsdAnalysisImage
+    getSourceActionsForAnalysis,
+    calculateAnalysis,
+    createAnalysis,
+    getAnalyses,
+    getAnalysisById,
+    updateAnalysis,
+    getAnalysisCopyDraft,
+    uploadGsdAnalysisImage
 };

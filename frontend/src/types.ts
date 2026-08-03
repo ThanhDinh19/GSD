@@ -660,8 +660,6 @@ export interface CreateOperationClusterPayload {
 }
 
 
-
-
 // dinh 09/07/2026
 export interface GsdActionDetail {
   id: number;

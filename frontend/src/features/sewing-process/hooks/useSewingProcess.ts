@@ -55,6 +55,11 @@ export function useSewingProcess() {
   const [saving, setSaving] =
     useState(false);
 
+  const [
+    deactivatingId,
+    setDeactivatingId,
+  ] = useState<number | null>(null);
+
   const loadSewingProcesses =
     async () => {
       setLoading(true);
@@ -304,28 +309,28 @@ export function useSewingProcess() {
     };
 
   const loadDetailToForm = async (id: number) => {
-      setLoading(true);
+    setLoading(true);
 
-      try {
-        const data = await sewingProcessService.getSewingProcessById(id);
+    try {
+      const data = await sewingProcessService.getSewingProcessById(id);
 
-        setForm({
-          ...data.header,
+      setForm({
+        ...data.header,
 
-          lines:
-            data.lines || [],
+        lines:
+          data.lines || [],
 
-          images:
-            data.images || [],
-        });
+        images:
+          data.images || [],
+      });
 
-        setResult(data);
+      setResult(data);
 
-        return data;
-      } finally {
-        setLoading(false);
-      }
-    };
+      return data;
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const resetForm = () => {
     setResult(null);
@@ -334,6 +339,32 @@ export function useSewingProcess() {
       createInitialSewingProcessPayload()
     );
   };
+
+  const deactivateSewingProcess =
+    async (id: number) => {
+      if (
+        !Number.isInteger(id) ||
+        id <= 0
+      ) {
+        throw new Error(
+          'ID chứng từ không hợp lệ'
+        );
+      }
+
+      setDeactivatingId(id);
+
+      try {
+        const response =
+          await sewingProcessService
+            .deactivate(id);
+
+        await loadSewingProcesses();
+
+        return response;
+      } finally {
+        setDeactivatingId(null);
+      }
+    };
 
   useEffect(() => {
     void loadSewingProcesses();
@@ -347,6 +378,7 @@ export function useSewingProcess() {
     loading,
     calculating,
     saving,
+    deactivatingId,
 
     refresh,
     loadSewingProcesses,
@@ -364,5 +396,8 @@ export function useSewingProcess() {
 
     createSewingProcess,
     updateSewingProcess,
+    deactivateSewingProcess,
   };
 }
+
+//

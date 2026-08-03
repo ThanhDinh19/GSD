@@ -269,6 +269,32 @@ function EyeIcon({
 }
 
 export function LoginPage() {
+
+  const BASE_UNITS = [
+    {
+      id: 'UNIT_01',
+      name: 'Công ty Cổ phần Đầu tư Mặt Trời Việt',
+    },
+    {
+      id: 'UNIT_02',
+      name: 'Công ty TNHH Đầu tư Quốc tế Việt Đức',
+    },
+    {
+      id: 'UNIT_03',
+      name: 'Công ty TNHH Quốc tế Việt An',
+    },
+    {
+      id: 'UNIT_04',
+      name: 'Công ty TNHH Đầu tư Vietsun Ninh Thuận',
+    },
+    {
+      id: 'UNIT_05',
+      name: 'Vietsun Phú Yên - CN Công ty Cổ phần Đầu tư Mặt Trời Việt',
+    },
+  ];
+
+
+
   const navigate = useNavigate();
 
   const {
@@ -290,6 +316,9 @@ export function LoginPage() {
     useState(false);
 
   const [error, setError] =
+    useState('');
+
+  const [baseUnitId, setBaseUnitId] =
     useState('');
 
   if (isAuthenticated) {
@@ -319,6 +348,13 @@ export function LoginPage() {
     if (!password) {
       setError(
         'Vui lòng nhập mật khẩu.'
+      );
+      return;
+    }
+
+    if (!baseUnitId) {
+      setError(
+        'Vui lòng chọn đơn vị cơ sở.'
       );
       return;
     }
@@ -374,8 +410,7 @@ export function LoginPage() {
             </h2>
 
             <p className="mx-auto mt-4 max-w-[560px] text-lg leading-8 text-slate-500">
-              Hệ thống quản lý phân tích thao tác,
-              thời gian chuẩn và quy trình sản xuất.
+              Đơn vị kiểm duyệt HQ5 VSN
             </p>
           </div>
         </section>
@@ -434,7 +469,7 @@ export function LoginPage() {
                       );
                       setError('');
                     }}
-                    className="h-[68px] w-full rounded-full border border-slate-300 bg-white pl-14 pr-5 text-base text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#247ccc] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    className="h-[40px] w-full rounded-sm border border-slate-300 bg-white pl-14 pr-5 text-base text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#247ccc] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
                   />
                 </div>
               </div>
@@ -469,7 +504,7 @@ export function LoginPage() {
                       );
                       setError('');
                     }}
-                    className="h-[68px] w-full rounded-full border border-slate-300 bg-white pl-14 pr-14 text-base text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#247ccc] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                    className="h-[40px] w-full rounded-sm border border-slate-300 bg-white pl-14 pr-14 text-base text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-[#247ccc] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
                   />
 
                   <button
@@ -493,6 +528,82 @@ export function LoginPage() {
                   </button>
                 </div>
               </div>
+
+
+              <div>
+                <label
+                  htmlFor="baseUnitId"
+                  className="mb-2 block text-sm font-bold text-slate-800"
+                >
+                  Đơn vị cơ sở
+                </label>
+
+                <div className="relative">
+                  <span className="pointer-events-none absolute left-5 top-1/2 z-10 -translate-y-1/2 text-slate-400">
+                    <svg
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      aria-hidden="true"
+                      className="h-5 w-5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                    >
+                      <path
+                        d="M4 21V5l8-3 8 3v16"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+
+                      <path
+                        d="M9 9h1M14 9h1M9 13h1M14 13h1M9 17h1M14 17h1M2 21h20"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                  </span>
+
+                  <select
+                    id="baseUnitId"
+                    value={baseUnitId}
+                    disabled={loading}
+                    onChange={(event) => {
+                      setBaseUnitId(
+                        event.target.value
+                      );
+                      setError('');
+                    }}
+                    className="h-[40px] w-full appearance-none rounded-sm border border-slate-300 bg-white pl-14 pr-12 text-base text-slate-800 outline-none transition focus:border-[#247ccc] focus:ring-4 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100"
+                  >
+                    <option value="">
+                      -- Chọn đơn vị cơ sở --
+                    </option>
+
+                    {BASE_UNITS.map((unit) => (
+                      <option
+                        key={unit.id}
+                        value={unit.id}
+                      >
+                        {unit.name}
+                      </option>
+                    ))}
+                  </select>
+
+                  <span className="pointer-events-none absolute right-5 top-1/2 -translate-y-1/2 text-slate-400">
+                    <svg
+                      viewBox="0 0 20 20"
+                      fill="currentColor"
+                      aria-hidden="true"
+                      className="h-5 w-5"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        d="M5.23 7.21a.75.75 0 0 1 1.06.02L10 11.17l3.71-3.94a.75.75 0 1 1 1.08 1.04l-4.25 4.5a.75.75 0 0 1-1.08 0l-4.25-4.5a.75.75 0 0 1 .02-1.06Z"
+                        clipRule="evenodd"
+                      />
+                    </svg>
+                  </span>
+                </div>
+              </div>
+
 
               {error && (
                 <div
