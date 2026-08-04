@@ -1,6 +1,6 @@
 import { GsdAnalysisDetail } from '../../types';
 import { getGsdAnalysisImageUrl } from '../../services/gsdAnalysis.service';
-import {Button} from '../../shared/components';
+import { Button } from '../../shared/components';
 interface GsdAnalysisDetailModalProps {
   analysis: GsdAnalysisDetail;
   onClose: () => void;
@@ -136,25 +136,24 @@ export default function GsdAnalysisDetailModal({
 
                 <InfoCard
                   label="Đường may"
-                  value={`${formatNumber(
-                    analysis.seamLength,
-                    4
-                  )} cm`}
+                  value={`${formatNumber(analysis.seamLength, 2)} cm`}
                 />
 
                 <InfoCard
                   label="Thao tác kèm theo"
                   value={formatNumber(
                     analysis.attachedActionTime,
-                    4
+                    2
                   )}
+
+                // value = {`${Number(analysis.attachedActionTime)}`}
                 />
 
                 <InfoCard
                   label="Hệ số nhân SP"
                   value={formatNumber(
                     analysis.productMultiplier,
-                    4
+                    2
                   )}
                 />
 
@@ -162,7 +161,7 @@ export default function GsdAnalysisDetailModal({
                   label="Số mũi chỉ"
                   value={formatNumber(
                     analysis.stitchCount,
-                    4
+                    2
                   )}
                 />
 
@@ -179,7 +178,7 @@ export default function GsdAnalysisDetailModal({
                   subLabel="(Số mũi chỉ / tốc độ máy) × 60"
                   value={formatNumber(
                     analysis.machineVelocity,
-                    4
+                    2
                   )}
                 />
 
@@ -187,7 +186,7 @@ export default function GsdAnalysisDetailModal({
                   label="Hao phí"
                   value={formatNumber(
                     analysis.allowance,
-                    4
+                    2
                   )}
                 />
 
@@ -276,7 +275,7 @@ export default function GsdAnalysisDetailModal({
                 label="Giây thao tác"
                 value={formatNumber(
                   analysis.totalManualSeconds,
-                  4
+                  2
                 )}
               />
 
@@ -285,7 +284,7 @@ export default function GsdAnalysisDetailModal({
                 subLabel="(Vận tốc máy × đường may) + thao tác kèm theo + hao phí"
                 value={formatNumber(
                   analysis.machineSeconds,
-                  4
+                  2
                 )}
                 tone="orange"
               />
@@ -295,7 +294,7 @@ export default function GsdAnalysisDetailModal({
                 subLabel="Tổng SMV × mức độ phức tạp / 100"
                 value={formatNumber(
                   analysis.difficultySeconds,
-                  4
+                  2
                 )}
                 tone="amber"
               />
@@ -305,7 +304,7 @@ export default function GsdAnalysisDetailModal({
                 subLabel="(Giây thao tác + thời gian MMTB) × hệ số SP"
                 value={formatNumber(
                   analysis.totalSmvBeforeDifficulty,
-                  4
+                  2
                 )}
                 tone="green"
               />
@@ -330,7 +329,6 @@ export default function GsdAnalysisDetailModal({
                 <h4 className="text-sm font-bold text-slate-800">
                   Chi tiết thao tác
                 </h4>
-
                 <p className="mt-1 text-xs text-slate-500">
                   {details.length} thao tác trong phân tích
                 </p>
@@ -430,7 +428,7 @@ export default function GsdAnalysisDetailModal({
                       <td className="border-b border-r border-slate-200 px-4 py-3 text-right text-slate-700">
                         {formatNumber(
                           item.seconds,
-                          4
+                          2
                         )}
                       </td>
 
@@ -574,10 +572,9 @@ function MetricCard({
       className={`
         rounded-lg border p-3
         ${classes.card}
-        ${
-          emphasis
-            ? 'ring-2 ring-emerald-100'
-            : ''
+        ${emphasis
+          ? 'ring-2 ring-emerald-100'
+          : ''
         }
       `}
     >
@@ -647,10 +644,9 @@ function MetricCard({
         className={`
           mt-1 font-black
           ${classes.value}
-          ${
-            emphasis
-              ? 'text-xl'
-              : 'text-lg'
+          ${emphasis
+            ? 'text-xl'
+            : 'text-lg'
           }
         `}
       >
