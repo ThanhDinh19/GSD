@@ -101,7 +101,6 @@ async function deactivateCluster(id) {
 }
 
 
-
 module.exports = {
   getClusters,
   getClusterById,

@@ -25,18 +25,14 @@ export function useOperationActions() {
     OperationActionsModalState | null
   >(null);
 
-  const open = async (
-    line: SewingProcessLine
-  ) => {
+  const open = async (line: SewingProcessLine) => {
     const operationLineId =
       line.sourceLineId ?? null;
 
     const gsdAnalysisId =
       line.gsdAnalysisId ?? null;
 
-    if (
-      !operationLineId &&
-      !gsdAnalysisId
+    if (!operationLineId && !gsdAnalysisId
     ) {
       alert(
         'Công đoạn này chưa có mã dòng kho cụm hoặc mã GSD để xem thao tác.'

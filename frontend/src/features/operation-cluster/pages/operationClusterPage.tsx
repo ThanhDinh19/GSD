@@ -1,229 +1,284 @@
 import {
-    useState,
-} from 'react';
+    useOperationClusters,
+} from '../hooks/useOperationClusters';
+import {
+    useOperationClusterEditor,
+} from '../hooks/useOperationClusterEditor';
+import {
+    useOperationClusterWorkflow,
+} from '../hooks/useOperationClusterWorkflow';
 
 import {
-    Button
-} from '../../../shared/components';
-
-import {
-    useOperationClusters
-} from '../hooks/useOperationCluster';
-
-import {
-    useWorks
+    useWorks,
 } from '../../../hooks/useWorks';
-
 import {
-    useProductCates
+    useProductCates,
 } from '../../../hooks/useProductCate';
-
 import {
-    useProductCateGroups
+    useProductCateGroups,
 } from '../../../hooks/useProductCateGroup';
+import {
+    useSalaryCoefficients,
+} from '../../../hooks/useSalaryCoefficient';
 
 import {
-    useStatuses
-} from '../../../hooks/useStatus' 
-
-
-
-import type {
-    OperationClusterHeader
-} from '../types/operationCluster.type'
-
+    usePermissions,
+} from '../../auth/hooks/usePermissions';
 import {
-    OperationClusterListTable
-} from '../components/operationClusterListTable';
+    SCREEN,
+} from '../../auth/constants/permission.constants';
 
-import {
-    ModalDetail,
-} from '../components/modalDetail';
-
-import {
-    Form
-} from '../components/Form';
+import OperationClusterToolbar from '../components/OperationClusterToolbar';
+import OperationClusterListTable from '../components/OperationClusterListTable';
+import OperationClusterEditorModal from '../components/OperationClusterEditorModal';
+import SalaryCoefficientModal from '../components/SalaryCoefficientModal';
+import OperationActionsModal from '../components/OperationActionsModal';
+import GsdPickerModal from '../components/GsdPickerModal';
+import OperationClusterDetailModal from '../components/OperationClusterDetailModal';
+import GroupOverviewModal from '../components/GroupOverviewModal';
 
 export default function OperationClusterPage() {
-    const {
-        items,
-        form,
-        selectedItemDetail,
-        loading,
-        resetForm,
-        updateForm,
-        loadOperationCluster,
-        loadOperationClusterDetail,
-        refresh,
-        handleExportExcel,
-        createOperationCluster,
-    } = useOperationClusters();
+    const permissions =
+        usePermissions(
+            SCREEN.OPERATION_CLUSTER
+        );
 
     const {
-        works
+        items,
+        loading,
+        gsdOptions,
+        saving,
+        createItem,
+        copyItem,
+        updateItem,
+        loadItems,
+        loadDetail,
+        selectedDetail,
+        setSelectedDetail,
+        loadGsdActions,
+    } = useOperationClusters();
+
+    const editor =
+        useOperationClusterEditor({
+            gsdOptions,
+            loadGsdActions,
+        });
+
+    const {
+        formMode,
+        editingId,
+
+        form,
+        groups,
+        requiredEfficiency,
+        enrichedGroups,
+
+        isGroupOverviewOpen,
+
+        isGsdPopupOpen,
+        gsdSearch,
+        checkedGsdIds,
+        gsdActionsMap,
+        loadingActionIds,
+        filteredGsdOptions,
+        checkedGsds,
+
+        coefficientPopup,
+        coefficientSearch,
+
+        handleOpenCreateModal,
+        closeEditorAfterSave,
+        openEditFromDetail,
+        openCopyFromDetail,
+
+        handleCloseGroupOverview,
+
+        setGsdSearch,
+        handleCloseGsdPopup,
+        handleToggleGsd,
+        handleConfirmSelectGsd,
+
+        setCoefficientSearch,
+        handleSelectSalaryCoefficient,
+        handleCloseCoefficientPopup,
+    } = editor;
+
+    const {
+        works,
+        loading: worksLoading,
     } = useWorks();
 
     const {
-        productCates
+        productCates,
+        loading: productCatesLoading,
     } = useProductCates();
 
     const {
-        productCateGroups
+        productCateGroups,
+        loading: productCateGroupsLoading,
     } = useProductCateGroups();
 
     const {
-        statuses
-    } = useStatuses();
+        salaryCoefficients,
+        skillGrades,
+        loading: salaryCoefficientLoading,
+    } = useSalaryCoefficients();
 
-    const [selectedId, setSelectedId] = useState<number | null>(null);
-    const [
-        modalMode,
-        setModalMode,
-    ] = useState<'create' | 'view' | 'edit' | null>(null);
+    const workflow =
+        useOperationClusterWorkflow({
+            form,
+            groups,
+            requiredEfficiency,
+            formMode,
+            editingId,
 
-    const activeWorks = works.filter(
-        (item) => Number(item.statusId) === 0
-    )
+            loadItems,
+            loadDetail,
+            loadGsdActions,
 
-    const activeProductCates = productCates.filter(
-        (item) => Number(item.statusId) === 0
-    )
+            createItem,
+            updateItem,
+            copyItem,
 
-    const activeProductCateGroups = productCateGroups.filter(
-        (item) => Number(item.statusId) === 0
-    )
+            setSelectedDetail,
 
-    const openDetail = async (id: number) => {
-        await loadOperationClusterDetail(id);
+            openEditFromDetail,
+            openCopyFromDetail,
+            closeEditorAfterSave,
+        });
 
-        setSelectedId(id);
+    const {
+        selectedSavedId,
+        setSelectedSavedId,
 
-        setModalMode('view');
+        isSavedDetailOpen,
+        previewImageUrl,
+
+        operationActionPopup,
+        operationActions,
+        loadingOperationActions,
+
+        handleExportExcel,
+        handleEdit,
+        handleCopy,
+        handleSave,
+        handleViewSavedDocument,
+
+        handleOpenOperationActions,
+        handleCloseOperationActions,
+
+        handleCloseSavedDetail,
+        handlePreviewImage,
+        handleClosePreview,
+    } = workflow;
+
+    const getSkillLevelText = (
+        levelId: number | null | undefined
+    ) => {
+        const skill = skillGrades.find(
+            (item) =>
+                item.id === levelId
+        );
+
+        return skill
+            ? skill.level
+            : levelId || '-';
     };
 
-    const openCreate = () => {
-        setSelectedId(null);
-        resetForm();
-        setModalMode('create');
-    }
-
-    const save = async () => {
-        if (modalMode === 'create') {
-            await createOperationCluster();
-        }
-    }
-
-    const handleWorkChange = (value: string) => {
-        const workId = value ? Number(value) : null
-
-        updateForm('work_id', workId)
-    }
-
-    const handleProductCateChange = (value: string) => {
-        const productCateId = value ? Number(value) : null
-
-        updateForm('product_category_id', productCateId)
-    }
-
-    const handleProductCateGroupChange = (value: string) => {
-        const productCateGroupId = value ? Number(value) : null
-
-        updateForm('product_category_group_id', productCateGroupId)
-    }
-
-    const handleStatusChange = (value: string) => {
-        const statusId = value ? Number(value) : null
-
-        updateForm('status_id', statusId)
-    }
-
-    const onClose = () => {
-        setModalMode(null);
+    if (!permissions.canView) {
+        return (
+            <div className="p-6 text-sm text-red-600">
+                Bạn không có quyền xem màn hình này.
+            </div>
+        );
     }
 
     return (
         <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto">
             <div className="max-w-[1720px] mx-auto space-y-4">
-                <div className="flex items-center justify-between mb-4">
-                    <div>
-                        <p className="text-lg font-bold uppercase text-slate-800">
-                            Danh sách kho cụm công đoạn
-                        </p>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <Button
-                            variant='primary'
-                            onClick={openCreate}
-                        >
-                            Thêm mới
-                        </Button>
-
-                        <Button
-                            variant='warning'
-                        // onClick={handleEdit}
-                        >
-                            Sửa
-                        </Button>
-
-                        <Button
-                        // onClick={handleCopy}
-                        >
-                            Sao chép
-                        </Button>
-
-                        <Button
-                            onClick={handleExportExcel}
-                        >
-                            Xuất Excel
-                        </Button>
-
-                        <Button
-                            variant='default'
-                            onClick={() => {
-                                void refresh();
-                            }}
-                            loading={loading}
-                            loadingText='Đang tải...'
-                        >
-                            Tải lại
-                        </Button>
-                    </div>
-                </div>
+                <OperationClusterToolbar
+                    canCreate={permissions.canCreate}
+                    canUpdate={permissions.canUpdate}
+                    canExport={permissions.canExport}
+                    selectedId={selectedSavedId}
+                    loading={loading}
+                    onNew={handleOpenCreateModal}
+                    onEdit={handleEdit}
+                    onCopy={handleCopy}
+                    onExport={handleExportExcel}
+                    onRefresh={loadItems}
+                />
 
                 <OperationClusterListTable
                     items={items}
-                    onOpenDetail={openDetail}
+                    loading={loading}
+                    selectedId={selectedSavedId}
+                    onSelect={setSelectedSavedId}
+                    onView={handleViewSavedDocument}
+                />
+
+                <OperationClusterEditorModal
+                    editor={editor}
+                    saving={saving}
+                    works={works}
+                    productCates={productCates}
+                    productCateGroups={productCateGroups}
+                    worksLoading={worksLoading}
+                    productCatesLoading={productCatesLoading}
+                    productCateGroupsLoading={productCateGroupsLoading}
+                    onSave={handleSave}
+                    onOpenOperationActions={handleOpenOperationActions}
                 />
             </div>
 
-            {modalMode === 'view' && (
-                <ModalDetail
-                    dashboard={selectedItemDetail?.dashboard}
-                    header={selectedItemDetail?.header}
-                    operations={selectedItemDetail?.operations}
-                    onClose={() => {
-                        setModalMode(null)
-                    }}
-                />
-            )}
+            <OperationClusterDetailModal
+                open={isSavedDetailOpen}
+                detail={selectedDetail}
+                previewImageUrl={previewImageUrl}
+                onEdit={handleEdit}
+                onClose={handleCloseSavedDetail}
+                onPreviewImage={handlePreviewImage}
+                onClosePreview={handleClosePreview}
+            />
 
-            {modalMode === 'create' && (
-                <Form
-                    form={form}
-                    works={activeWorks}
-                    productCates={activeProductCates}
-                    productCateGroups={activeProductCateGroups}
-                    statuses={statuses}
-                    onUpdate={updateForm}
-                    onWorkChange={handleWorkChange}
-                    onProductCateChange={handleProductCateChange}
-                    onProductCateGroupChange={handleProductCateGroupChange}
-                    onStatusChange={handleStatusChange}
-                    onClose={onClose}
-                    onSave={save}
-                />
-            )}
+            <GsdPickerModal
+                open={isGsdPopupOpen}
+                search={gsdSearch}
+                checkedIds={checkedGsdIds}
+                options={filteredGsdOptions}
+                checkedGsds={checkedGsds}
+                actionsMap={gsdActionsMap}
+                loadingActionIds={loadingActionIds}
+                onSearchChange={setGsdSearch}
+                onToggle={handleToggleGsd}
+                onCancel={handleCloseGsdPopup}
+                onConfirm={handleConfirmSelectGsd}
+            />
+
+            <SalaryCoefficientModal
+                open={Boolean(coefficientPopup)}
+                search={coefficientSearch}
+                loading={salaryCoefficientLoading}
+                items={salaryCoefficients}
+                getSkillLevelText={getSkillLevelText}
+                onSearchChange={setCoefficientSearch}
+                onSelect={handleSelectSalaryCoefficient}
+                onClose={handleCloseCoefficientPopup}
+            />
+
+            <OperationActionsModal
+                popup={operationActionPopup}
+                actions={operationActions}
+                loading={loadingOperationActions}
+                onClose={handleCloseOperationActions}
+            />
+
+            <GroupOverviewModal
+                open={isGroupOverviewOpen}
+                groups={enrichedGroups}
+                requiredEfficiency={requiredEfficiency}
+                onClose={handleCloseGroupOverview}
+            />
         </div>
     );
 }

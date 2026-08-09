@@ -1295,6 +1295,40 @@ async function deleteImages(
     }
 }
 
+async function deactivate(id, context = {}){
+    const pool = getPool()
+    const userId = Number(context.userId)
+
+    if(!Number.isInteger(userId) || userId <= 0){
+        const err = new Error('Bạn chưa đăng nhập')
+
+        err.statusCode = 401;
+        throw err
+    }
+
+    const result = await pool.request()
+        .input('id', sql.Int, id)
+        .query(`
+            UPDATE gsd_analysis_headers
+            SET 
+                is_deleted = 1,
+                deleted_at = SYSDATETIME()
+            WHERE id = @id    
+                AND is_deleted = 0
+        `);
+
+    const userUpdated = await pool.request()
+        .input('id', sql.Int, id)
+        .input('deleted_by_user_id', sql.Int, userId)
+        .query(`
+                UPDATE gsd_analysis_headers
+                SET deleted_by_user_id = @deleted_by_user_id
+                WHERE id = @id
+            `)
+
+    return result.rowsAffected[0] > 0;
+}
+
 module.exports = {
     getSourceActionsForAnalysis,
     calculateAnalysis,
@@ -1303,7 +1337,8 @@ module.exports = {
     getAnalysisById,
     updateAnalysis,
     getAnalysisCopyDraft,
-    insertImages
+    insertImages,
+    deactivate,
 };
 
 

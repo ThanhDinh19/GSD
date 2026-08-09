@@ -4,7 +4,12 @@ import {
   GsdAnalysisSummary,
   SourceActionForAnalysis,
   GsdAnalysisDetail,
+  DeactivateResponse,
 } from '../types';
+
+import type {
+  ApiResponse,
+} from '../shared/types/api.types';
 
 import {
   request,
@@ -158,4 +163,14 @@ export const gsdAnalysisService = {
 
     return response.data;
   },
+
+    async deactivate(id: number): Promise<DeactivateResponse> {
+      const response = await request<ApiResponse<DeactivateResponse>>(
+        `/api/gsd-analysis/deactivate/${id}`,
+        {
+          method: 'PUT'
+        }
+      );
+      return response;
+    },
 };

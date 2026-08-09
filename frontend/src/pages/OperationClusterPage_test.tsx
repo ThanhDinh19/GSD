@@ -28,7 +28,6 @@ import {
 import { useToast } from '../shared/notifications/ToastProvider';
 
 
-
 // form thông tin chứng từ
 type FormState = {
     document_code: string;
@@ -84,8 +83,6 @@ type OperationClusterDraft = {
     viewAllGroups: boolean;
 };
 
-
-
 const readOperationClusterDraft = (): OperationClusterDraft | null => {
     try {
         const raw = localStorage.getItem(OPERATION_CLUSTER_DRAFT_KEY);
@@ -108,8 +105,6 @@ const readOperationClusterDraft = (): OperationClusterDraft | null => {
     }
 };
 
-
-// -------------------------------- bản nháp ----------------------------------------
 export default function OperationClusterPage_test() {
     const permissions = usePermissions(SCREEN.OPERATION_CLUSTER);
     const initialDraft = useMemo(() => readOperationClusterDraft(), []);

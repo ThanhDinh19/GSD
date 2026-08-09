@@ -18,7 +18,9 @@ import MasterDataPage_test from './pages/MasterDataPage_test';
 import OperationClusterPage_test from './pages/OperationClusterPage_test';
 import SewingProcessPage from './pages/SewingProcessPage'; // chưa tách file
 import SewingProcessPage_test from '../src/features/sewing-process/pages/SewingProcessPage'; // đã tách file
-import OperationClusterPage_test_v2 from '../src/features/operation-cluster/pages/operationClusterPage';
+import OperationClusterPage_test_v2 from '../src/features/operation-cluster/pages/OperationClusterPage'; // đã tách file
+import OperationClusterTreeTest from '../src/features/operation-cluster/pages/OperationClusterTreeTest';
+import OperationClusterTreeRealDataTest from '../src/features/operation-cluster/pages/OperationClusterTreeRealDataTest';
 import UserPermissionsPage from '../src/features/access-control/pages/UserPermissionsPage';
 import { useAuth } from './features/auth/hooks/useAuth';
 import SystemUsersPage from './features/system-users/pages/SystemUsersPage';
@@ -83,7 +85,8 @@ export default function App_test() {
     | 'product-category-group'
     | 'department-type'
     | 'skill-grade'
-    | 'salary-coefficient';
+    | 'salary-coefficient'
+    | 'customer';
 
   const [isMasterDataTestOpen, setIsMasterDataTestOpen] = useState<boolean>(false);
   const [activeMasterDataTestTab, setActiveMasterDataTestTab] =
@@ -93,7 +96,6 @@ export default function App_test() {
     key: MasterDataTestTabKey;
     label: string;
   }[] = [
-      { key: 'department-type', label: 'Danh mục Phòng Phân xưởng' },
       { key: 'clusters', label: 'Danh mục công đoạn' },
       { key: 'machine-equipments', label: 'Danh mục MMTB' },
       { key: 'skill-grade', label: 'Danh mục bậc thợ' },
@@ -104,6 +106,8 @@ export default function App_test() {
       { key: 'product-category-group', label: 'Danh mục nhóm chủng loại' },
       { key: 'gsd-codes', label: 'Kho thao tác chuẩn' },
       { key: 'source-action-mapping', label: 'Khai báo thao tác' },
+      { key: 'department-type', label: 'Loại phòng ban' },
+      { key: 'customer', label: 'Khách hàng' },
     ];
 
   useEffect(() => {
@@ -335,7 +339,7 @@ export default function App_test() {
                       ? 'bg-[#1e40af] border-r-4 border-white font-bold'
                       : 'hover:bg-blue-800/40 text-blue-100'
                       }`}
-                    title="Kho cụm công đoạn test"
+                    title="Kho cụm công đoạn"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -358,6 +362,42 @@ export default function App_test() {
                   </button>
                 )}
               </li>
+
+              <li>
+                {permissions.canView && (
+                  <button
+                    onClick={() => {
+                      setActiveTab('Operation-Cluster');
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Operation-Cluster'
+                      ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                      : 'hover:bg-blue-800/40 text-blue-100'
+                      }`}
+                    title="Kho cụm công đoạn test"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 shrink-0"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M4 6h16M4 12h8M4 18h16"
+                      />
+                    </svg>
+
+                    {!isSidebarCollapsed && (
+                      <span className="whitespace-nowrap">Kho cụm công đoạn (New)</span>
+                    )}
+                  </button>
+                )}
+              </li>
+
               <li>
                 {permissions.canView && (
                   <button
@@ -454,7 +494,7 @@ export default function App_test() {
               Danh mục hệ thống
             </h3>
             <ul className="space-y-0.5">
-              <li>
+              {/* <li>
                 <button
                   onClick={() => { setActiveTab('master-data'); setMobileMenuOpen(false); }}
                   className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'master-data'
@@ -482,10 +522,10 @@ export default function App_test() {
                     <span className="whitespace-nowrap">Danh mục</span>
                   )}
                 </button>
-              </li>
+              </li> */}
 
 
-              {/* <li>
+              <li>
                 <button
                   type="button"
                   onClick={() => {
@@ -497,7 +537,7 @@ export default function App_test() {
                     ? 'bg-[#1e40af] border-r-4 border-white font-bold'
                     : 'hover:bg-blue-800/40 text-blue-100'
                     }`}
-                  title="Danh mục test"
+                  title="Danh mục"
                 >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
@@ -516,7 +556,7 @@ export default function App_test() {
 
                   {!isSidebarCollapsed && (
                     <>
-                      <span className="whitespace-nowrap flex-1">Danh mục (test)</span>
+                      <span className="whitespace-nowrap flex-1">Danh mục</span>
 
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -565,7 +605,7 @@ export default function App_test() {
                     })}
                   </div>
                 )}
-              </li> */}
+              </li>
 
               {/* <li>
                 <button
@@ -946,7 +986,7 @@ export default function App_test() {
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
 
         {/* Top Header Navigation */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40 shadow-sm shrink-0">
+        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40 shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -1054,7 +1094,7 @@ export default function App_test() {
         </header>
 
         {/* Dashboard Main Workspace View Area */}
-        <div className={`p-6 flex-1 w-full mx-auto transition-all duration-300 ${isSidebarCollapsed ? 'max-w-full' : 'max-w-7xl'}`}>
+        <div className={`p-0 flex-1 w-full mx-auto transition-all duration-300 ${isSidebarCollapsed ? 'max-w-full' : 'max-w-7xl'}`}>
           {activeTab === 'gsd-routing' && (
             <GsdRoutingView
               currentStyle={currentStyle}
@@ -1144,8 +1184,15 @@ export default function App_test() {
             <OperationClusterPage />
           )} */}
 
+          {/* {activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng' && (
+            <OperationClusterPage_test_v2 />
+          )} */}
           {activeTab === 'Khai báo cụm công đoạn cho chủng loại hàng' && (
-            <OperationClusterPage_test />
+            <OperationClusterPage_test_v2 />
+          )}
+
+          {activeTab === 'Operation-Cluster' && (
+            <OperationClusterTreeRealDataTest />
           )}
 
           {activeTab === 'Bảng quy trình may' && (
@@ -1165,7 +1212,7 @@ export default function App_test() {
           )}
 
           {activeTab === 'employees' && (
-            <SystemEmployeesPage/>
+            <SystemEmployeesPage />
           )}
 
         </div>

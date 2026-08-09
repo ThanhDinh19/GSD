@@ -676,7 +676,6 @@ export interface GsdActionDetail {
   is_selected?: boolean;
 }
 
-
 // dinh 15/07/2026
 export interface Customer {
   id: number;
@@ -692,7 +691,6 @@ export interface CustomerPayload {
   cusName: string;
   statusId: number;
 }
-
 
 export interface SewingProcessLine {
   id?: number;
@@ -889,3 +887,7 @@ export interface FormTest {
   age: number | 0;
 }
 
+
+export interface DeactivateResponse {
+  message?: string;
+}

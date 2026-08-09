@@ -140,8 +140,8 @@ export default function GsdOverviewPage() {
     }
 
     return (
-        <div className="space-y-5">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+        <div className="space-y-0">
+            <div className="bg-white border border-slate-100 p-5">
                 <div className="flex items-center justify-between gap-4 mb-5">
                     <div>
                         <h1 className="text-xl font-bold text-slate-800 uppercase tracking-tight">

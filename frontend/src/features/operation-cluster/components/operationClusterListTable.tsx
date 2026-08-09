@@ -1,133 +1,158 @@
 import type {
-    OperationClusterHeader
-} from '../types/operationCluster.type';
-
-import {
-    formatNumber
-} from '../../../shared/utils/formatters';
+    OperationClusterHeader,
+} from '../../../types';
 
 type OperationClusterListTableProps = {
     items: OperationClusterHeader[];
-    // selectedId: number | null;
-    // onSelect: (id: number) => void;
-    onOpenDetail: (id: number) => void;
+    loading: boolean;
+    selectedId: number | null;
+
+    onSelect: (id: number) => void;
+    onView: (id: number) => void;
 };
 
-export function OperationClusterListTable({
+export default function OperationClusterListTable({
     items,
-    // selectedId,
-    // onSelect,
-    onOpenDetail
+    loading,
+    selectedId,
+    onSelect,
+    onView,
 }: OperationClusterListTableProps) {
     return (
-        
         <div className="h-[630px] overflow-auto border border-slate-200 rounded-sm">
             <table className="w-full text-sm min-w-[1100px] border-collapse">
                 <thead className="bg-slate-50 sticky top-0 z-10">
                     <tr className="text-xs text-slate-500 uppercase">
-                        <th className="border border-slate-200 px-3 py-2 text-center">
+                        <th className="p-3 border border-slate-200 text-left w-[20px]">
                             STT
                         </th>
-                        <th className="border border-slate-200 px-3 py-2 text-left">
+
+                        <th className="p-3 border border-slate-200 text-left w-[115px]">
                             Mã chứng từ
                         </th>
-                        <th className="border border-slate-200 px-3 py-2 text-center">
+
+                        <th className="p-3 border border-slate-200 text-left">
                             Nhóm công việc
                         </th>
-                        <th className="border border-slate-200 px-3 py-2 text-left">
+
+                        <th className="p-3 border border-slate-200 text-left">
                             Chủng loại
                         </th>
-                        <th className="border border-slate-200 px-3 py-2 text-left">
+
+                        <th className="p-3 border border-slate-200 text-left">
                             Nhóm chủng loại
                         </th>
-                        <th className="border border-slate-200 px-3 py-2 text-left">
+
+                        <th className="p-3 border border-slate-200 text-right w-[100px]">
                             SMV
                         </th>
-                        <th className="border border-slate-200 px-3 py-2 text-right">
+
+                        <th className="p-3 border border-slate-200 text-right w-[100px]">
                             SMV ĐC
                         </th>
-                        <th className="border border-slate-200 px-3 py-2 text-right">
+
+                        <th className="p-3 border border-slate-200 text-center w-[140px]">
                             Trạng thái
                         </th>
                     </tr>
                 </thead>
 
                 <tbody>
-                    {items.length === 0 && (
+                    {loading && (
                         <tr>
                             <td
-                                colSpan={10}
-                                className="border border-slate-200 px-4 py-6 text-center text-slate-400"
+                                colSpan={8}
+                                className="p-8 border border-slate-200 text-center text-slate-400"
                             >
-                                Chưa có chứng từ kho cụm công đoạn.
+                                Đang tải danh sách chứng từ...
                             </td>
                         </tr>
                     )}
 
-                    {items.map((item, index) => {
-                        // const isSelected =
-                        //     selectedId === item.id;
-
-                        return (
-                            <tr
-                                key={item.id}
-                                // onClick={() =>
-                                //     onSelect(item.id)
-                                // }
-                                // className={`
-                                // cursor-pointer
-                                // ${isSelected
-                                //     ? 'bg-blue-50'
-                                //     : 'hover:bg-slate-50'
-                                //                 }
-                                // `}
+                    {!loading && items.length === 0 && (
+                        <tr>
+                            <td
+                                colSpan={8}
+                                className="p-8 border border-slate-200 text-center text-slate-400"
                             >
-                                <td className="border border-slate-200 px-3 py-2 text-center text-blue-700">
-                                    {index + 1}
-                                </td>
+                                Chưa có chứng từ nào được lưu.
+                            </td>
+                        </tr>
+                    )}
 
-                                <td className="border border-slate-200 px-3 py-2 text-blue-700">
-                                    <button
-                                        type="button"
-                                        onClick={(event) => {
-                                            event.stopPropagation();
-                                            onOpenDetail(item.id);
-                                        }}
-                                        className="text-blue-700 hover:underline"
-                                    >
-                                        {item.document_code}
-                                    </button>
-                                </td>
+                    {!loading &&
+                        items.map((item, index) => {
+                            const isSelected = selectedId === item.id;
 
-                                <td className="border border-slate-200 px-3 py-2">
-                                    {item.work_name}
-                                </td>
+                            return (
+                                <tr
+                                    key={item.id}
+                                    onClick={() => onSelect(item.id)}
+                                    className={`cursor-pointer hover:bg-blue-100 ${
+                                        isSelected ? 'bg-blue-100' : ''
+                                    }`}
+                                >
+                                    <td className="p-3 border border-slate-200 text-slate-500">
+                                        {index + 1}
+                                    </td>
 
-                                <td className="border border-slate-200 px-3 py-2">
-                                    {item.product_name}
-                                </td>
+                                    <td className="p-3 border border-slate-200">
+                                        <button
+                                            type="button"
+                                            onClick={(event) => {
+                                                event.stopPropagation();
+                                                onSelect(item.id);
+                                                onView(item.id);
+                                            }}
+                                            className="text-blue-700 hover:underline"
+                                        >
+                                            {item.document_code}
+                                        </button>
+                                    </td>
 
-                                <td className="border border-slate-200 px-3 py-2">
-                                    {item.category_group_name}
-                                </td>
+                                    <td className="p-3 border border-slate-200">
+                                        {item.work_code && item.work_name
+                                            ? item.work_name
+                                            : item.work_id}
+                                    </td>
 
-                                <td className="border border-slate-200 px-3 py-2 text-right">
-                                    {item.total_sam_gsd}
-                                </td>
+                                    <td className="p-3 border border-slate-200">
+                                        {item.product_code && item.product_name
+                                            ? `${item.product_code} - ${item.product_name}`
+                                            : item.product_name || item.product_category_id}
+                                    </td>
 
-                                <td className="border border-slate-200 px-3 py-2 text-right">
-                                    {formatNumber(
-                                        item.total_adjusted_sam,
-                                        2
-                                    )}
-                                </td>
+                                    <td className="p-3 border border-slate-200">
+                                        {item.category_group_code && item.category_group_name
+                                            ? `${item.category_group_code} - ${item.category_group_name}`
+                                            : item.category_group_name ||
+                                              item.product_category_group_id}
+                                    </td>
 
-                                <td className="border border-slate-200 px-3 py-2 text-right">
-                                    {item.status_name}
-                                </td>
-                            </tr>
-                        );
-                    })}
+                                    <td className="p-3 border border-slate-200 text-right font-bold">
+                                        {Number(item.total_sam_gsd || 0).toFixed(2)}
+                                    </td>
+
+                                    <td className="p-3 border border-slate-200 text-right text-blue-700">
+                                        {Number(item.total_adjusted_sam || 0).toFixed(2)}
+                                    </td>
+
+                                    <td className="p-3 border border-slate-200 text-center">
+                                        <span
+                                            className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                                                item.status_id === 0
+                                                    ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                                    : 'bg-slate-100 text-slate-500 border-slate-200'
+                                            }`}
+                                        >
+                                            {item.status_id === 0
+                                                ? 'Đang sử dụng'
+                                                : 'Không sử dụng'}
+                                        </span>
+                                    </td>
+                                </tr>
+                            );
+                        })}
                 </tbody>
             </table>
         </div>

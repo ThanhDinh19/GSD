@@ -135,6 +135,28 @@ async function uploadGsdAnalysisImage(req, res) {
     }
 }
 
+const deactivate = async (req, res) => {
+    const { id } = req.params;
+
+    const updated = await gsdAnalysisService.deactivate(Number(id), {
+        userId:req.user.id,
+
+        employeeId: req.user.employeeId,
+
+        departmentCode: req.user.departmentCode,
+    });
+
+    if (!updated) {
+        return res.status(404).json({
+            error: 'Không tìm thấy chứng từ'
+        })
+    }
+
+    return res.json({
+        message: 'Đã chuyển vào thùng rác'
+    });
+};
+
 module.exports = {
     getSourceActionsForAnalysis,
     calculateAnalysis,
@@ -143,5 +165,6 @@ module.exports = {
     getAnalysisById,
     updateAnalysis,
     getAnalysisCopyDraft,
-    uploadGsdAnalysisImage
+    uploadGsdAnalysisImage,
+    deactivate,
 };

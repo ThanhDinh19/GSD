@@ -55,7 +55,7 @@ const getOperationClusterHeaders = async () => {
   const pool = await getPool();
 
   const result = await pool.request().query(`
-    SELECT
+      SELECT
       h.id,
       h.document_code,
 
@@ -96,6 +96,7 @@ const getOperationClusterHeaders = async () => {
       ON ms.id = h.status_id
     LEFT JOIN operation_cluster_operations o
       ON o.header_id = h.id
+    WHERE h.is_deleted = 0
     GROUP BY
       h.id,
       h.document_code,

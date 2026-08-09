@@ -43,7 +43,7 @@ export default function SkillGradeMasterPage() {
 
     return (
         <div className="space-y-5">
-            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-5">
+            <div className="bg-white border-slate-200 shadow-sm p-5">
                 <div className="flex items-center justify-between gap-4 mb-5">
                     <div>
                         <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">

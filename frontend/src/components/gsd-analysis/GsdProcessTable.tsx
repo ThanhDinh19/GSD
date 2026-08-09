@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { GsdAnalysisSummary } from '../../types';
 import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../../services/gsdAnalysis.service';
+import { useGsdAnalysis } from '../../hooks/useGsdAnalysis';
 import {
     usePermissions,
 } from '../../../src/features/auth/hooks/usePermissions';
@@ -45,6 +46,7 @@ function formatDateTime(value?: string) {
     return `${hour}:${minute}:${second} ${day}/${month}/${year}`;
 }
 
+
 export default function GsdProcessTable({
     analyses,
     loading = false,
@@ -60,12 +62,43 @@ export default function GsdProcessTable({
 
     showActionButtons = true,
 }: GsdProcessTableProps) {
+
+    const {
+        deactivatingId,
+        deactivateGsdAnalysis,
+    } = useGsdAnalysis();
+
     const permissions = usePermissions(SCREEN.GSD_ANALYSIS);
     const columnCount = onDetailClick ? 8 : 7;
     const [previewImageUrl, setPreviewImageUrl] = useState('');
 
+
+    const handleMoveToTrash =
+        async (id: number) => {
+            const confirmed = window.confirm(
+                'Bạn có chắc muốn chuyển chứng từ này vào thùng rác?'
+            );
+
+            if (!confirmed) {
+                return;
+            }
+
+            try {
+                const response =
+                    await deactivateGsdAnalysis(id);
+
+                alert(response.message);
+            } catch (error) {
+                alert(
+                    error instanceof Error
+                        ? error.message
+                        : 'Không thể chuyển vào thùng rác'
+                );
+            }
+        };
+
     return (
-        <div className="bg-white rounded-xl border border-slate-200 p-5">
+        <div className="bg-white border-slate-200 p-5">
             <div className="flex items-center justify-between gap-4 mb-5">
                 <div>
                     <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
@@ -97,24 +130,32 @@ export default function GsdProcessTable({
                         )}
 
                         {permissions.canCreate && onCopy && (
-
                             <Button
                                 type="button"
                                 onClick={onCopy}
                                 disabled={!selectedId}
-
                             >
                                 Copy
                             </Button>
-
                         )}
+                        
+                        {/* 
+                        {permissions.canDelete && (
+                            <Button
+                                variant='danger'
+                                disabled={!selectedId}
+                                onClick={() =>
+                                    void handleMoveToTrash(Number(selectedId))
+                                }
+                            >
+                                Trash
+                            </Button>
+                        )} */}
 
                         {onRefresh && (
                             <Button
-
                                 onClick={onRefresh}
                                 disabled={loading}
-
                             >
                                 {loading ? 'Loading...' : 'Refresh'}
                             </Button>

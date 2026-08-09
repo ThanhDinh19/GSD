@@ -28,6 +28,7 @@ const PERMISSIONS = {
     VIEW: 'GSD.ANALYSIS.VIEW',
     CREATE: 'GSD.ANALYSIS.CREATE',
     UPDATE: 'GSD.ANALYSIS.UPDATE',
+    DELETE: 'GSD.ANALYSIS.DELETE',
 };
 
 /*
@@ -87,31 +88,12 @@ router.get(
         .getAnalyses
 );
 
-router.post(
-    '/',
-    requirePermission(
-        PERMISSIONS.CREATE
-    ),
-    gsdAnalysisController
-        .createAnalysis
-);
+router.post('/', requirePermission(PERMISSIONS.CREATE), gsdAnalysisController.createAnalysis);
 
-router.put(
-    '/:id',
-    requirePermission(
-        PERMISSIONS.UPDATE
-    ),
-    gsdAnalysisController
-        .updateAnalysis
-);
+router.put('/:id', requirePermission(PERMISSIONS.UPDATE), gsdAnalysisController.updateAnalysis);
 
-router.get(
-    '/:id',
-    requirePermission(
-        PERMISSIONS.VIEW
-    ),
-    gsdAnalysisController
-        .getAnalysisById
-);
+router.get('/:id', requirePermission(PERMISSIONS.VIEW), gsdAnalysisController.getAnalysisById);
+
+router.put('/deactivate/:id', requirePermission(PERMISSIONS.DELETE), gsdAnalysisController.deactivate);
 
 module.exports = router;

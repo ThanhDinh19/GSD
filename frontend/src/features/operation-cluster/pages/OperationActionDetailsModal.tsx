@@ -1,42 +1,50 @@
 import type {
-  SewingProcessActionDetail,
-} from '../types/sewingProcess.types';
+  GsdActionDetail,
+} from '../types/operationCluster.types';
 
-import {
-  formatNumber,
-} from '../utils/sewingProcess.formatters';
-
-type OperationActionsModalProps = {
+type OperationActionDetailsModalProps = {
+  open: boolean;
   title: string;
   loading: boolean;
-  rows: SewingProcessActionDetail[];
+  rows: GsdActionDetail[];
   onClose: () => void;
 };
 
-export function OperationActionsModal({
+function formatNumber(
+  value: number | null | undefined
+) {
+  return Number(value || 0).toFixed(2);
+}
+
+export default function OperationActionDetailsModal({
+  open,
   title,
   loading,
   rows,
   onClose,
-}: OperationActionsModalProps) {
+}: OperationActionDetailsModalProps) {
+  if (!open) {
+    return null;
+  }
+
   return (
     <div
-      className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4"
+      className="fixed inset-0 z-[900] flex items-center justify-center bg-black/35 p-4"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[85vh] w-[90vw] max-w-[1100px] flex-col rounded-sm bg-white shadow-xl"
+        className="flex max-h-[85vh] w-[90vw] max-w-[1100px] flex-col overflow-hidden rounded-sm bg-white shadow-xl"
         onClick={(event) =>
           event.stopPropagation()
         }
       >
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
-          <div>
-            <h3 className="text-sm font-bold uppercase text-slate-800">
+        <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-4 py-3">
+          <div className="min-w-0">
+            <div className="text-sm font-semibold text-slate-900">
               Chi tiết thao tác công đoạn
-            </h3>
+            </div>
 
-            <div className="mt-1 text-xs text-slate-500">
+            <div className="mt-1 truncate text-xs text-slate-500">
               {title}
             </div>
           </div>
@@ -44,7 +52,7 @@ export function OperationActionsModal({
           <button
             type="button"
             onClick={onClose}
-            className="rounded-sm border border-slate-300 px-3 py-1.5 text-xs font-bold hover:bg-slate-50"
+            className="shrink-0 rounded-sm border border-slate-300 px-3 py-1.5 text-xs font-bold text-slate-700 hover:bg-slate-50"
           >
             Đóng
           </button>
@@ -84,7 +92,7 @@ export function OperationActionsModal({
                 {rows.length === 0 && (
                   <tr>
                     <td
-                      colSpan={8}
+                      colSpan={6}
                       className="border border-slate-300 px-4 py-8 text-center text-slate-400"
                     >
                       Công đoạn này chưa có thao tác.
@@ -101,32 +109,23 @@ export function OperationActionsModal({
                     </td>
 
                     <td className="border border-slate-300 px-2 py-2">
-                      {row.gsdCode || ''}
+                      {row.gsd_code || ''}
                     </td>
 
                     <td className="border border-slate-300 px-2 py-2">
-                      {row.actionName}
+                      {row.action_name}
                     </td>
 
                     <td className="border border-slate-300 px-2 py-2 text-right">
-                      {formatNumber(
-                        row.tmu,
-                        2
-                      )}
+                      {formatNumber(row.tmu)}
                     </td>
 
                     <td className="border border-slate-300 px-2 py-2 text-right">
-                      {formatNumber(
-                        row.frequency,
-                        2
-                      )}
+                      {formatNumber(row.frequency)}
                     </td>
 
                     <td className="border border-slate-300 px-2 py-2 text-right">
-                      {formatNumber(
-                        row.seconds,
-                        2
-                      )}
+                      {formatNumber(row.seconds)}
                     </td>
                   </tr>
                 ))}

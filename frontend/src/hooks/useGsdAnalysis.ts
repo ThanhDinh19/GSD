@@ -43,6 +43,11 @@ export function useGsdAnalysis() {
         setResult(null);
     };
 
+    const [
+        deactivatingId,
+        setDeactivatingId,
+    ] = useState<number | null>(null);
+
     const popupRows = useMemo(() => {
         if (!popupSourceId) return [];
         return sourceActionMap[popupSourceId] || [];
@@ -609,7 +614,7 @@ export function useGsdAnalysis() {
         );
 
         const resultDetails:
-            GsdAnalysisCalculateResult['details'] = 
+            GsdAnalysisCalculateResult['details'] =
             rows.map((row, index) => {
                 const tmu = Number(row.tmu || 0);
                 const frequency = Number(
@@ -710,6 +715,32 @@ export function useGsdAnalysis() {
         return detail;
     };
 
+    const deactivateGsdAnalysis =
+        async (id: number) => {
+            if (
+                !Number.isInteger(id) ||
+                id <= 0
+            ) {
+                throw new Error(
+                    'ID chứng từ không hợp lệ'
+                );
+            }
+
+            setDeactivatingId(id);
+
+            try {
+                const response =
+                    await gsdAnalysisService
+                        .deactivate(id);
+
+                await loadAnalyses();
+
+                return response;
+            } finally {
+                setDeactivatingId(null);
+            }
+        };
+
     useEffect(() => {
         loadMasterData();
         loadMachines_test();
@@ -739,6 +770,7 @@ export function useGsdAnalysis() {
         calculating,
         saving,
         result,
+        deactivatingId,
 
         selectPopupSource,
         updatePopupStepNo,
@@ -757,6 +789,7 @@ export function useGsdAnalysis() {
         togglePopupActionRow,
         loadingAnalysisDetail,
         loadAnalysisForEdit,
-        loadAnalysisForCopy
+        loadAnalysisForCopy,
+        deactivateGsdAnalysis,
     };
 }
