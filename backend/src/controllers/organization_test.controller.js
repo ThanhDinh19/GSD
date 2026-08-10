@@ -169,17 +169,31 @@ const updateDepartmentType_test_1 = asyncHandler(async (req, res) => {
   });
 });
 
+const getGrassrootsLevelUnit = async(req, res) => {
+  try {
+    const data = await organizationService_test.getGrassrootsLevelUnit();
+    return res.status(200).json({
+      success: true,
+      data
+    })
+  } catch (error) {
+    console.error('GrassrootsLevelUnit error:', error);
+    res.status(500).json({ message: 'Không lấy được đơn vị cơ sở' });
+  }
+};
+
 module.exports = {
-//   getDepartmentTypes_test,
-// createDepartmentType,
-//   updateDepartmentType_test,
+  //   getDepartmentTypes_test,
+  //   createDepartmentType,
+  //   updateDepartmentType_test,
   getDepartmentTree_test,
   getDepartmentById_test,
   createDepartment_test,
   updateDepartment_test,
   dissolveDepartment_test,
-  getEmployees_test, 
+  getEmployees_test,
   getDepartmentTypes_test_1,
   createDepartmentType_test_1,
   updateDepartmentType_test_1,
+  getGrassrootsLevelUnit,
 };

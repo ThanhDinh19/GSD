@@ -18,6 +18,7 @@ import OperationActionDetailsModal
   from './OperationActionDetailsModal';
 
 import type {
+  CreateOperationClusterPayload,
   GsdActionDetail,
   GsdOption,
   OperationClusterDetail,
@@ -81,6 +82,9 @@ type OperationClusterDocumentTree = {
   statusLabel: string;
   inactive: boolean;
   requiredEfficiency: number;
+
+  header: OperationClusterHeader;
+
   category: ProductCategory;
   group: ProductCategoryGroup;
   clusters: TreeCluster[];
@@ -434,6 +438,9 @@ function buildTreeFromDetails(
             header.document_code ||
             `CT-${header.id}`,
 
+          header:
+            header,
+
           note:
             header.note ||
             '',
@@ -524,6 +531,236 @@ function buildTreeFromDetails(
     ) as OperationClusterDocumentTree[];
 }
 
+
+function buildUpdatePayload(
+  document:
+    OperationClusterDocumentTree
+): CreateOperationClusterPayload {
+  const header =
+    document.header;
+
+  const groups =
+    document.clusters
+      .filter(
+        (cluster) =>
+          cluster.name.trim()
+      )
+      .map(
+        (
+          cluster,
+          groupIndex
+        ) => ({
+          line_no:
+            groupIndex + 1,
+
+          cluster_name:
+            cluster.name.trim(),
+
+          operations:
+            cluster.operations.map(
+              (
+                operation,
+                operationIndex
+              ) => {
+                const raw =
+                  operation.raw ||
+                  {};
+
+                const requiredEfficiency =
+                  toNumber(
+                    raw.required_efficiency,
+                    document.requiredEfficiency
+                  ) ||
+                  null;
+
+                const skillLevel =
+                  raw.skill_level !==
+                    null &&
+                  raw.skill_level !==
+                    undefined
+                    ? toNumber(
+                        raw.skill_level,
+                        0
+                      )
+                    : operation.skillLevel !==
+                      '-'
+                      ? toNumber(
+                          operation.skillLevel,
+                          0
+                        )
+                      : null;
+
+                return {
+                  line_no:
+                    operationIndex + 1,
+
+                  line_balance_no:
+                    raw.line_balance_no ??
+                    null,
+
+                  gsd_analysis_id:
+                    operation.gsdAnalysisId ??
+                    raw.gsd_analysis_id ??
+                    null,
+
+                  operation_code:
+                    operation.code ||
+                    null,
+
+                  operation_name:
+                    operation.name,
+
+                  skill_grade_id:
+                    raw.skill_grade_id ??
+                    null,
+
+                  skill_level:
+                    skillLevel,
+
+                  machine_equipment_id:
+                    raw.machine_equipment_id ??
+                    null,
+
+                  machine_name:
+                    operation.machineName ===
+                      '-'
+                      ? null
+                      : operation.machineName,
+
+                  machine_code:
+                    raw.machine_code ??
+                    raw.machine_code_master ??
+                    null,
+
+                  code_mmtb:
+                    operation.codeMmtb ===
+                      '-'
+                      ? null
+                      : operation.codeMmtb,
+
+                  sam_gsd:
+                    toNumber(
+                      operation.samGsd,
+                      0
+                    ),
+
+                  salary_coefficient:
+                    toNumber(
+                      raw.salary_coefficient,
+                      0
+                    ),
+
+                  manpower:
+                    toNumber(
+                      operation.manpower,
+                      1
+                    ),
+
+                  required_efficiency:
+                    requiredEfficiency,
+
+                  standard_price:
+                    raw.standard_price !==
+                      null &&
+                    raw.standard_price !==
+                      undefined
+                      ? toNumber(
+                          raw.standard_price,
+                          0
+                        )
+                      : undefined,
+
+                  adjusted_sam:
+                    toNumber(
+                      operation.adjustedSam,
+                      0
+                    ),
+
+                  utilization_rate:
+                    raw.utilization_rate !==
+                      null &&
+                    raw.utilization_rate !==
+                      undefined
+                      ? toNumber(
+                          raw.utilization_rate,
+                          0
+                        )
+                      : null,
+
+                  total_action_seconds:
+                    toNumber(
+                      operation.totalActionSeconds,
+                      0
+                    ),
+
+                  total_actions:
+                    toNumber(
+                      operation.totalActions,
+                      0
+                    ),
+
+                  status_id:
+                    raw.status_id ??
+                    0,
+                };
+              }
+            ),
+        })
+      );
+
+  return {
+    document_code:
+      String(
+        header.document_code ||
+        document.documentCode ||
+        ''
+      ).trim(),
+
+    work_id:
+      Number(
+        header.work_id
+      ),
+
+    product_category_id:
+      Number(
+        header.product_category_id
+      ),
+
+    product_category_group_id:
+      Number(
+        header.product_category_group_id
+      ),
+
+    required_efficiency:
+      header.required_efficiency !==
+        null &&
+      header.required_efficiency !==
+        undefined
+        ? Number(
+            header.required_efficiency
+          )
+        : null,
+
+    price_method:
+      header.price_method ===
+        'ADJUSTED'
+        ? 'ADJUSTED'
+        : 'GSD',
+
+    note:
+      header.note ||
+      null,
+
+    status_id:
+      Number(
+        header.status_id ??
+        0
+      ),
+
+    groups,
+  };
+}
+
 async function loadDetailsInBatches(
   headers: OperationClusterHeader[],
   batchSize = 8
@@ -585,7 +822,7 @@ async function loadDetailsInBatches(
   };
 }
 
-export default function OperationClusterTreeCategoryFirst() {
+export default function OperationClusterTreeSaveOperations() {
   const [
     treeData,
     setTreeData,
@@ -697,6 +934,24 @@ export default function OperationClusterTreeCategoryFirst() {
     string | null
   >(null);
 
+
+  const [
+    dirtyDocumentIds,
+    setDirtyDocumentIds,
+  ] = useState<
+    Set<number>
+  >(
+    () =>
+      new Set()
+  );
+
+  const [
+    savingDocumentId,
+    setSavingDocumentId,
+  ] = useState<
+    number | null
+  >(null);
+
   const [
     expanded,
     setExpanded,
@@ -737,6 +992,10 @@ export default function OperationClusterTreeCategoryFirst() {
 
       setTreeData(
         nextTree
+      );
+
+      setDirtyDocumentIds(
+        new Set()
       );
 
       if (
@@ -1084,6 +1343,193 @@ export default function OperationClusterTreeCategoryFirst() {
   const cluster =
     selectedContext
       ?.cluster;
+
+
+  const currentDocument =
+    selectedContext
+      ?.document ||
+    null;
+
+  const hasPendingChanges =
+    currentDocument
+      ? dirtyDocumentIds.has(
+          currentDocument.id
+        )
+      : false;
+
+  const isSavingCurrentDocument =
+    currentDocument
+      ? savingDocumentId ===
+        currentDocument.id
+      : false;
+
+  const handleSaveCurrentDocument =
+    async () => {
+      if (
+        !currentDocument
+      ) {
+        alert(
+          'Không xác định được chứng từ cần lưu.'
+        );
+
+        return;
+      }
+
+      const latestDocument =
+        treeData.find(
+          (item) =>
+            item.id ===
+            currentDocument.id
+        );
+
+      if (
+        !latestDocument
+      ) {
+        alert(
+          'Không tìm thấy dữ liệu chứng từ hiện tại.'
+        );
+
+        return;
+      }
+
+      const payload =
+        buildUpdatePayload(
+          latestDocument
+        );
+
+      if (
+        !payload.groups.some(
+          (group) =>
+            group.operations.length >
+            0
+        )
+      ) {
+        alert(
+          'Chứng từ phải có ít nhất một công đoạn.'
+        );
+
+        return;
+      }
+
+      setSavingDocumentId(
+        latestDocument.id
+      );
+
+      try {
+        const selectedClusterName =
+          cluster?.name ||
+          '';
+
+        const selectedClusterIndex =
+          latestDocument.clusters.findIndex(
+            (item) =>
+              item.key ===
+              selectedClusterKey
+          );
+
+        await operationClusterService
+          .update(
+            latestDocument.id,
+            payload
+          );
+
+        const refreshedDetail =
+          await operationClusterService
+            .getById(
+              latestDocument.id
+            );
+
+        const refreshedDocument =
+          buildTreeFromDetails(
+            [
+              refreshedDetail,
+            ]
+          )[0];
+
+        if (
+          refreshedDocument
+        ) {
+          setTreeData(
+            (currentTree) =>
+              currentTree.map(
+                (item) =>
+                  item.id ===
+                    refreshedDocument.id
+                    ? refreshedDocument
+                    : item
+              )
+          );
+
+          const refreshedCluster =
+            (
+              selectedClusterIndex >=
+              0
+                ? refreshedDocument
+                    .clusters[
+                    selectedClusterIndex
+                  ]
+                : null
+            ) ||
+            refreshedDocument.clusters.find(
+              (item) =>
+                item.name ===
+                selectedClusterName
+            ) ||
+            refreshedDocument
+              .clusters[0];
+
+          setSelectedClusterKey(
+            refreshedCluster
+              ?.key ||
+              null
+          );
+
+          setSelectedOperationKey(
+            refreshedCluster
+              ?.operations[0]
+              ?.key ||
+              null
+          );
+        }
+
+        setDirtyDocumentIds(
+          (current) => {
+            const next =
+              new Set(
+                current
+              );
+
+            next.delete(
+              latestDocument.id
+            );
+
+            return next;
+          }
+        );
+
+        alert(
+          'Lưu công đoạn vào chứng từ thành công.'
+        );
+      } catch (
+        saveError
+      ) {
+        console.error(
+          'Lưu công đoạn vào chứng từ lỗi:',
+          saveError
+        );
+
+        alert(
+          saveError instanceof
+            Error
+            ? saveError.message
+            : 'Không lưu được công đoạn vào chứng từ.'
+        );
+      } finally {
+        setSavingDocumentId(
+          null
+        );
+      }
+    };
 
   const handleOpenOperationActions =
     async (
@@ -1446,6 +1892,23 @@ export default function OperationClusterTreeCategoryFirst() {
         newOperations[0]
           ?.key ||
         null
+      );
+
+      setDirtyDocumentIds(
+        (current) => {
+          const next =
+            new Set(
+              current
+            );
+
+          next.add(
+            selectedContext
+              .document
+              .id
+          );
+
+          return next;
+        }
       );
 
       resetGsdPopup();
@@ -1879,14 +2342,25 @@ export default function OperationClusterTreeCategoryFirst() {
               <button
                 type="button"
                 onClick={
-                  handleOpenGsdPopup
+                  hasPendingChanges
+                    ? handleSaveCurrentDocument
+                    : handleOpenGsdPopup
                 }
                 disabled={
-                  !cluster
+                  !cluster ||
+                  isSavingCurrentDocument
                 }
-                className="h-8 shrink-0 rounded-md bg-blue-600 px-3 text-xs font-medium text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+                className={`h-8 shrink-0 rounded-md px-3 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 ${
+                  hasPendingChanges
+                    ? 'bg-emerald-600 hover:bg-emerald-700'
+                    : 'bg-blue-600 hover:bg-blue-700'
+                }`}
               >
-                + Thêm công đoạn
+                {isSavingCurrentDocument
+                  ? 'Đang lưu...'
+                  : hasPendingChanges
+                    ? 'Lưu'
+                    : 'Thêm'}
               </button>
             </div>
 

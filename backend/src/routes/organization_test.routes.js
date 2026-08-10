@@ -14,5 +14,6 @@ router.get('/employees-test', organizationController_test.getEmployees_test);
 router.get('/department-types-test1', organizationController_test.getDepartmentTypes_test_1);
 router.post('/department-types-test1', organizationController_test.createDepartmentType_test_1);
 router.put('/department-types-test1/:id', organizationController_test.updateDepartmentType_test_1);
+router.get('/grassroots-level-unit', organizationController_test.getGrassrootsLevelUnit);
 
 module.exports = router;
