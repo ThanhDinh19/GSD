@@ -350,19 +350,18 @@ export function useOperationClusterWorkflow({
                     })
                 );
 
-            const hasOperation =
-                validGroups.some(
-                    (group) =>
-                        group.operations
-                            .length > 0
-                );
-
-            if (!hasOperation) {
-                alert(
-                    'Vui lòng chọn ít nhất một công đoạn GSD'
-                );
-                return;
-            }
+            // const hasOperation =
+            //     validGroups.some(
+            //         (group) =>
+            //             group.operations
+            //                 .length > 0
+            //     );
+            // if (!hasOperation) {
+            //     alert(
+            //         'Vui lòng chọn ít nhất một công đoạn GSD'
+            //     );   
+            //     return;
+            // }
 
             const payload:
                 CreateOperationClusterPayload = {
