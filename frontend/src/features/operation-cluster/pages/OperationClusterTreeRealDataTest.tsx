@@ -68,6 +68,10 @@ type TreeOperation = {
 type TreeCluster = {
   key: string;
   id: number | string;
+
+  // Thứ tự cụm lấy trực tiếp từ line_no trong DB.
+  lineNo: number;
+
   documentId: number;
   documentCode: string;
   name: string;
@@ -228,7 +232,41 @@ function buildTreeFromDetails(
             : [];
 
         const clusters =
-          detailGroups
+          [...detailGroups]
+            .sort(
+              (
+                a: any,
+                b: any
+              ) => {
+                const lineCompare =
+                  toNumber(
+                    a.line_no,
+                    0
+                  ) -
+                  toNumber(
+                    b.line_no,
+                    0
+                  );
+
+                if (
+                  lineCompare !==
+                  0
+                ) {
+                  return lineCompare;
+                }
+
+                // Nếu line_no trùng nhau thì dùng id làm tie-breaker
+                // để thứ tự vẫn ổn định.
+                return toNumber(
+                  a.id,
+                  0
+                ) -
+                  toNumber(
+                    b.id,
+                    0
+                  );
+              }
+            )
             .map(
               (
                 rawGroup: any,
@@ -410,6 +448,12 @@ function buildTreeFromDetails(
                   id:
                     rawGroupId,
 
+                  lineNo:
+                    toNumber(
+                      rawGroup.line_no,
+                      groupIndex + 1
+                    ),
+
                   documentId:
                     header.id,
 
@@ -443,16 +487,6 @@ function buildTreeFromDetails(
                   operations,
                 };
               }
-            )
-            .sort(
-              (
-                a,
-                b
-              ) =>
-                a.name.localeCompare(
-                  b.name,
-                  'vi'
-                )
             );
 
         return {
@@ -572,11 +606,10 @@ function buildUpdatePayload(
       )
       .map(
         (
-          cluster,
-          groupIndex
+          cluster
         ) => ({
           line_no:
-            groupIndex + 1,
+            cluster.lineNo,
 
           cluster_name:
             cluster.name.trim(),
@@ -847,7 +880,7 @@ async function loadDetailsInBatches(
   };
 }
 
-export default function OperationClusterTreeSaveOperationsWithCancelAndImage() {
+export default function OperationClusterTreeOrderedByLineNo() {
   const [
     treeData,
     setTreeData,

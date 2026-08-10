@@ -33,8 +33,6 @@ app.use(express.json({
 app.use(cookieParser());
 
 
-
-
 // 1. Serve hình ảnh upload trước SPA fallback
 app.use(
     '/sewing_process_images',

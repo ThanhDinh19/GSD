@@ -29,7 +29,7 @@ import {
 } from '../../auth/constants/permission.constants';
 
 import OperationClusterToolbar from '../components/OperationClusterToolbar';
-import OperationClusterListTable from '../components/OperationClusterListTable';
+import OperationClusterListTable from '../components/operationClusterListTable';
 import OperationClusterEditorModal from '../components/OperationClusterEditorModal';
 import SalaryCoefficientModal from '../components/SalaryCoefficientModal';
 import OperationActionsModal from '../components/OperationActionsModal';

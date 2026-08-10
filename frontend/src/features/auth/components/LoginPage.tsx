@@ -147,7 +147,7 @@ export function LoginPage() {
 
       try {
         const res = await fetch(
-          "http://localhost:9000/api/organization-test/grassroots-level-unit"
+          `${import.meta.env.VITE_API_URL}/api/organization-test/grassroots-level-unit`
         );
 
         if (!res.ok) {
