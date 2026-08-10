@@ -87,20 +87,15 @@ export function AuthProvider({
       }
 
       try {
-        /*
-         * /me cần access token.
-         *
-         * Nếu token hết hạn:
-         * httpClient sẽ tự gọi /refresh,
-         * lưu token mới và gọi lại /me.
-         */
-        const user = await authService.me();
+        const me =
+          await authService.me();
 
         /*
-         * Lấy lại session vì httpClient có thể
-         * vừa cập nhật access token trong storage.
+         * httpClient có thể vừa refresh
+         * access token nên phải đọc lại.
          */
-        const latestSession = getAuthSession();
+        const latestSession =
+          getAuthSession();
 
         if (!latestSession) {
           throw new Error(
@@ -108,19 +103,30 @@ export function AuthProvider({
           );
         }
 
-        /*
-         * Đồng bộ lại thông tin user mới nhất
-         * do endpoint /me trả về.
-         */
         const restoredSession: AuthSession = {
           ...latestSession,
-          user,
+
+          user:
+            me.user,
+
+          roles:
+            me.roles,
+
+          permissions:
+            me.permissions,
+
+          navigation:
+            me.navigation,
         };
 
-        saveAuthSession(restoredSession);
+        saveAuthSession(
+          restoredSession
+        );
 
         if (isMounted) {
-          setSession(restoredSession);
+          setSession(
+            restoredSession
+          );
         }
       } catch {
         clearAuthSession();

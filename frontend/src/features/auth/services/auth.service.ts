@@ -9,6 +9,7 @@ import type {
   AuthUser,
   LoginPayload,
   RefreshTokenResponse,
+  AuthMeResponse
 } from '../types/auth.type';
 
 export const authService = {
@@ -54,9 +55,9 @@ export const authService = {
     );
   },
 
-  async me(): Promise<AuthUser> {
+  async me(): Promise<AuthMeResponse> {
     const response =
-      await request<ApiResponse<AuthUser>>(
+      await request<ApiResponse<AuthMeResponse>>(
         '/api/auth/me'
       );
 

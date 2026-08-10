@@ -59,3 +59,10 @@ export type RefreshTokenResponse = {
   accessToken: string;
 };
 
+
+export type AuthMeResponse = {
+  user: AuthUser;
+  roles: AuthRole[];
+  permissions: AuthPermission[];
+  navigation: AuthNavigation[];
+};

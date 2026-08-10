@@ -2228,7 +2228,7 @@ export default function OperationClusterTreeSaveOperationsWithCancelAndImage() {
                             label={
                               document.category.name
                             }
-                             className="font-medium text-blue-600"
+                            className="font-medium text-blue-600"
                           />
 
                           {categoryOpen ? (
@@ -2511,9 +2511,9 @@ export default function OperationClusterTreeSaveOperationsWithCancelAndImage() {
 
             </div>
 
-            <div className="overflow-auto">
+            <div className="max-h-[500px] overflow-auto">
               <table className="w-full min-w-[1000px] border-collapse text-xs">
-                <thead className="bg-slate-50 text-slate-600">
+                <thead className="sticky top-0 z-10 bg-slate-50 text-slate-600">
                   <tr>
                     <TableHeader className="w-12 text-center">
                       STT
