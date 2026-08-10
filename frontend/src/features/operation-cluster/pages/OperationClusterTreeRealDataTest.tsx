@@ -11,8 +11,15 @@ import {
   operationClusterService,
 } from '../services/operationCluster.service';
 
+import {
+  getGsdAnalysisImageUrl,
+} from '../../../services/sewingProcess.service';
+
 import GsdPickerModal
   from '../components/GsdPickerModal';
+
+import ImagePreviewModal
+  from '../components/ImagePreviewModal';
 
 import OperationActionDetailsModal
   from './OperationActionDetailsModal';
@@ -25,6 +32,11 @@ import type {
   OperationClusterHeader,
 } from '../types/operationCluster.types';
 
+
+import {
+  Button
+} from '../../../shared/components'
+
 type TreeOperation = {
   key: string;
   id: number | string;
@@ -35,6 +47,9 @@ type TreeOperation = {
 
   code: string;
   name: string;
+
+  imageFileName: string;
+  imageUrl: string;
 
   machineName: string;
   codeMmtb: string;
@@ -276,12 +291,12 @@ function buildTreeFromDetails(
                         const adjustedSamFromApi =
                           operation.adjusted_sam !==
                             null &&
-                          operation.adjusted_sam !==
+                            operation.adjusted_sam !==
                             undefined
                             ? toNumber(
-                                operation.adjusted_sam,
-                                0
-                              )
+                              operation.adjusted_sam,
+                              0
+                            )
                             : null;
 
                         const adjustedSam =
@@ -290,7 +305,7 @@ function buildTreeFromDetails(
                             : operationEfficiency >
                               0
                               ? samGsd /
-                                operationEfficiency
+                              operationEfficiency
                               : samGsd;
 
                         const operationId =
@@ -324,6 +339,16 @@ function buildTreeFromDetails(
                             operation.gsd_operation_name ||
                             '',
 
+                          imageFileName:
+                            operation.image_file_name ||
+                            operation.imageFileName ||
+                            '',
+
+                          imageUrl:
+                            operation.image_url ||
+                            operation.imageUrl ||
+                            '',
+
                           machineName:
                             operation.machine_name ||
                             operation.machine_name_master ||
@@ -337,11 +362,11 @@ function buildTreeFromDetails(
                           skillLevel:
                             operation.skill_level !==
                               null &&
-                            operation.skill_level !==
+                              operation.skill_level !==
                               undefined
                               ? String(
-                                  operation.skill_level
-                                )
+                                operation.skill_level
+                              )
                               : '-',
 
                           samGsd,
@@ -576,18 +601,18 @@ function buildUpdatePayload(
                 const skillLevel =
                   raw.skill_level !==
                     null &&
-                  raw.skill_level !==
+                    raw.skill_level !==
                     undefined
                     ? toNumber(
-                        raw.skill_level,
-                        0
-                      )
+                      raw.skill_level,
+                      0
+                    )
                     : operation.skillLevel !==
                       '-'
                       ? toNumber(
-                          operation.skillLevel,
-                          0
-                        )
+                        operation.skillLevel,
+                        0
+                      )
                       : null;
 
                 return {
@@ -662,12 +687,12 @@ function buildUpdatePayload(
                   standard_price:
                     raw.standard_price !==
                       null &&
-                    raw.standard_price !==
+                      raw.standard_price !==
                       undefined
                       ? toNumber(
-                          raw.standard_price,
-                          0
-                        )
+                        raw.standard_price,
+                        0
+                      )
                       : undefined,
 
                   adjusted_sam:
@@ -679,12 +704,12 @@ function buildUpdatePayload(
                   utilization_rate:
                     raw.utilization_rate !==
                       null &&
-                    raw.utilization_rate !==
+                      raw.utilization_rate !==
                       undefined
                       ? toNumber(
-                          raw.utilization_rate,
-                          0
-                        )
+                        raw.utilization_rate,
+                        0
+                      )
                       : null,
 
                   total_action_seconds:
@@ -734,11 +759,11 @@ function buildUpdatePayload(
     required_efficiency:
       header.required_efficiency !==
         null &&
-      header.required_efficiency !==
+        header.required_efficiency !==
         undefined
         ? Number(
-            header.required_efficiency
-          )
+          header.required_efficiency
+        )
         : null,
 
     price_method:
@@ -822,7 +847,7 @@ async function loadDetailsInBatches(
   };
 }
 
-export default function OperationClusterTreeSaveOperations() {
+export default function OperationClusterTreeSaveOperationsWithCancelAndImage() {
   const [
     treeData,
     setTreeData,
@@ -933,6 +958,12 @@ export default function OperationClusterTreeSaveOperations() {
   ] = useState<
     string | null
   >(null);
+
+
+  const [
+    previewImageUrl,
+    setPreviewImageUrl,
+  ] = useState('');
 
 
   const [
@@ -1353,15 +1384,104 @@ export default function OperationClusterTreeSaveOperations() {
   const hasPendingChanges =
     currentDocument
       ? dirtyDocumentIds.has(
-          currentDocument.id
-        )
+        currentDocument.id
+      )
       : false;
 
   const isSavingCurrentDocument =
     currentDocument
       ? savingDocumentId ===
-        currentDocument.id
+      currentDocument.id
       : false;
+
+  const handleCancelPendingChanges =
+    () => {
+      if (
+        !currentDocument
+      ) {
+        return;
+      }
+
+      const currentDocumentId =
+        currentDocument.id;
+
+      const currentClusterKey =
+        selectedClusterKey;
+
+      let nextSelectedOperationKey:
+        string | null =
+        null;
+
+      setTreeData(
+        (currentTree) =>
+          currentTree.map(
+            (document) => {
+              if (
+                document.id !==
+                currentDocumentId
+              ) {
+                return document;
+              }
+
+              const nextClusters =
+                document.clusters.map(
+                  (currentCluster) => {
+                    const nextOperations =
+                      currentCluster.operations.filter(
+                        (operation) =>
+                          !String(
+                            operation.key
+                          ).startsWith(
+                            'temp:'
+                          )
+                      );
+
+                    if (
+                      currentCluster.key ===
+                      currentClusterKey
+                    ) {
+                      nextSelectedOperationKey =
+                        nextOperations[0]
+                          ?.key ||
+                        null;
+                    }
+
+                    return {
+                      ...currentCluster,
+                      operations:
+                        nextOperations,
+                    };
+                  }
+                );
+
+              return {
+                ...document,
+                clusters:
+                  nextClusters,
+              };
+            }
+          )
+      );
+
+      setSelectedOperationKey(
+        nextSelectedOperationKey
+      );
+
+      setDirtyDocumentIds(
+        (current) => {
+          const next =
+            new Set(
+              current
+            );
+
+          next.delete(
+            currentDocumentId
+          );
+
+          return next;
+        }
+      );
+    };
 
   const handleSaveCurrentDocument =
     async () => {
@@ -1463,11 +1583,11 @@ export default function OperationClusterTreeSaveOperations() {
           const refreshedCluster =
             (
               selectedClusterIndex >=
-              0
+                0
                 ? refreshedDocument
-                    .clusters[
-                    selectedClusterIndex
-                  ]
+                  .clusters[
+                selectedClusterIndex
+                ]
                 : null
             ) ||
             refreshedDocument.clusters.find(
@@ -1481,14 +1601,14 @@ export default function OperationClusterTreeSaveOperations() {
           setSelectedClusterKey(
             refreshedCluster
               ?.key ||
-              null
+            null
           );
 
           setSelectedOperationKey(
             refreshedCluster
               ?.operations[0]
               ?.key ||
-              null
+            null
           );
         }
 
@@ -1511,7 +1631,7 @@ export default function OperationClusterTreeSaveOperations() {
           'Lưu công đoạn vào chứng từ thành công.'
         );
       } catch (
-        saveError
+      saveError
       ) {
         console.error(
           'Lưu công đoạn vào chứng từ lỗi:',
@@ -1814,6 +1934,16 @@ export default function OperationClusterTreeSaveOperations() {
                 gsd.operation_name ||
                 '',
 
+              imageFileName:
+                (gsd as any).image_file_name ||
+                (gsd as any).imageFileName ||
+                '',
+
+              imageUrl:
+                (gsd as any).image_url ||
+                (gsd as any).imageUrl ||
+                '',
+
               machineName:
                 gsd.machine_name ||
                 '-',
@@ -1874,14 +2004,14 @@ export default function OperationClusterTreeSaveOperations() {
                     currentCluster.key ===
                       cluster.key
                       ? {
-                          ...currentCluster,
+                        ...currentCluster,
 
-                          operations:
-                            [
-                              ...currentCluster.operations,
-                              ...newOperations,
-                            ],
-                        }
+                        operations:
+                          [
+                            ...currentCluster.operations,
+                            ...newOperations,
+                          ],
+                      }
                       : currentCluster
                 ),
             })
@@ -2098,6 +2228,7 @@ export default function OperationClusterTreeSaveOperations() {
                             label={
                               document.category.name
                             }
+                             className="font-medium text-blue-600"
                           />
 
                           {categoryOpen ? (
@@ -2118,6 +2249,7 @@ export default function OperationClusterTreeSaveOperations() {
                                 label={
                                   document.group.name
                                 }
+                                className="font-medium text-amber-700"
                               />
 
                               {groupOpen &&
@@ -2160,6 +2292,7 @@ export default function OperationClusterTreeSaveOperations() {
                                         expandable={
                                           false
                                         }
+                                        className="text-slate-700"
                                       />
                                     );
                                   }
@@ -2173,7 +2306,7 @@ export default function OperationClusterTreeSaveOperations() {
 
                 {!loading &&
                   visibleTree.length ===
-                    0 ? (
+                  0 ? (
                   <div className="px-3 py-10 text-center text-xs text-slate-500">
                     Không có dữ liệu phù hợp.
                   </div>
@@ -2339,35 +2472,49 @@ export default function OperationClusterTreeSaveOperations() {
                 </div>
               </div>
 
-              <button
-                type="button"
-                onClick={
-                  hasPendingChanges
-                    ? handleSaveCurrentDocument
-                    : handleOpenGsdPopup
-                }
-                disabled={
-                  !cluster ||
-                  isSavingCurrentDocument
-                }
-                className={`h-8 shrink-0 rounded-md px-3 text-xs font-medium text-white disabled:cursor-not-allowed disabled:opacity-50 ${
-                  hasPendingChanges
-                    ? 'bg-emerald-600 hover:bg-emerald-700'
-                    : 'bg-blue-600 hover:bg-blue-700'
-                }`}
-              >
-                {isSavingCurrentDocument
-                  ? 'Đang lưu...'
-                  : hasPendingChanges
-                    ? 'Lưu'
-                    : 'Thêm'}
-              </button>
+              <div className='flex gap-2'>
+                <Button
+                  type="button"
+                  onClick={
+                    hasPendingChanges
+                      ? handleSaveCurrentDocument
+                      : handleOpenGsdPopup
+                  }
+                  disabled={
+                    !cluster ||
+                    isSavingCurrentDocument
+                  }
+                  variant={hasPendingChanges ? 'success' : 'primary'}
+                >
+                  {isSavingCurrentDocument
+                    ? 'Đang lưu...'
+                    : hasPendingChanges
+                      ? 'Lưu'
+                      : 'Thêm'}
+                </Button>
+
+                {hasPendingChanges && (
+                  <Button
+                    type="button"
+                    variant="danger"
+                    onClick={
+                      handleCancelPendingChanges
+                    }
+                    disabled={
+                      isSavingCurrentDocument
+                    }
+                  >
+                    Hủy
+                  </Button>
+                )}
+              </div>
+
             </div>
 
             <div className="overflow-auto">
-              <table className="w-full min-w-[920px] border-collapse text-xs">
+              <table className="w-full min-w-[1000px] border-collapse text-xs">
                 <thead className="bg-slate-50 text-slate-600">
-                  <tr>  
+                  <tr>
                     <TableHeader className="w-12 text-center">
                       STT
                     </TableHeader>
@@ -2376,8 +2523,12 @@ export default function OperationClusterTreeSaveOperations() {
                       Tên công đoạn
                     </TableHeader>
 
+                    <TableHeader className="w-[76px] text-center">
+                      Hình ảnh
+                    </TableHeader>
+
                     <TableHeader className="min-w-[80px]">
-                      Máy / MMTB
+                      MMTB code
                     </TableHeader>
 
                     <TableHeader className="w-20 text-center">
@@ -2421,6 +2572,22 @@ export default function OperationClusterTreeSaveOperations() {
                           operation.statusLabel
                         );
 
+                      const imageValue =
+                        operation.imageFileName ||
+                        operation.imageUrl ||
+                        operation.raw?.image_file_name ||
+                        operation.raw?.imageFileName ||
+                        operation.raw?.image_url ||
+                        operation.raw?.imageUrl ||
+                        '';
+
+                      const imageSrc =
+                        imageValue
+                          ? getGsdAnalysisImageUrl(
+                            imageValue
+                          )
+                          : '';
+
                       return (
                         <tr
                           key={
@@ -2459,6 +2626,39 @@ export default function OperationClusterTreeSaveOperations() {
                             </button>
                           </TableCell>
 
+                          <TableCell className="text-center">
+                            {imageSrc ? (
+                              <button
+                                type="button"
+                                onClick={(
+                                  event
+                                ) => {
+                                  event.stopPropagation();
+
+                                  setPreviewImageUrl(
+                                    imageSrc
+                                  );
+                                }}
+                                className="inline-flex h-11 w-11 items-center justify-center overflow-hidden rounded border border-slate-200 bg-slate-50 hover:ring-2 hover:ring-blue-300"
+                                title="Xem hình công đoạn"
+                              >
+                                <img
+                                  src={
+                                    imageSrc
+                                  }
+                                  alt={
+                                    operation.name ||
+                                    'Hình công đoạn'
+                                  }
+                                  className="h-full w-full object-cover"
+                                />
+                              </button>
+                            ) : (
+                              <span className="text-[11px] text-slate-400">
+                                -
+                              </span>
+                            )}
+                          </TableCell>
 
                           <TableCell>
                             {
@@ -2545,6 +2745,17 @@ export default function OperationClusterTreeSaveOperations() {
           </section>
         </section>
       </div>
+
+      {previewImageUrl && (
+        <ImagePreviewModal
+          imageUrl={
+            previewImageUrl
+          }
+          onClose={() =>
+            setPreviewImageUrl('')
+          }
+        />
+      )}
 
       <OperationActionDetailsModal
         open={
@@ -2764,6 +2975,7 @@ function TreeNodeRow({
   strong = false,
   inactive = false,
   expandable = true,
+  className = '',
 }: {
   depth: number;
   open: boolean;
@@ -2775,6 +2987,7 @@ function TreeNodeRow({
   strong?: boolean;
   inactive?: boolean;
   expandable?: boolean;
+  className?: string;
 }) {
   return (
     <div
@@ -2827,7 +3040,7 @@ function TreeNodeRow({
           {icon}
         </span>
 
-        <span className="truncate">
+        <span className={`truncate ${className}`}>
           {label}
         </span>
 
@@ -2874,7 +3087,7 @@ function KpiCard({
     <div
       className={`min-h-[72px] rounded-md border px-3 py-2.5 ${className}`}
     >
-      <div className="text-[10px] font-semibold uppercase tracking-wide">
+      <div className="text-[9px] font-semibold uppercase tracking-wide">
         {label}
       </div>
 

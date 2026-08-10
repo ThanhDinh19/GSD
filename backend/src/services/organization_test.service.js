@@ -309,10 +309,11 @@ const getGrassrootsLevelUnit = async() =>  {
   const result = await pool.request()
     .query(`
       select 
+        id,
         department_code,
         department_name
       from departments_test
-      where department_code = 'D0001'  
+      where status_id = 0 and department_type_code = '001' 
     `)
 
   return result.recordset;
