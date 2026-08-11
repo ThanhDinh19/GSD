@@ -271,7 +271,7 @@ export default function App_test() {
               <p className="text-[9px] font-bold opacity-60 uppercase mt-1 tracking-wider whitespace-nowrap">SAM &amp; Line Planning</p>
             </div>
           </div>
-
+          
           {/* Toggle Button */}
           <button
             onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
@@ -488,7 +488,6 @@ export default function App_test() {
               </li> */}
             </ul>
           </div>
-
 
           <div>
             <h3 className={`px-5 text-[9px] font-extrabold text-blue-300 uppercase tracking-widest mb-1.5 opacity-50 whitespace-nowrap ${isSidebarCollapsed ? 'hidden' : 'block'}`}>

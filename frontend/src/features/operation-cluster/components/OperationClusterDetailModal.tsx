@@ -82,7 +82,7 @@ export default function OperationClusterDetailModal({
                                 Nhóm công việc
                             </div>
                             <div className="text-sm text-slate-800 mt-1">
-                                {detail.header?.work_code || ''} - {detail.header?.work_name || ''}
+                                {detail.header?.work_name || ''}
                             </div>
                         </div>
 
@@ -91,7 +91,7 @@ export default function OperationClusterDetailModal({
                                 Chủng loại
                             </div>
                             <div className="text-sm text-slate-800 mt-1">
-                                {detail.header?.product_code || ''} - {detail.header?.product_name || ''}
+                                {detail.header?.product_name || ''}
                             </div>
                         </div>
 
@@ -100,7 +100,7 @@ export default function OperationClusterDetailModal({
                                 Nhóm chủng loại
                             </div>
                             <div className="text-sm text-slate-800 mt-1">
-                                {detail.header?.category_group_code || ''} - {detail.header?.category_group_name || ''}
+                                {detail.header?.category_group_name || ''}
                             </div>
                         </div>
 
