@@ -116,6 +116,15 @@ type SelectedContext = {
   cluster: TreeCluster;
 };
 
+// Cấu trúc chỉ dùng để hiển thị cây bên trái.
+// Mỗi bucket là một node Chủng loại. Trong cùng một bucket,
+// mỗi Nhóm chủng loại chỉ xuất hiện tối đa 1 lần.
+type DisplayCategoryBucket = {
+  key: string;
+  category: ProductCategory;
+  documents: OperationClusterDocumentTree[];
+};
+
 function toNumber(
   value: unknown,
   defaultValue = 0
@@ -136,6 +145,183 @@ function getNodeKey(
   id: number | string
 ) {
   return `${level}:${id}`;
+}
+
+/**
+ * Gom cây theo rule:
+ * - Cùng Chủng loại + khác Nhóm chủng loại => nằm chung một node Chủng loại.
+ * - Cùng Chủng loại + cùng Nhóm chủng loại => tách sang node Chủng loại tiếp theo.
+ *
+ * Ví dụ:
+ * CT01 = Áo / Sơ mi
+ * CT02 = Áo / Jacket
+ * CT03 = Áo / Sơ mi
+ * CT04 = Áo / Jacket
+ *
+ * Kết quả:
+ * Áo
+ *   Sơ mi   (CT01)
+ *   Jacket  (CT02)
+ * Áo
+ *   Sơ mi   (CT03)
+ *   Jacket  (CT04)
+ */
+function buildDisplayTree(
+  documents: OperationClusterDocumentTree[]
+): DisplayCategoryBucket[] {
+  const categoryMap =
+    new Map<
+      number,
+      {
+        category: ProductCategory;
+        groups: Map<
+          number,
+          OperationClusterDocumentTree[]
+        >;
+      }
+    >();
+
+  documents.forEach(
+    (document) => {
+      let categoryEntry =
+        categoryMap.get(
+          document.category.id
+        );
+
+      if (!categoryEntry) {
+        categoryEntry = {
+          category:
+            document.category,
+          groups:
+            new Map(),
+        };
+
+        categoryMap.set(
+          document.category.id,
+          categoryEntry
+        );
+      }
+
+      const groupDocuments =
+        categoryEntry.groups.get(
+          document.group.id
+        ) || [];
+
+      groupDocuments.push(
+        document
+      );
+
+      categoryEntry.groups.set(
+        document.group.id,
+        groupDocuments
+      );
+    }
+  );
+
+  const result:
+    DisplayCategoryBucket[] = [];
+
+  categoryMap.forEach(
+    ({
+      category,
+      groups,
+    }) => {
+      // Giữ thứ tự nhóm ổn định theo tên.
+      const groupDocumentLists =
+        Array.from(
+          groups.values()
+        ).sort(
+          (a, b) =>
+            (a[0]?.group.name || '')
+              .localeCompare(
+                b[0]?.group.name || '',
+                'vi'
+              )
+        );
+
+      const maxDocumentsPerGroup =
+        groupDocumentLists.reduce(
+          (max, items) =>
+            Math.max(
+              max,
+              items.length
+            ),
+          0
+        );
+
+      for (
+        let bucketIndex = 0;
+        bucketIndex <
+        maxDocumentsPerGroup;
+        bucketIndex += 1
+      ) {
+        const bucketDocuments =
+          groupDocumentLists
+            .map(
+              (items) =>
+                items[
+                  bucketIndex
+                ]
+            )
+            .filter(
+              (document):
+                document is OperationClusterDocumentTree =>
+                Boolean(
+                  document
+                )
+            );
+
+        if (
+          bucketDocuments.length ===
+          0
+        ) {
+          continue;
+        }
+
+        result.push({
+          key:
+            getNodeKey(
+              'category',
+              `${category.id}:${bucketIndex + 1}`
+            ),
+          category,
+          documents:
+            bucketDocuments,
+        });
+      }
+    }
+  );
+
+  return result;
+}
+
+function getDisplayGroupKey(
+  categoryKey: string,
+  document:
+    OperationClusterDocumentTree
+) {
+  return getNodeKey(
+    'group',
+    `${categoryKey}:${document.id}:${document.group.id}`
+  );
+}
+
+function findDisplayBucketByDocument(
+  displayTree:
+    DisplayCategoryBucket[],
+  documentId: number
+) {
+  return (
+    displayTree.find(
+      (bucket) =>
+        bucket.documents.some(
+          (document) =>
+            document.id ===
+            documentId
+        )
+    ) ||
+    null
+  );
 }
 
 function isInactiveStatus(
@@ -1071,9 +1257,23 @@ export default function OperationClusterTreeOrderedByLineNo() {
         );
       }
 
+      // Dùng cùng cấu trúc hiển thị với cây bên trái để
+      // mở đúng Chủng loại/Nhóm ngay từ lần tải đầu tiên.
+      const initialVisibleTree =
+        filterTree(
+          nextTree,
+          '',
+          false
+        );
+
+      const initialDisplayTree =
+        buildDisplayTree(
+          initialVisibleTree
+        );
+
       const firstContext =
         findFirstCluster(
-          nextTree,
+          initialVisibleTree,
           false
         );
 
@@ -1091,23 +1291,35 @@ export default function OperationClusterTreeOrderedByLineNo() {
           null
         );
 
-        setExpanded(
-          new Set([
+        const firstBucket =
+          findDisplayBucketByDocument(
+            initialDisplayTree,
+            firstContext.document.id
+          );
+
+        const nextExpanded =
+          new Set<string>([
             getNodeKey(
               'root',
               0
             ),
+          ]);
 
-            getNodeKey(
-              'category',
-              `${firstContext.document.id}:${firstContext.category.id}`
-            ),
+        if (firstBucket) {
+          nextExpanded.add(
+            firstBucket.key
+          );
 
-            getNodeKey(
-              'group',
-              `${firstContext.document.id}:${firstContext.group.id}`
-            ),
-          ])
+          nextExpanded.add(
+            getDisplayGroupKey(
+              firstBucket.key,
+              firstContext.document
+            )
+          );
+        }
+
+        setExpanded(
+          nextExpanded
         );
       } else {
         setSelectedClusterKey(
@@ -1324,6 +1536,19 @@ export default function OperationClusterTreeOrderedByLineNo() {
       ]
     );
 
+  // Chỉ thay đổi cấu trúc HIỂN THỊ.
+  // treeData gốc vẫn giữ từng chứng từ riêng để thêm/lưu không bị nhầm chứng từ.
+  const displayTree =
+    useMemo(
+      () =>
+        buildDisplayTree(
+          visibleTree
+        ),
+      [
+        visibleTree,
+      ]
+    );
+
   const forcedOpen =
     normalizedKeyword.length >
     0;
@@ -1371,6 +1596,12 @@ export default function OperationClusterTreeOrderedByLineNo() {
       null
     );
 
+    const displayBucket =
+      findDisplayBucketByDocument(
+        displayTree,
+        document.id
+      );
+
     setExpanded(
       (current) => {
         const next =
@@ -1385,19 +1616,18 @@ export default function OperationClusterTreeOrderedByLineNo() {
           )
         );
 
-        next.add(
-          getNodeKey(
-            'category',
-            `${document.id}:${document.category.id}`
-          )
-        );
+        if (displayBucket) {
+          next.add(
+            displayBucket.key
+          );
 
-        next.add(
-          getNodeKey(
-            'group',
-            `${document.id}:${document.group.id}`
-          )
-        );
+          next.add(
+            getDisplayGroupKey(
+              displayBucket.key,
+              document
+            )
+          );
+        }
 
         return next;
       }
@@ -2209,17 +2439,12 @@ export default function OperationClusterTreeOrderedByLineNo() {
                       0
                     )
                   )) &&
-                  visibleTree.map(
+                  displayTree.map(
                     (
-                      document
+                      categoryBucket
                     ) => {
-                      // Category/group keys luôn kèm document.id:
-                      // hai chứng từ cùng Chủng loại + Nhóm vẫn là hai nhánh riêng.
                       const categoryKey =
-                        getNodeKey(
-                          'category',
-                          `${document.id}:${document.category.id}`
-                        );
+                        categoryBucket.key;
 
                       const categoryOpen =
                         forcedOpen ||
@@ -2227,22 +2452,10 @@ export default function OperationClusterTreeOrderedByLineNo() {
                           categoryKey
                         );
 
-                      const groupKey =
-                        getNodeKey(
-                          'group',
-                          `${document.id}:${document.group.id}`
-                        );
-
-                      const groupOpen =
-                        forcedOpen ||
-                        expanded.has(
-                          groupKey
-                        );
-
                       return (
                         <div
                           key={
-                            document.id
+                            categoryKey
                           }
                         >
                           <TreeNodeRow
@@ -2259,86 +2472,110 @@ export default function OperationClusterTreeOrderedByLineNo() {
                               <TagIcon />
                             }
                             label={
-                              document.category.name
+                              categoryBucket.category.name
                             }
                             className="font-medium text-blue-600"
                           />
 
-                          {categoryOpen ? (
-                            <>
-                              <TreeNodeRow
-                                depth={2}
-                                open={
-                                  groupOpen
-                                }
-                                onToggle={() =>
-                                  toggleNode(
+                          {categoryOpen
+                            ? categoryBucket.documents.map(
+                              (
+                                document
+                              ) => {
+                                const groupKey =
+                                  getDisplayGroupKey(
+                                    categoryKey,
+                                    document
+                                  );
+
+                                const groupOpen =
+                                  forcedOpen ||
+                                  expanded.has(
                                     groupKey
-                                  )
-                                }
-                                icon={
-                                  <FolderIcon />
-                                }
-                                label={
-                                  document.group.name
-                                }
-                                className="font-medium text-amber-700"
-                              />
+                                  );
 
-                              {groupOpen &&
-                                document.clusters.map(
-                                  (
-                                    treeCluster
-                                  ) => {
-                                    const selected =
-                                      treeCluster.key ===
-                                      selectedClusterKey;
+                                return (
+                                  <div
+                                    key={
+                                      `${categoryKey}:${document.id}`
+                                    }
+                                  >
+                                    <TreeNodeRow
+                                      depth={2}
+                                      open={
+                                        groupOpen
+                                      }
+                                      onToggle={() =>
+                                        toggleNode(
+                                          groupKey
+                                        )
+                                      }
+                                      icon={
+                                        <FolderIcon />
+                                      }
+                                      label={
+                                        document.group.name
+                                      }
+                                      className="font-medium text-amber-700"
+                                    />
 
-                                    return (
-                                      <TreeNodeRow
-                                        key={
-                                          treeCluster.key
+                                    {groupOpen &&
+                                      document.clusters.map(
+                                        (
+                                          treeCluster
+                                        ) => {
+                                          const selected =
+                                            treeCluster.key ===
+                                            selectedClusterKey;
+
+                                          return (
+                                            <TreeNodeRow
+                                              key={
+                                                treeCluster.key
+                                              }
+                                              depth={3}
+                                              open={
+                                                false
+                                              }
+                                              onToggle={() => { }}
+                                              onSelect={() =>
+                                                selectCluster(
+                                                  document,
+                                                  treeCluster
+                                                )
+                                              }
+                                              icon={
+                                                <ClusterIcon />
+                                              }
+                                              label={
+                                                treeCluster.name
+                                              }
+                                              selected={
+                                                selected
+                                              }
+                                              inactive={
+                                                treeCluster.inactive
+                                              }
+                                              expandable={
+                                                false
+                                              }
+                                              className="text-slate-700"
+                                            />
+                                          );
                                         }
-                                        depth={3}
-                                        open={
-                                          false
-                                        }
-                                        onToggle={() => { }}
-                                        onSelect={() =>
-                                          selectCluster(
-                                            document,
-                                            treeCluster
-                                          )
-                                        }
-                                        icon={
-                                          <ClusterIcon />
-                                        }
-                                        label={
-                                          treeCluster.name
-                                        }
-                                        selected={
-                                          selected
-                                        }
-                                        inactive={
-                                          treeCluster.inactive
-                                        }
-                                        expandable={
-                                          false
-                                        }
-                                        className="text-slate-700"
-                                      />
-                                    );
-                                  }
-                                )}
-                            </>
-                          ) : null}
+                                      )}
+                                  </div>
+                                );
+                              }
+                            )
+                            : null}
                         </div>
                       );
                     }
                   )}
 
                 {!loading &&
-                  visibleTree.length ===
+                  displayTree.length ===
                   0 ? (
                   <div className="px-3 py-10 text-center text-xs text-slate-500">
                     Không có dữ liệu phù hợp.
