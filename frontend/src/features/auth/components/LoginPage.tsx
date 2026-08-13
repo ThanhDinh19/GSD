@@ -20,6 +20,8 @@ import {
   useAuth,
 } from '../hooks/useAuth';
 
+import { API_BASE_URL } from '../../../config/api.config';
+
 function EmailIcon() {
   return (
     <svg
@@ -147,7 +149,7 @@ export function LoginPage() {
 
       try {
         const res = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/organization-test/grassroots-level-unit`
+          `${API_BASE_URL}/api/organization-test/grassroots-level-unit`
         );
 
         if (!res.ok) {
