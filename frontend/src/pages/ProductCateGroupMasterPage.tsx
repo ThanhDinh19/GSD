@@ -3,8 +3,19 @@ import { ProductCateGroup, ProductCateGroupPayload } from '../types';
 import { useProductCateGroups } from '../hooks/useProductCateGroup';
 import ProductCateGroupFormModal from '../components/productCateGroup/productCateGroupFormModal';
 import ProductCateGroupTable from '../components/productCateGroup/productCateGroupTable';
+import {
+    Button
+} from '../shared/components';
+
+import {
+    usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+    SCREEN,
+} from '../features/auth/constants/permission.constants';
 
 export default function ProductCateMasterPage() {
+    const permissions = usePermissions(SCREEN.MASTER_DATA);
     const {
         productCateGroups,
         statuses,
@@ -34,7 +45,7 @@ export default function ProductCateMasterPage() {
     const handleSubmit = async (payload: ProductCateGroupPayload) => {
         if (selectedProductCateGroup) {
             await updateProductCateGroup(selectedProductCateGroup.id, payload);
-    } else {
+        } else {
             await createProductCateGroup(payload);
         }
         closeForm();
@@ -46,19 +57,21 @@ export default function ProductCateMasterPage() {
                 <div className="flex items-center justify-between gap-4 mb-5">
                     <div>
                         <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
-                            Danh mục chủng loại 
+                            Danh mục chủng loại
                         </h2>
                         <p className="text-xs text-slate-500 mt-1">
                             Quản lý chủng loại. Click vào một dòng để cập nhật.
                         </p>
                     </div>
 
-                    <button
-                        onClick={openCreateForm}
-                        className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
-                    >
-                        + Thêm mới
-                    </button>
+                    {permissions.canCreate && (
+                        <Button
+                            variant='primary'
+                            onClick={openCreateForm}
+                        >
+                            New
+                        </Button>
+                    )}
                 </div>
 
                 <ProductCateGroupTable

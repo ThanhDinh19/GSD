@@ -38,10 +38,7 @@ import OperationClusterDetailModal from '../components/OperationClusterDetailMod
 import GroupOverviewModal from '../components/GroupOverviewModal';
 
 export default function OperationClusterPage() {
-    const permissions =
-        usePermissions(
-            SCREEN.OPERATION_CLUSTER
-        );
+    const permissions = usePermissions(SCREEN.OPERATION_CLUSTER);
 
     const {
         items,
@@ -194,7 +191,7 @@ export default function OperationClusterPage() {
     }
 
     return (
-        <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto">
+        <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto bg-white">
             <div className="max-w-[1720px] mx-auto space-y-4">
                 <OperationClusterToolbar
                     canCreate={permissions.canCreate}

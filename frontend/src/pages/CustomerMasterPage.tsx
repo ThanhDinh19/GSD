@@ -3,8 +3,19 @@ import { Customer, CustomerPayload } from '../types';
 import { useCustomers } from '../hooks/useCustomers';
 import CustomerTable from '../components/customer/customerTable';
 import CustomerFormModal from '../components/customer/CustomerFormModal';
+import {
+  Button
+} from '../shared/components';
+
+import {
+  usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+  SCREEN,
+} from '../features/auth/constants/permission.constants';
 
 export default function CustomerMasterPage() {
+  const permissions = usePermissions(SCREEN.MASTER_DATA);
   const {
     customers,
     statuses,
@@ -19,7 +30,7 @@ export default function CustomerMasterPage() {
   const openCreateForm = () => {
     setSelectedCustomer(null);
     setIsFormOpen(true);
-  };    
+  };
 
   const openEditForm = (customer: Customer) => {
     setSelectedCustomer(customer);
@@ -54,12 +65,14 @@ export default function CustomerMasterPage() {
             </p>
           </div>
 
-          <button
-            onClick={openCreateForm}
-            className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
-          >
-            + Thêm mới
-          </button>
+          {permissions.canCreate && (
+            <Button
+              variant='primary'
+              onClick={openCreateForm}
+            >
+              New
+            </Button>
+          )}
         </div>
 
         <CustomerTable

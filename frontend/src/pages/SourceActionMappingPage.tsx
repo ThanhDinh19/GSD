@@ -1,8 +1,18 @@
 import { useMemo, useState } from 'react';
 import { GsdCode } from '../types';
 import { useSourceActionMapping } from '../hooks/useSourceActionMapping';
+import {
+    Button
+} from '../shared/components';
 
+import {
+    usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+    SCREEN,
+} from '../features/auth/constants/permission.constants';
 export default function SourceActionMappingPage() {
+    const permissions = usePermissions(SCREEN.MASTER_DATA);
     const {
         sources,
         gsdCodes,
@@ -104,39 +114,47 @@ export default function SourceActionMappingPage() {
                     </div>
 
                     <div className="flex gap-2">
-                        <button
-                            onClick={() => {
-                                setSelectedGsdIds([]);
-                                setIsPopupOpen(true);
-                            }}
-                            disabled={!selectedSourceId}
-                            className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800 disabled:opacity-50"
-                        >
-                            + Thêm thao tác
-                        </button>
 
-                        <button
-                            type="button"
-                            onClick={() => {
-                                const ok = confirm('Xóa tất cả thao tác khỏi source này?');
-                                if (!ok) return;
+                        {permissions.canCreate && (
+                            <Button
+                                variant='primary'
+                                onClick={() => {
+                                    setSelectedGsdIds([]);
+                                    setIsPopupOpen(true);
+                                }}
+                                disabled={!selectedSourceId}                            >
+                                New
+                            </Button>
+                        )}
 
-                                clearDetails();
-                                setHasChanged(true);
-                            }}
-                            disabled={!selectedSourceId || details.length === 0}
-                            className="px-4 py-2 border border-red-200 text-red-600 rounded-lg text-xs font-bold hover:bg-red-50 disabled:opacity-50"
-                        >
-                            Xóa tất cả
-                        </button>
+                        {hasChanged && (
+                            <Button
+                                variant='success'
+                                onClick={handleSave}
+                                disabled={!selectedSourceId}
+                            >
+                                Save
+                            </Button>
+                        )}
 
-                        <button
-                            onClick={handleSave}
-                            disabled={!selectedSourceId}
-                            className="px-4 py-2 bg-green-700 text-white rounded-lg text-xs font-bold hover:bg-green-800 disabled:opacity-50"
-                        >
-                            Lưu
-                        </button>
+                        {permissions.canDelete && (
+                            <Button
+                                variant='danger'
+                                onClick={() => {
+                                    const ok = confirm('Xóa tất cả thao tác khỏi source này?');
+                                    if (!ok) return;
+
+                                    clearDetails();
+                                    setHasChanged(true);
+                                }}
+                                disabled={!selectedSourceId || details.length === 0}
+                            >
+                                Delete all
+                            </Button>
+                        )}
+
+
+
                     </div>
                 </div>
 

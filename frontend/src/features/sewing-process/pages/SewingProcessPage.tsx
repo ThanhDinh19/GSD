@@ -6,6 +6,20 @@ import {
 import {
     Button
 } from '../../../shared/components';
+import {
+  Plus,
+  Trash2,
+  Save,
+  Download,
+  RefreshCw,
+  Search,
+  Pencil,
+  Edit,
+  Copy,
+  Import,
+  FileDown,
+  RefreshCcw
+} from 'lucide-react';
 
 import {
     useSewingProcess,
@@ -86,9 +100,66 @@ import {
     useToast
 } from '../../../shared/notifications/ToastProvider';
 
+import {
+    useOperationClusterEditor,
+} from '../../operation-cluster/hooks/useOperationClusterEditor';
+import {
+    useOperationClusterWorkflow,
+} from '../../operation-cluster/hooks/useOperationClusterWorkflow';
+
 
 export default function SewingProcessPage() {
     const permissions = usePermissions(SCREEN.SEWING_PROCESS);
+
+    // --------------------------------------------------------------------
+    const {
+        items: itemsOperationCluster,
+        loading: loadingOperationCluster,
+        gsdOptions,
+        saving: savingOperationCluster,
+        createItem,
+        copyItem,
+        updateItem,
+        loadItems,
+        loadDetail,
+        setSelectedDetail,
+        loadGsdActions,
+    } = useOperationClusters();
+
+    const editor =
+        useOperationClusterEditor({
+            gsdOptions,
+            loadGsdActions,
+        });
+
+    const workflow = useOperationClusterWorkflow({
+        form: editor.form,
+        groups: editor.groups,
+        requiredEfficiency: editor.requiredEfficiency,
+        formMode: editor.formMode,
+        editingId: editor.editingId,
+
+        loadItems,
+        loadDetail,
+        loadGsdActions,
+
+        createItem,
+        updateItem,
+        copyItem,
+
+        setSelectedDetail,
+
+        openEditFromDetail: editor.openEditFromDetail,
+        openCopyFromDetail: editor.openCopyFromDetail,
+        closeEditorAfterSave: editor.closeEditorAfterSave,
+    });
+
+    const {
+        handleOpenOperationActions,
+    } = workflow;
+
+    // --------------------------------------------------------------------
+
     const toast = useToast();
     const sewingProcess =
         useSewingProcess();
@@ -104,30 +175,15 @@ export default function SewingProcessPage() {
         machineEquiments_test,
     } = useMachineEquipments();
 
-    const {
-        items: rawOperationClusters,
-        loadDetail:
-        loadOperationClusterDetail,
-    } = useOperationClusters();
-
-    console.log(
-        'rawOperationClusters:',
-        rawOperationClusters
-    );
-
-    console.log(
-        'isArray:',
-        Array.isArray(rawOperationClusters)
-    );
-
 
     const operationClusters =
-        Array.isArray(rawOperationClusters)
-            ? rawOperationClusters
+        Array.isArray(itemsOperationCluster)
+            ? itemsOperationCluster
             : [];
 
     const {
         productCateGroups,
+        loading: productCateGroupsLoading,
     } = useProductCateGroups();
 
     const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -156,6 +212,7 @@ export default function SewingProcessPage() {
         imageUploading,
         setImageUploading,
     ] = useState(false);
+
 
     const {
         items,
@@ -432,9 +489,7 @@ export default function SewingProcessPage() {
             loadDetail:
                 async (id) => {
                     const detail =
-                        await loadOperationClusterDetail(
-                            id
-                        );
+                        await loadDetail(id);
 
                     return detail as
                         OperationClusterDetailDto;
@@ -501,6 +556,10 @@ export default function SewingProcessPage() {
         setModalMode('create');
     };
 
+    const openOperationCluster = () => {
+        editor.handleOpenCreateModal();
+    };
+
     const openDetail = async (id: number) => {
         await loadDetailToForm(id);
 
@@ -517,7 +576,7 @@ export default function SewingProcessPage() {
         }
 
         if (!selectedId) {
-            
+
             toast.warning(
                 "Vui lòng chọn chứng từ cần sửa.",
                 {
@@ -577,8 +636,8 @@ export default function SewingProcessPage() {
             return;
         }
 
-       
-        toast.success( 
+
+        toast.success(
             String(response.message),
             {
                 duration: 3000
@@ -615,30 +674,37 @@ export default function SewingProcessPage() {
     }
 
     return (
-        <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto">
+        <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto bg-white">
             <div className="ax-w-[1720px] mx-auto space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                   <div>    
+                    <div>
                         <h2 className="text-lg font-bold uppercase text-slate-800">
                             Danh sách quy trình may
                         </h2>
                     </div>
 
                     <div className="flex gap-2">
+
+
                         {permissions.canCreate && (
                             <Button
                                 variant="primary"
                                 onClick={openCreate}
+                                size='sm'
+                                leftIcon={<Plus className='w-4 h-4'/>}
                             >
                                 New
                             </Button>
                         )}
+
 
                         {permissions.canUpdate && (
                             <Button
                                 variant="warning"
                                 onClick={openEdit}
                                 disabled={!selectedId}
+                                size='sm'
+                                leftIcon={<Edit className='w-4 h-4'/>}
                             >
                                 Edit
                             </Button>
@@ -660,6 +726,8 @@ export default function SewingProcessPage() {
                         {permissions.canExport && (
                             <Button
                                 onClick={handleExportExcel}
+                                size='sm'
+                                leftIcon={<FileDown className='w-4 h-4'/>}
                             >
                                 Export
                             </Button>
@@ -671,6 +739,8 @@ export default function SewingProcessPage() {
                             }}
                             loading={loading}
                             loadingText="Loading..."
+                            size='sm'
+                            leftIcon={<RefreshCcw className='w-4 h-4'/>}
                         >
                             Refresh
                         </Button>
@@ -692,7 +762,7 @@ export default function SewingProcessPage() {
             {modalMode && (
                 <SewingProcessModal
                     mode={modalMode}
-                    saving={saving}
+                    savingSweingProcess={saving}
                     calculating={calculating}
                     onClose={() =>
                         setModalMode(null)
@@ -701,6 +771,11 @@ export default function SewingProcessPage() {
                         setModalMode('edit')
                     }
                     onSave={save}
+                    // onOperationClusterEditorModal={openOperationCluster}
+
+                    operationClusterEditor={editor}
+                    operationClusterWorkflow={workflow}
+                    savingOperationCluster={savingOperationCluster}
                 >
                     <SewingProcessForm
                         form={form}

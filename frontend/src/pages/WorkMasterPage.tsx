@@ -3,8 +3,19 @@ import { Work, WorkPayload } from '../types';
 import { useWorks } from '../hooks/useWorks';
 import WorkTable from '../components/work/workTable';
 import WorkFormModal from '../components/work/WorkFormModal';
+import {
+    Button
+} from '../shared/components';
+
+import {
+    usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+    SCREEN,
+} from '../features/auth/constants/permission.constants';
 
 export default function WorkMasterPage() {
+    const permissions = usePermissions(SCREEN.MASTER_DATA);
     const {
         works,
         statuses,
@@ -34,7 +45,7 @@ export default function WorkMasterPage() {
     const handleSubmit = async (payload: WorkPayload) => {
         if (selectedWork) {
             await updateWork(selectedWork.id, payload);
-    } else {
+        } else {
             await createWork(payload);
         }
 
@@ -54,12 +65,15 @@ export default function WorkMasterPage() {
                         </p>
                     </div>
 
-                    <button
-                        onClick={openCreateForm}
-                        className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
-                    >
-                        + Thêm mới
-                    </button>
+                    {permissions.canCreate && (
+                        <Button
+                            variant='primary'
+                            onClick={openCreateForm}
+                        >
+                            New
+                        </Button>
+                    )}
+
                 </div>
 
                 <WorkTable

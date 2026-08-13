@@ -60,6 +60,50 @@ function requirePermission(
     };
 }
 
+function requireAnyPermission(
+    ...permissionCodes
+) {
+    return async function (
+        req,
+        res,
+        next
+    ) {
+        try {
+            const userId = req.user?.id;
+
+            if (!userId) {
+                throw createHttpError(
+                    401,
+                    'Bạn chưa đăng nhập.',
+                    'UNAUTHORIZED'
+                );
+            }
+
+            const permission =
+                await authorizationService
+                    .hasAnyPermission(
+                        userId,
+                        permissionCodes
+                    );
+
+            if (!permission) {
+                throw createHttpError(
+                    403,
+                    'Bạn không có quyền thực hiện thao tác này.',
+                    'PERMISSION_DENIED'
+                );
+            }
+
+            req.permission = permission;
+
+            next();
+        } catch (error) {
+            next(error);
+        }
+    };
+}
+
 module.exports = {
     requirePermission,
+    requireAnyPermission,
 };

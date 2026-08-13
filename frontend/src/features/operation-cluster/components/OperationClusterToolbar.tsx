@@ -1,6 +1,21 @@
 import {
     Button,
 } from '../../../shared/components';
+import {
+  Plus,
+  Trash2,
+  Save,
+  Download,
+  RefreshCw,
+  Search,
+  Pencil,
+  Edit,
+  Copy,
+  Import,
+  FileDown,
+  RefreshCcw,
+  X
+} from 'lucide-react';
 
 type OperationClusterToolbarProps = {
     canCreate: boolean;
@@ -31,17 +46,19 @@ export default function OperationClusterToolbar({
 }: OperationClusterToolbarProps) {
     return (
         <div className="flex items-center justify-between mb-4">
-            <div>
+            {/* <div>
                 <h1 className="text-lg font-bold uppercase text-slate-800">
                     DANH SÁCH KHO CỤM CÔNG ĐOẠN
                 </h1>
-            </div>
+            </div> */}
 
             <div className="flex items-center gap-2">
                 {canCreate && (
                     <Button
                         variant="primary"
                         onClick={onNew}
+                        size='sm'
+                        leftIcon={<Plus className='w-4 h-4'/>}
                     >
                         New
                     </Button>
@@ -52,6 +69,8 @@ export default function OperationClusterToolbar({
                         variant="warning"
                         onClick={onEdit}
                         disabled={!selectedId}
+                        size='sm'
+                        leftIcon={<Edit className='w-4 h-4'/>}
                     >
                         Edit
                     </Button>
@@ -60,6 +79,8 @@ export default function OperationClusterToolbar({
                 {canCreate && (
                     <Button
                         onClick={onCopy}
+                        size='sm'
+                        leftIcon={<Copy className='w-4 h-4'/>}
                     >
                         Copy
                     </Button>
@@ -68,6 +89,8 @@ export default function OperationClusterToolbar({
                 {canExport && (
                     <Button
                         onClick={onExport}
+                        size='sm'
+                        leftIcon={<FileDown className='w-4 h-4'/>}
                     >
                         Export
                     </Button>
@@ -77,6 +100,8 @@ export default function OperationClusterToolbar({
                     onClick={onRefresh}
                     loading={loading}
                     loadingText="Loading..."
+                    size='sm'
+                    leftIcon={<RefreshCcw className='w-4 h-4'/>}
                 >
                     Refresh
                 </Button>

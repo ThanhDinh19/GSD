@@ -118,9 +118,7 @@ export function useOperationClusterWorkflow({
         setLoadingOperationActions,
     ] = useState(false);
 
-    const handleOpenOperationActions = async (
-        operation: OperationClusterOperationView
-    ) => {
+    const handleOpenOperationActions = async (operation: OperationClusterOperationView) => {
         const gsdAnalysisId = Number(
             operation.gsd_analysis_id || 0
         );

@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useState } from 'react';
 import { DepartmentNode_test } from '../types';
 import { useOrganizationChart_test } from '../hooks/useOrganizationChart_test';
+import {
+    Button
+} from '../shared/components';
+
+import {
+    usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+    SCREEN,
+} from '../features/auth/constants/permission.constants';
+
 
 type ContextMenuState = {
     x: number;
@@ -37,6 +48,7 @@ function DepartmentTreeNode({
     const hasChildren = node.children && node.children.length > 0;
     const isSelected = selectedId === node.department_code;
     const isInactive = node.status_id === 1;
+
 
     return (
         <div>
@@ -135,6 +147,8 @@ function collectDepartmentCodes(
 }
 
 export default function OrganizationChartPage() {
+    const permissions = usePermissions(SCREEN.ORGANIZATION_CHART);
+
     const {
         employees,
         departmentTypes,
@@ -347,13 +361,15 @@ export default function OrganizationChartPage() {
                     <div className="flex items-center justify-between mb-3 gap-3">
                         <h2 className="font-bold text-slate-700">Cây sơ đồ tổ chức</h2>
 
-                        <button
-                            type="button"
-                            onClick={handleCreateDepartment}
-                            className="px-3 py-1.5 rounded-sm bg-blue-600 text-white text-sm font-semibold hover:bg-blue-700"
-                        >
-                            + Tạo mới
-                        </button>
+                        {permissions.canCreate && (
+                            <Button
+                                variant='primary'
+                                onClick={handleCreateDepartment}
+                            >
+                                New
+                            </Button>
+                        )}
+
                     </div>
 
                     <label className="flex items-center gap-2 text-xs text-slate-600 mb-3 cursor-pointer">
@@ -625,25 +641,26 @@ export default function OrganizationChartPage() {
                                 </div>
                             </div>
 
-                            <div className="pt-4 flex gap-2">
-                                <button
-                                    type="button"
-                                    onClick={handleEditDepartment}
-                                    className="px-4 py-2 border border-amber-300 text-amber-700 rounded-sm text-xs font-bold hover:bg-amber-50 disabled:opacity-50"
-                                >
-                                    Sửa
-                                </button>
+                            {permissions.canUpdate && (
+                                <div className="pt-4 flex gap-2">
 
-                                {selectedDepartment.status_id === 0 && (
-                                    <button
-                                        type="button"
-                                        onClick={handleDissolveDepartment}
-                                        className="px-4 py-2 border border-amber-300 text-amber-700 rounded-sm text-xs font-bold hover:bg-amber-50 disabled:opacity-50"
+                                    <Button
+                                        variant="warning"
+                                        onClick={handleEditDepartment}
                                     >
-                                        Giải thể
-                                    </button>
-                                )}
-                            </div>
+                                        Edit
+                                    </Button>
+
+                                    {selectedDepartment.status_id === 0 && (
+                                        <Button
+                                            variant='danger'
+                                            onClick={handleDissolveDepartment}
+                                        >
+                                            Giải thể
+                                        </Button>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -674,9 +691,9 @@ export default function OrganizationChartPage() {
                 </div>
             )}
 
-            {contextMenu && (
+            {(permissions.canCreate && contextMenu) && (
                 <div
-                    className="fixed z-[9999] w-56 bg-white border border-slate-200 rounded-xl shadow-xl py-2"
+                    className="fixed z-[9999] w-56 bg-white border border-slate-200 rounded-sm shadow-xl py-2"
                     style={{
                         left: contextMenu.x,
                         top: contextMenu.y,

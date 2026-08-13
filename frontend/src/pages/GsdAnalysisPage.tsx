@@ -33,15 +33,6 @@ function formatNumber(value: number | null | undefined, digits = 4) {
     return numberValue.toFixed(digits);
 }
 
-// function formatDateTime(value?: string) {
-//     if (!value) return '';
-
-//     const date = new Date(value);
-
-//     if (Number.isNaN(date.getTime())) return value;
-
-//     return date.toLocaleString('vi-VN');
-// }
 
 function getLaborGradeByDifficulty(value: number | null | undefined) {
     if (value === null || value === undefined || value === 0) return 2;

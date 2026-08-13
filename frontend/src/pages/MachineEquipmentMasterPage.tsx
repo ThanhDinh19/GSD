@@ -1,6 +1,16 @@
 import { useState } from 'react';
 import { MachineEquipment, MachineEquipment_test, MachineEquipmentPayload } from '../types';
 import { useMachineEquipments } from '../hooks/useMachineEquipments';
+import {
+  Button
+} from '../shared/components';
+
+import {
+  usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+  SCREEN,
+} from '../features/auth/constants/permission.constants';
 
 const emptyForm: MachineEquipmentPayload = {
   machineCode: '',
@@ -18,6 +28,7 @@ const emptyForm: MachineEquipmentPayload = {
 };
 
 export default function MachineEquipmentMasterPage() {
+  const permissions = usePermissions(SCREEN.MASTER_DATA);
   const {
     machineEquipments,
     machineEquiments_test,
@@ -34,7 +45,7 @@ export default function MachineEquipmentMasterPage() {
 
   // Dinh, 28/06/2026
   const [selectedItem_test, setSelectedItem_test] = useState<MachineEquipment_test | null>(null);
-  
+
 
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -110,12 +121,15 @@ export default function MachineEquipmentMasterPage() {
             </p>
           </div>
 
-          <button
-            onClick={openCreateForm}
-            className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
-          >
-            + Thêm mới
-          </button>
+          {permissions.canCreate && (
+            <Button
+              variant='primary'
+              onClick={openCreateForm}
+            >
+              New
+            </Button>
+          )}
+
         </div>
 
         <div className="overflow-x-auto border border-slate-200 rounded-lg">
@@ -125,7 +139,6 @@ export default function MachineEquipmentMasterPage() {
                 <th className="px-4 py-3 text-left">STT</th>
                 <th className="px-4 py-3 text-left">Code MMTB</th>
                 <th className="px-4 py-3 text-left">Tên MMTB</th>
-        
                 <th className="px-4 py-3 text-left">Code</th>
                 <th className="px-4 py-3 text-right">Hao phí</th>
                 <th className="px-4 py-3 text-left">Thao tác kèm theo</th>
@@ -172,11 +185,10 @@ export default function MachineEquipmentMasterPage() {
                   <td className="px-4 py-3 text-slate-700">{item.skillGrade || ''}</td>
                   <td className="px-4 py-3">
                     <span
-                      className={`px-2 py-1 rounded-full text-[10px] font-bold ${
-                        item.statusId === 0
+                      className={`px-2 py-1 rounded-full text-[10px] font-bold ${item.statusId === 0
                           ? 'bg-green-50 text-green-700 border border-green-200'
                           : 'bg-slate-100 text-slate-500 border border-slate-200'
-                      }`}
+                        }`}
                     >
                       {item.statusName || 'Không rõ'}
                     </span>
@@ -285,7 +297,7 @@ export default function MachineEquipmentMasterPage() {
                   <label className="block text-xs font-bold text-slate-600 mb-1">
                     Thao tác kèm theo
                   </label>
-                  <input 
+                  <input
                     type="number"
                     step="0.01"
                     value={form.attachedActionTime ?? ''}

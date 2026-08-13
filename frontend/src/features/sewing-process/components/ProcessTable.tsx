@@ -127,7 +127,7 @@ export function ProcessTable({
             </th>
 
             <th className="border border-slate-300 px-2 py-2">
-              SMV điều chỉnh
+              SMV theo hiệu suất
             </th>
 
             <th className="border border-slate-300 px-2 py-2">

@@ -32,10 +32,34 @@ import type {
   OperationClusterHeader,
 } from '../types/operationCluster.types';
 
+import {
+  usePermissions,
+} from '../../auth/hooks/usePermissions';
+import {
+  SCREEN,
+} from '../../auth/constants/permission.constants';
 
 import {
   Button
 } from '../../../shared/components'
+import {
+  Plus,
+  Trash2,
+  Save,
+  Download,
+  RefreshCw,
+  Search,
+  Pencil,
+  Edit,
+  Copy,
+  Import,
+  FileDown,
+  RefreshCcw,
+  X
+} from 'lucide-react';
+
+import GsdAnalysisModal
+  from '../../../components/GsdAnalysisModal';
 
 type TreeOperation = {
   key: string;
@@ -260,7 +284,7 @@ function buildDisplayTree(
             .map(
               (items) =>
                 items[
-                  bucketIndex
+                bucketIndex
                 ]
             )
             .filter(
@@ -1067,6 +1091,23 @@ async function loadDetailsInBatches(
 }
 
 export default function OperationClusterTreeOrderedByLineNo() {
+  const permissions = usePermissions(SCREEN.OPERATION_CLUSTER_NEW);
+
+  const [
+    gsdAnalysisOpen,
+    setGsdAnalysisOpen,
+  ] = useState(false);
+
+  const [
+    editGsdAnalysisId,
+    setEditGsdAnalysisId,
+  ] = useState<number | null>(null);
+
+  const [
+    copyGsdAnalysisId,
+    setCopyGsdAnalysisId,
+  ] = useState<number | null>(null);
+
   const [
     treeData,
     setTreeData,
@@ -2307,6 +2348,11 @@ export default function OperationClusterTreeOrderedByLineNo() {
       resetGsdPopup();
     };
 
+  const openGsdAnalysis = () => {
+    setEditGsdAnalysisId(null);
+    setCopyGsdAnalysisId(null);
+    setGsdAnalysisOpen(true);
+  };
 
   return (
     <div className="h-full min-h-0 bg-slate-50 p-3 text-slate-800">
@@ -2743,26 +2789,33 @@ export default function OperationClusterTreeOrderedByLineNo() {
               </div>
 
               <div className='flex gap-2'>
-                <Button
-                  type="button"
-                  onClick={
-                    hasPendingChanges
-                      ? handleSaveCurrentDocument
-                      : handleOpenGsdPopup
-                  }
-                  disabled={
-                    !cluster ||
-                    isSavingCurrentDocument
-                  }
-                  variant={hasPendingChanges ? 'success' : 'primary'}
-                >
-                  {isSavingCurrentDocument
-                    ? 'Đang lưu...'
-                    : hasPendingChanges
-                      ? 'Lưu'
-                      : 'Thêm'}
-                </Button>
 
+
+
+                {permissions.canCreate && (
+                  <Button
+                    onClick={
+                      hasPendingChanges
+                        ? handleSaveCurrentDocument
+                        : handleOpenGsdPopup
+                    }
+                    disabled={
+                      !cluster ||
+                      isSavingCurrentDocument
+                    }
+                    variant={hasPendingChanges ? 'success' : 'primary'}
+                    size='sm'
+                    leftIcon={hasPendingChanges ? <Save className='w-4 h-4' /> : <Plus className='w-4 h-4' />}
+                  >
+                    {isSavingCurrentDocument
+                      ? 'Đang lưu...'
+                      : hasPendingChanges
+                        ? 'Lưu'
+                        : 'Thêm'}
+
+                  </Button>
+                )}
+                
                 {hasPendingChanges && (
                   <Button
                     type="button"
@@ -2773,10 +2826,20 @@ export default function OperationClusterTreeOrderedByLineNo() {
                     disabled={
                       isSavingCurrentDocument
                     }
+                    size='sm'
+                    leftIcon={<X className='w-4 h-4'/>}
                   >
                     Hủy
                   </Button>
                 )}
+
+                <Button
+                  variant="primary"
+                  onClick={openGsdAnalysis}
+                  size='sm'
+                >
+                  GSD Chuyền may
+                </Button>
               </div>
 
             </div>
@@ -3079,6 +3142,24 @@ export default function OperationClusterTreeOrderedByLineNo() {
         onConfirm={
           handleConfirmSelectGsd
         }
+      />
+
+      <GsdAnalysisModal
+        open={gsdAnalysisOpen}
+        editAnalysisId={editGsdAnalysisId}
+        copyAnalysisId={copyGsdAnalysisId}
+        onClose={() => {
+          setGsdAnalysisOpen(false);
+          setEditGsdAnalysisId(null);
+          setCopyGsdAnalysisId(null);
+        }}
+        onSaveSuccess={async () => {
+          await loadGsdOptions();
+
+          setGsdAnalysisOpen(false);
+          setEditGsdAnalysisId(null);
+          setCopyGsdAnalysisId(null);
+        }}
       />
     </div>
   );

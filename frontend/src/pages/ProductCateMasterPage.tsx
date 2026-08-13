@@ -3,9 +3,19 @@ import { ProductCate, ProductCatePayload } from '../types';
 import { useProductCates } from '../hooks/useProductCate';
 import ProductCateFormModal from '../components/productCate/productCateFormModal';
 import ProductCateTable from '../components/productCate/productCateTable';
-import {Button} from '../shared/components';
+import {
+    Button
+} from '../shared/components';
+
+import {
+    usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+    SCREEN,
+} from '../features/auth/constants/permission.constants';
 
 export default function ProductCateMasterPage() {
+    const permissions = usePermissions(SCREEN.MASTER_DATA);
     const {
         productCates,
         statuses,
@@ -35,7 +45,7 @@ export default function ProductCateMasterPage() {
     const handleSubmit = async (payload: ProductCatePayload) => {
         if (selectedProductCate) {
             await updateProductCate(selectedProductCate.id, payload);
-    } else {
+        } else {
             await createProductCate(payload);
         }
         closeForm();
@@ -47,19 +57,21 @@ export default function ProductCateMasterPage() {
                 <div className="flex items-center justify-between gap-4 mb-5">
                     <div>
                         <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
-                            Danh mục chủng loại 
+                            Danh mục chủng loại
                         </h2>
                         <p className="text-xs text-slate-500 mt-1">
                             Quản lý chủng loại. Click vào một dòng để cập nhật.
                         </p>
                     </div>
 
-                    <Button
-                        variant='primary'
-                        onClick={openCreateForm}
-                    >
-                        New
-                    </Button>
+                    {permissions.canCreate && (
+                        <Button
+                            variant='primary'
+                            onClick={openCreateForm}
+                        >
+                            New
+                        </Button>
+                    )}
                 </div>
 
                 <ProductCateTable

@@ -2,6 +2,16 @@ import { useRef, useState } from 'react';
 import { SourceMaster, SourceMasterPayload } from '../types';
 import { useSources } from '../hooks/useSources';
 import { sourceService } from '../services/source.service';
+import {
+  Button
+} from '../shared/components';
+
+import {
+  usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+  SCREEN,
+} from '../features/auth/constants/permission.constants';
 
 const emptyForm: SourceMasterPayload = {
   sourceCode: '',
@@ -11,6 +21,7 @@ const emptyForm: SourceMasterPayload = {
 };
 
 export default function SourceMasterPage() {
+  const permissions = usePermissions(SCREEN.MASTER_DATA);
   const {
     sources,
     statuses,
@@ -141,13 +152,15 @@ export default function SourceMasterPage() {
               {importing ? 'Đang import...' : 'Import Excel'}
             </button>
 
-            <button
-              type="button"
-              onClick={openCreateForm}
-              className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
-            >
-              + Thêm mới
-            </button>
+            {permissions.canCreate && (
+              <Button
+                variant='primary'
+                onClick={openCreateForm}
+              >
+                New
+              </Button>
+            )}
+            
           </div>
         </div>
 

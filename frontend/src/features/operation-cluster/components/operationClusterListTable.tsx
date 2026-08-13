@@ -117,16 +117,11 @@ export default function OperationClusterListTable({
                                     </td>
 
                                     <td className="p-3 border border-slate-200">
-                                        {item.product_code && item.product_name
-                                            ? `${item.product_code} - ${item.product_name}`
-                                            : item.product_name || item.product_category_id}
+                                        {item.product_name}
                                     </td>
 
                                     <td className="p-3 border border-slate-200">
-                                        {item.category_group_code && item.category_group_name
-                                            ? `${item.category_group_code} - ${item.category_group_name}`
-                                            : item.category_group_name ||
-                                              item.product_category_group_id}
+                                        {item.category_group_name}
                                     </td>
 
                                     <td className="p-3 border border-slate-200 text-right font-bold">

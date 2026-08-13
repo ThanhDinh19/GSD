@@ -9,6 +9,35 @@ import {
   SCREEN,
 } from '../../auth/constants/permission.constants';
 
+import {
+  Button
+} from '../../../shared/components';
+// ---------------------------------------------------------------------
+// import {
+//   useOperationClusterEditor,
+// } from '../../operation-cluster/hooks/useOperationClusterEditor';
+// import {
+//   useOperationClusters,
+// } from '../../../hooks/useOperationClusters';
+import {
+  useWorks,
+} from '../../../hooks/useWorks';
+import {
+  useProductCates,
+} from '../../../hooks/useProductCate';
+import {
+  useProductCateGroups,
+} from '../../../hooks/useProductCateGroup';
+import {
+  useOperationClusterWorkflow,
+} from '../../operation-cluster/hooks/useOperationClusterWorkflow';
+import OperationClusterEditorModal from '../../operation-cluster/components/OperationClusterEditorModal';
+import GsdPickerModal from '../../operation-cluster/components/GsdPickerModal';
+import type {
+  OperationClusterEditorController,
+} from '../../operation-cluster/hooks/useOperationClusterEditor';
+//-----------------------------------------------------------------------
+
 export type SewingProcessModalMode =
   | 'create'
   | 'view'
@@ -17,26 +46,76 @@ export type SewingProcessModalMode =
 type SewingProcessModalProps = {
   mode: SewingProcessModalMode;
 
-  saving: boolean;
+  savingSweingProcess: boolean;
   calculating: boolean;
+  savingOperationCluster: boolean;
 
   onClose: () => void;
   onEdit: () => void;
   onSave: () => void;
+
+  operationClusterEditor: OperationClusterEditorController;
+  operationClusterWorkflow: ReturnType<typeof useOperationClusterWorkflow>;
 
   children: ReactNode;
 };
 
 export function SewingProcessModal({
   mode,
-  saving,
+  savingSweingProcess,
   calculating,
+  savingOperationCluster,
+
   onClose,
   onEdit,
   onSave,
+
+  operationClusterEditor,
+  operationClusterWorkflow,
+
   children,
 }: SewingProcessModalProps) {
+
   const permissions = usePermissions(SCREEN.SEWING_PROCESS);
+  // -----------------------------------------------------------
+  // const {
+  //   gsdOptions,
+  //   loadGsdActions,
+  // } = useOperationClusters();
+
+  // const editor = useOperationClusterEditor({ gsdOptions, loadGsdActions });
+
+  const {
+    isGsdPopupOpen,
+    gsdSearch,
+    checkedGsdIds,
+    filteredGsdOptions,
+    checkedGsds,
+    gsdActionsMap,
+    loadingActionIds,
+    setGsdSearch,
+    handleToggleGsd,
+    handleCloseGsdPopup,
+    handleConfirmSelectGsd,
+  } = operationClusterEditor;
+
+  const {
+    works,
+    loading: worksLoading,
+  } = useWorks();
+
+  const {
+    productCates,
+    loading: productCatesLoading,
+  } = useProductCates();
+
+  const {
+    productCateGroups,
+    loading: productCateGroupsLoading,
+  } = useProductCateGroups();
+
+  // -----------------------------------------------------------
+
   const isViewMode =
     mode === 'view';
 
@@ -46,6 +125,7 @@ export function SewingProcessModal({
       : mode === 'edit'
         ? 'Sửa bảng quy trình may'
         : 'Chi tiết bảng quy trình may';
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -69,48 +149,82 @@ export function SewingProcessModal({
         </div>
 
         <div className="flex justify-end gap-2 border-t border-slate-200 px-5 py-4">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-sm border border-slate-300 px-4 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50"
-          >
-            Đóng
-          </button>
-
-
           {isViewMode ? (
 
             permissions.canUpdate && (
-              <button
-                type="button"
+              <Button
+                variant='warning'
                 onClick={onEdit}
-                className="rounded-sm bg-amber-600 px-4 py-2 text-xs font-bold text-white hover:bg-amber-700"
+                size='sm'
               >
                 Sửa
-              </button>
+              </Button>
             )
 
           ) : (
             permissions.canUpdate && (
-              <button
-                type="button"
+              <Button
+                size='sm'
+                variant='success'
                 onClick={onSave}
                 disabled={
-                  saving ||
+                  savingSweingProcess ||
                   calculating
-                }
-                className="rounded-sm bg-green-700 px-4 py-2 text-xs font-bold text-white hover:bg-green-800 disabled:opacity-50"
-              >
-                {saving
+                }              >
+                {savingSweingProcess
                   ? 'Đang lưu...'
                   : 'Lưu'}
-              </button>
+              </Button>
             )
           )}
 
+          <Button
+            variant="primary"
+            onClick={
+              operationClusterEditor.handleOpenCreateModal
+            }
+            size='sm'
+          >
+            Thêm cụm công đoạn
+          </Button>
 
+          <Button
+            onClick={onClose}
+            size='sm'
+          >
+            Đóng
+          </Button>
         </div>
+
       </div>
+
+      <OperationClusterEditorModal
+        editor={operationClusterEditor}
+        saving={savingOperationCluster}
+        works={works}
+        productCates={productCates}
+        productCateGroups={productCateGroups}
+        worksLoading={worksLoading}
+        productCatesLoading={productCatesLoading}
+        productCateGroupsLoading={productCateGroupsLoading}
+        onSave={operationClusterWorkflow.handleSave}
+        onOpenOperationActions={operationClusterWorkflow.handleOpenOperationActions}
+      />
+
+      <GsdPickerModal
+        open={isGsdPopupOpen}
+        search={gsdSearch}
+        checkedIds={checkedGsdIds}
+        options={filteredGsdOptions}
+        checkedGsds={checkedGsds}
+        actionsMap={gsdActionsMap}
+        loadingActionIds={loadingActionIds}
+        onSearchChange={setGsdSearch}
+        onToggle={handleToggleGsd}
+        onCancel={handleCloseGsdPopup}
+        onConfirm={handleConfirmSelectGsd}
+      />
+
     </div>
   );
 }

@@ -12,6 +12,20 @@ import {
 import {
     Button
 } from '../../shared/components';
+import {
+  Plus,
+  Trash2,
+  Save,
+  Download,
+  RefreshCw,
+  Search,
+  Pencil,
+  Edit,
+  Copy,
+  Import,
+  FileDown,
+  RefreshCcw
+} from 'lucide-react';
 
 interface GsdProcessTableProps {
     analyses: GsdAnalysisSummary[];
@@ -112,7 +126,8 @@ export default function GsdProcessTable({
                             <Button
                                 variant='primary'
                                 onClick={onCreate}
-
+                                size='sm'
+                                leftIcon={<Plus className='w-4 h-4'/>}
                             >
                                 New
                             </Button>
@@ -123,7 +138,8 @@ export default function GsdProcessTable({
                                 variant='warning'
                                 onClick={onEdit}
                                 disabled={!selectedId}
-
+                                size='sm'
+                                leftIcon={<Edit className='w-4 h-4'/>}
                             >
                                 Edit
                             </Button>
@@ -134,11 +150,13 @@ export default function GsdProcessTable({
                                 type="button"
                                 onClick={onCopy}
                                 disabled={!selectedId}
+                                size='sm'
+                                leftIcon={<Copy className='w-4 h-4'/>}
                             >
                                 Copy
                             </Button>
                         )}
-                        
+
                         {/* 
                         {permissions.canDelete && (
                             <Button
@@ -156,6 +174,8 @@ export default function GsdProcessTable({
                             <Button
                                 onClick={onRefresh}
                                 disabled={loading}
+                                size='sm'
+                                leftIcon={<RefreshCcw className='w-4 h-4'/>}
                             >
                                 {loading ? 'Loading...' : 'Refresh'}
                             </Button>

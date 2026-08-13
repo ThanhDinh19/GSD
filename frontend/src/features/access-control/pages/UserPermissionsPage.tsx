@@ -17,9 +17,7 @@ import {
 } from '../../../shared/components';
 
 export default function UserPermissionsPage() {
-  const permissions = usePermissions(
-    'SYSTEM.USER_PERMISSIONS'
-  );
+  const permissions = usePermissions('SYSTEM.USER_PERMISSIONS');
 
   const {
     users,

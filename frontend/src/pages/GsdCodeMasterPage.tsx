@@ -2,6 +2,16 @@ import { useRef, useState } from 'react';
 import { GsdCode, GsdCodePayload } from '../types';
 import { useGsdCodes } from '../hooks/useGsdCodes';
 import { gsdCodeService } from '../services/gsdCode.service';
+import {
+    Button
+} from '../shared/components';
+
+import {
+    usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+    SCREEN,
+} from '../features/auth/constants/permission.constants';
 
 const emptyForm: GsdCodePayload = {
     actionCode: '',
@@ -19,6 +29,7 @@ const emptyForm: GsdCodePayload = {
 // }
 
 export default function GsdCodeMasterPage() {
+    const permissions = usePermissions(SCREEN.MASTER_DATA);
     const {
         gsdCodes,
         statuses,
@@ -160,20 +171,22 @@ export default function GsdCodeMasterPage() {
                             className="hidden"
                         />
 
-                        <button
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={importing}
-                            className="px-4 py-2 border border-blue-200 text-blue-700 rounded-lg text-xs font-bold hover:bg-blue-50 disabled:opacity-50"
-                        >
-                            {importing ? 'Đang import...' : 'Import Excel'}
-                        </button>
 
-                        <button
-                            onClick={openCreateForm}
-                            className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
-                        >
-                            + Thêm mới
-                        </button>
+                        <Button
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={importing}                        >
+                            {importing ? 'Đang import...' : 'Import Excel'}
+                        </Button>
+
+
+                        {permissions.canCreate && (
+                            <Button
+                                variant='primary'
+                                onClick={openCreateForm}
+                            >
+                                Thêm
+                            </Button>
+                        )}
                     </div>
                 </div>
 

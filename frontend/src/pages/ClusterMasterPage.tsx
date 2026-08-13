@@ -3,8 +3,20 @@ import { Cluster, ClusterPayload } from '../types';
 import { useClusters } from '../hooks/useClusters';
 import ClusterTable from '../components/cluster/ClusterTable';
 import ClusterFormModal from '../components/cluster/ClusterFormModal';
+import {
+  Button
+} from '../shared/components';
+
+import {
+  usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+  SCREEN,
+} from '../features/auth/constants/permission.constants';
 
 export default function ClusterMasterPage() {
+  const permissions = usePermissions(SCREEN.MASTER_DATA);
+
   const {
     clusters,
     statuses,
@@ -53,12 +65,15 @@ export default function ClusterMasterPage() {
             </p>
           </div>
 
-          <button
-            onClick={openCreateForm}
-            className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
-          >
-            + Thêm mới
-          </button>
+          {permissions.canCreate && (
+            <Button
+              variant='primary'
+              onClick={openCreateForm}
+            >
+              New
+            </Button>
+          )}
+
         </div>
 
         <ClusterTable

@@ -21,7 +21,7 @@ const uploadSewingProcessImage = multer({
         if (!file.mimetype.startsWith('image/')) {
             return cb(new Error('Chỉ được upload file hình ảnh.'));
         }
-
+        
         cb(null, true);
     },
     limits: {

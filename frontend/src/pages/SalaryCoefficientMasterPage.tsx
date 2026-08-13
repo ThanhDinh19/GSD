@@ -4,7 +4,20 @@ import { useSalaryCoefficients } from '../hooks/useSalaryCoefficient';
 import SalaryCoefficientTable from '../components/salaryCoefficient/salaryCoefficientTable';
 import SalaryCoefficientFormModal from '../components/salaryCoefficient/salaryCoefficientFormModal';
 
+import {
+    Button
+} from '../shared/components';
+
+import {
+    usePermissions,
+} from '../features/auth/hooks/usePermissions';
+import {
+    SCREEN,
+} from '../features/auth/constants/permission.constants';
+
 export default function SalaryCoefficientMasterPage() {
+    const permissions = usePermissions(SCREEN.MASTER_DATA);
+
     const {
         salaryCoefficients,
         skillGrades,
@@ -35,7 +48,7 @@ export default function SalaryCoefficientMasterPage() {
     const handleSubmit = async (payload: SalaryCoefficientPayload) => {
         if (selectedSalaryCoefficient) {
             await updateSalaryCoefficient(selectedSalaryCoefficient.id, payload);
-    } else {
+        } else {
             await createSalaryCoefficient(payload);
         }
 
@@ -55,12 +68,15 @@ export default function SalaryCoefficientMasterPage() {
                         </p>
                     </div>
 
-                    <button
-                        onClick={openCreateForm}
-                        className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
-                    >
-                        + Thêm mới
-                    </button>
+                    {permissions.canCreate && (
+                        <Button
+                            variant='primary'
+                            onClick={openCreateForm}
+                        >
+                            New
+                        </Button>
+                    )}
+                    
                 </div>
 
                 <SalaryCoefficientTable

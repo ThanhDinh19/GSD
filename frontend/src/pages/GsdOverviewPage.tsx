@@ -141,17 +141,17 @@ export default function GsdOverviewPage() {
 
     return (
         <div className="space-y-0">
-            <div className="bg-white border border-slate-100 p-5">
-                <div className="flex items-center justify-between gap-4 mb-5">
-                    <div>
-                        <h1 className="text-xl font-bold text-slate-800 uppercase tracking-tight">
+            <div className="bg-white border border-slate-100 p-3">
+                <div className="flex items-center justify-between gap-4 mb-1">
+                    {/* <div>
+                        <h1 className="text-sm font-bold text-slate-800 uppercase tracking-tight">
                             Tổng quan phân tích GSD
                         </h1>
-
+                            
                         <p className="text-xs text-slate-500 mt-1">
                             Theo dõi công đoạn đã phân tích và khai báo công đoạn mới.
                         </p>
-                    </div>
+                    </div> */}
 
                     {/* <button
                         type="button"
