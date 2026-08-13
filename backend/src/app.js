@@ -18,10 +18,34 @@ const app = express();
 // dinh 25/07/2026
 app.set('trust proxy', 1);
 
+// app.use(
+//     cors({
+//         origin: process.env.FRONTEND_ORIGIN || process.env.FRONTEND_ORIGIN_,
+//         credentials: true,
+//     })
+// );
+
+const allowedOrigins = (process.env.FRONTEND_ORIGINS || '')
+    .split(',')
+    .map(origin => origin.trim())
+    .filter(Boolean);
+
 app.use(
     cors({
-        origin:
-            process.env.FRONTEND_ORIGIN,
+        origin: (origin, callback) => {
+            // curl / server-to-server thường không có Origin
+            if (!origin) {
+                return callback(null, true);
+            }
+
+            if (allowedOrigins.includes(origin)) {
+                return callback(null, true);
+            }
+
+            return callback(
+                new Error(`CORS blocked origin: ${origin}`)
+            );
+        },
         credentials: true,
     })
 );
@@ -31,9 +55,6 @@ app.use(express.json({
 }));
 
 app.use(cookieParser());
-
-
-
 
 // 1. Serve hình ảnh upload trước SPA fallback
 app.use(

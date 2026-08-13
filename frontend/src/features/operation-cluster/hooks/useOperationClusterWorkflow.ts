@@ -357,9 +357,8 @@ export function useOperationClusterWorkflow({
             // if (!hasOperation) {
             //     alert(
             //         'Vui lòng chọn ít nhất một công đoạn GSD'
-            //     );   
-            //     return;
-            // }
+            //     );
+
 
             const payload:
                 CreateOperationClusterPayload = {
