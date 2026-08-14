@@ -11,6 +11,8 @@ export type AuthUser = {
   loginEmail: string | null;
   fullName: string;
   departmentCode: string | null;
+  unitCode: string | null;
+  unitName: string | null;
 };
 
 export type AuthRole = {

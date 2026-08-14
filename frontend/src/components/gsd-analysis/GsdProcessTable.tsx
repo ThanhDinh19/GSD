@@ -13,18 +13,18 @@ import {
     Button
 } from '../../shared/components';
 import {
-  Plus,
-  Trash2,
-  Save,
-  Download,
-  RefreshCw,
-  Search,
-  Pencil,
-  Edit,
-  Copy,
-  Import,
-  FileDown,
-  RefreshCcw
+    Plus,
+    Trash2,
+    Save,
+    Download,
+    RefreshCw,
+    Search,
+    Pencil,
+    Edit,
+    Copy,
+    Import,
+    FileDown,
+    RefreshCcw
 } from 'lucide-react';
 
 interface GsdProcessTableProps {
@@ -127,7 +127,7 @@ export default function GsdProcessTable({
                                 variant='primary'
                                 onClick={onCreate}
                                 size='sm'
-                                leftIcon={<Plus className='w-4 h-4'/>}
+                                leftIcon={<Plus className='w-4 h-4' />}
                             >
                                 New
                             </Button>
@@ -139,7 +139,7 @@ export default function GsdProcessTable({
                                 onClick={onEdit}
                                 disabled={!selectedId}
                                 size='sm'
-                                leftIcon={<Edit className='w-4 h-4'/>}
+                                leftIcon={<Edit className='w-4 h-4' />}
                             >
                                 Edit
                             </Button>
@@ -151,7 +151,7 @@ export default function GsdProcessTable({
                                 onClick={onCopy}
                                 disabled={!selectedId}
                                 size='sm'
-                                leftIcon={<Copy className='w-4 h-4'/>}
+                                leftIcon={<Copy className='w-4 h-4' />}
                             >
                                 Copy
                             </Button>
@@ -175,7 +175,7 @@ export default function GsdProcessTable({
                                 onClick={onRefresh}
                                 disabled={loading}
                                 size='sm'
-                                leftIcon={<RefreshCcw className='w-4 h-4'/>}
+                                leftIcon={<RefreshCcw className='w-4 h-4' />}
                             >
                                 {loading ? 'Loading...' : 'Refresh'}
                             </Button>
@@ -184,7 +184,7 @@ export default function GsdProcessTable({
                 )}
             </div>
 
-            <div className="h-[500px] overflow-auto border border-slate-200 rounded-lg">
+            <div className="h-[534px] overflow-auto border border-slate-200 rounded-lg">
                 <table className="min-w-[1100px] w-full text-xs border-collapse">
                     <thead className="bg-slate-50 text-slate-500 uppercase sticky top-0 z-10">
                         <tr>
@@ -275,10 +275,14 @@ export default function GsdProcessTable({
                                         onClick={() =>
                                             onRowClick?.(item.id)
                                         }
-                                        className={`cursor-pointer ${isSelected
-                                            ? 'bg-blue-100'
-                                            : 'hover:bg-blue-50'
-                                            }`}
+                                        className={`
+                                            cursor-pointer
+                                            transition-colors
+                                            ${isSelected
+                                                ? 'bg-blue-100'
+                                                : 'bg-white hover:bg-blue-50'
+                                            }
+                                        `}
                                         title="Chọn công đoạn"
                                     >
 

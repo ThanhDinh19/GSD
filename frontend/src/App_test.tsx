@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import MasterDataView from './components/MasterDataView';
 import GsdAnalysisView from './components/GsdAnalysisView';
 import OrganizationChartPage from './pages/OrganizationChartPage';
@@ -8,15 +8,14 @@ import MasterDataPage_test from './pages/MasterDataPage_test';
 import OperationClusterPage_test from './pages/OperationClusterPage_test';
 import SewingProcessPage from './pages/SewingProcessPage'; // chưa tách file
 import SewingProcessPage_test from '../src/features/sewing-process/pages/SewingProcessPage'; // đã tách file
-
 import OperationClusterPage_test_v2 from '../src/features/operation-cluster/pages/operationClusterPage'; // đã tách file
-
 import OperationClusterTreeRealDataTest from '../src/features/operation-cluster/pages/OperationClusterTreeRealDataTest';
 import UserPermissionsPage from '../src/features/access-control/pages/UserPermissionsPage';
 import { useAuth } from './features/auth/hooks/useAuth';
 import SystemUsersPage from './features/system-users/pages/SystemUsersPage';
 import RoleManagementPage from './features/role-management/pages/RoleManagementPage';
 import SystemEmployeesPage from './features/system-employees/pages/SystemEmployeesPage';
+import { ChevronDown, LogOut, UserRound, } from 'lucide-react';
 
 // Import Syncfusion Spreadsheet CSS files
 import "@syncfusion/ej2-base/styles/material.css";
@@ -88,7 +87,7 @@ export default function App_test() {
     key: MasterDataTestTabKey;
     label: string;
   }[] = [
-      { key: 'clusters', label: 'Danh mục công đoạn' },
+      { key: 'clusters', label: 'Danh mục cụm' },
       { key: 'machine-equipments', label: 'Danh mục MMTB' },
       { key: 'skill-grade', label: 'Danh mục bậc thợ' },
       { key: 'salary-coefficient', label: 'Danh mục hệ số lương' },
@@ -102,6 +101,31 @@ export default function App_test() {
       { key: 'customer', label: 'Khách hàng' },
     ];
 
+
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        userMenuRef.current &&
+        !userMenuRef.current.contains(event.target as Node)
+      ) {
+        setUserMenuOpen(false);
+      }
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
   // useEffect(() => {
   //   if (activeTab !== 'master-data-test') {
   //     setIsMasterDataTestOpen(false);
@@ -114,7 +138,7 @@ export default function App_test() {
     }
 
     if (permissionsGsdAnalysis.canView) {
-      setActiveTab('gsd-analysis');
+      setActiveTab('GSD chuyền may');
       return;
     }
 
@@ -126,7 +150,7 @@ export default function App_test() {
     }
 
     if (permissionsOperationClusterNew.canView) {
-      setActiveTab('Operation-Cluster');
+      setActiveTab('Kho cụm công đoạn mới');
       return;
     }
 
@@ -136,12 +160,12 @@ export default function App_test() {
     }
 
     if (permissionsMasterData.canView) {
-      setActiveTab('master-data-test');
+      setActiveTab('master-data');
       return;
     }
 
     if (permissionsOrganizationChart.canView) {
-      setActiveTab('organization-chart-test');
+      setActiveTab('Sơ đồ tổ chức');
       return;
     }
 
@@ -249,8 +273,8 @@ export default function App_test() {
                 {permissionsGsdAnalysis.canView && (
                   <li>
                     <button
-                      onClick={() => { setActiveTab('gsd-analysis'); setMobileMenuOpen(false); }}
-                      className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'gsd-analysis'
+                      onClick={() => { setActiveTab('GSD chuyền may'); setMobileMenuOpen(false); }}
+                      className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'GSD chuyền may'
                         ? 'bg-[#1e40af] border-r-4 border-white font-bold'
                         : 'hover:bg-blue-800/40 text-blue-100'
                         }`}
@@ -315,14 +339,14 @@ export default function App_test() {
 
                     <button
                       onClick={() => {
-                        setActiveTab('Operation-Cluster');
+                        setActiveTab('Kho cụm công đoạn mới');
                         setMobileMenuOpen(false);
                       }}
-                      className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Operation-Cluster'
+                      className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Kho cụm công đoạn mới'
                         ? 'bg-[#1e40af] border-r-4 border-white font-bold'
                         : 'hover:bg-blue-800/40 text-blue-100'
                         }`}
-                      title="Kho cụm công đoạn test"
+                      title="Kho cụm công đoạn mới"
                     >
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
@@ -398,10 +422,10 @@ export default function App_test() {
                       type="button"
                       onClick={() => {
                         setIsMasterDataTestOpen((prev) => !prev);
-                        setActiveTab('master-data-test');
+                        setActiveTab('master-data');
                         setMobileMenuOpen(false);
                       }}
-                      className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'master-data-test'
+                      className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'master-data'
                         ? 'bg-[#1e40af] border-r-4 border-white font-bold'
                         : 'hover:bg-blue-800/40 text-blue-100'
                         }`}
@@ -449,7 +473,7 @@ export default function App_test() {
                       <div className="mt-1 ml-8 space-y-0.5">
                         {masterDataTestTabs.map((tab) => {
                           const isActive =
-                            activeTab === 'master-data-test' &&
+                            activeTab === 'master-data' &&
                             activeMasterDataTestTab === tab.key;
 
                           return (
@@ -457,7 +481,7 @@ export default function App_test() {
                               key={tab.key}
                               type="button"
                               onClick={() => {
-                                setActiveTab('master-data-test');
+                                setActiveTab('master-data');
                                 setActiveMasterDataTestTab(tab.key);
                                 setMobileMenuOpen(false);
                               }}
@@ -490,10 +514,10 @@ export default function App_test() {
                   <li>
                     <button
                       onClick={() => {
-                        setActiveTab('organization-chart-test');
+                        setActiveTab('Sơ đồ tổ chức');
                         setMobileMenuOpen(false);
                       }}
-                      className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'organization-chart-test'
+                      className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'Sơ đồ tổ chức'
                         ? 'bg-[#1e40af] border-r-4 border-white font-bold'
                         : 'hover:bg-blue-800/40 text-blue-100'
                         }`}
@@ -764,7 +788,7 @@ export default function App_test() {
       <div className={`flex-1 flex flex-col min-h-screen transition-all duration-300 ease-in-out ${isSidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
 
         {/* Top Header Navigation */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40 shrink-0">
+        <header className="h-12 bg-white border-b border-slate-200 flex items-center justify-between px-6 sticky top-0 z-40 shrink-0">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -786,96 +810,290 @@ export default function App_test() {
 
           <div className="flex items-center gap-5">
             {/* Notification alert block */}
-            <div className="relative cursor-pointer hover:bg-slate-50 p-1.5 rounded-full transition-colors select-none">
+            {/* <div className="relative cursor-pointer hover:bg-slate-50 p-1.5 rounded-full transition-colors select-none">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5.5 w-5.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
               <span className="absolute top-1 right-1 bg-rose-500 text-white text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-white">
                 8
               </span>
-            </div>
+            </div> */}
 
             {/* Profile operator element */}
-            <div className="flex items-center gap-3 border-l border-slate-200 pl-4 select-none">
-              <div className="text-right hidden sm:block">
-                <p className="text-xs font-bold text-slate-800 leading-none">
-                  {session?.user.fullName ?? 'Người dùng'}
-                </p>
-
-                <p className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-wider">
-                  {session?.user.departmentCode ??
-                    session?.user.username ??
-                    'IE Planning System'}
-                </p>
-              </div>
-
-              <div
-                className="
-                  w-9 h-9
-                  bg-slate-200 text-slate-500
-                  rounded-full
-                  flex items-center justify-center
-                  font-bold font-mono
-                "
-                title={session?.user.fullName}
-              >
-                {session?.user.fullName
-                  ?.trim()
-                  .split(/\s+/)
-                  .slice(-2)
-                  .map((word) => word.charAt(0))
-                  .join('')
-                  .toUpperCase() || 'IE'}
-              </div>
-
+            <div
+              ref={userMenuRef}
+              className="
+                relative
+                flex items-center
+                 border-slate-200
+                pl-4
+                select-none
+              "
+            >
+              {/* User trigger */}
               <button
                 type="button"
                 onClick={() => {
-                  void handleLogout();
+                  setUserMenuOpen((prev) => !prev);
                 }}
-                disabled={isLoggingOut}
+                aria-expanded={userMenuOpen}
+                aria-haspopup="menu"
                 className="
-                  flex items-center gap-2
-                  px-3 py-2
+                  flex
+                  items-center
+                  gap-2.5
+
                   rounded-md
-                  text-xs font-bold
-                  text-rose-600
-                  hover:bg-rose-50
-                  disabled:opacity-50
-                  disabled:cursor-not-allowed
+                  px-2
+                  py-1.5
+
+                  text-left
+
                   transition-colors
+                  duration-150
+
+                  hover:bg-slate-100
+
+                  focus-visible:outline-none
+                  focus-visible:ring-2
+                  focus-visible:ring-blue-500/30
+
                   cursor-pointer
                 "
-                title="Đăng xuất"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-4 h-4"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M17 16l4-4m0 0-4-4m4 4H7m6 4v1a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v1"
-                  />
-                </svg>
+                {/* User info */}
+                <div className="hidden text-right sm:block">
+                  <p
+                    className="
+                      max-w-[180px]
+                      truncate
+                      text-xs
+                      font-semibold
+                      leading-4
+                      text-slate-800
+                    "
+                  >
+                    {session?.user.fullName ?? 'Người dùng'}
+                  </p>
 
-                <span className="hidden lg:inline">
-                  {isLoggingOut ? 'Đang thoát...' : 'Đăng xuất'}
-                </span>
+                  <p
+                    className="
+                      mt-0.5
+                      max-w-[180px]
+                      truncate
+                      text-[10px]
+                      font-medium
+                      leading-4
+                      text-slate-500
+                    "
+                  >
+                    {session?.user.departmentCode ??
+                      session?.user.username ??
+                      'IE Planning System'}
+                  </p>
+                </div>
+
+                {/* Avatar */}
+                <div
+                  className="
+                    flex
+                    h-8 w-8
+                    shrink-0
+                    items-center
+                    justify-center
+
+                    rounded
+                    border border-slate-300
+
+                    bg-slate-100
+
+                    text-[11px]
+                    font-semibold
+                    text-slate-600
+                  "
+                >
+                  {session?.user.fullName
+                    ?.trim()
+                    .split(/\s+/)
+                    .slice(-2)
+                    .map((word) => word.charAt(0))
+                    .join('')
+                    .toUpperCase() || 'IE'}
+                </div>
+
+                <ChevronDown
+                  className={`
+                    hidden
+                    h-3.5 w-3.5
+                    shrink-0
+                    text-slate-400
+
+                    transition-transform
+                    duration-150
+
+                    sm:block
+
+                    ${userMenuOpen ? 'rotate-180' : ''}
+                  `}
+                />
               </button>
+
+              {/* Dropdown */}
+              {userMenuOpen && (
+                <div
+                  role="menu"
+                  className="
+                    absolute
+                    right-0
+                    top-[calc(100%+8px)]
+                    z-50
+
+                    w-64
+                    
+                    overflow-hidden
+
+                    rounded-md
+                    border border-slate-200
+
+                    bg-white
+
+                    shadow-lg
+                    shadow-slate-900/10
+
+                  "
+                >
+                  {/* Account header */}
+                  <div className="px-4 py-3">
+                    <div className="flex items-start gap-3">
+                      <div
+                        className="
+                          flex
+                          h-9 w-9
+                          shrink-0
+                          items-center
+                          justify-center
+
+                          rounded
+                          bg-blue-50
+
+                          text-blue-700
+                        "
+                      >
+                        <UserRound className="h-4 w-4" />
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <p
+                          className="
+                            truncate
+                            text-sm
+                            font-semibold
+                            text-slate-800
+                          "
+                        >
+                          {session?.user.fullName ?? 'Người dùng'}
+                        </p>
+
+                        <p
+                          className="
+                            mt-0.5
+                            truncate
+                            text-xs
+                            text-slate-500
+                          "
+                        >
+                          {session?.user.username ?? ''}
+                        </p>
+                      </div>
+                    </div>
+
+                    {session?.user.departmentCode && (
+                      <div
+                        className="
+                          mt-3
+                          flex
+                          items-center
+                          justify-between
+
+                          border-t border-slate-100
+                          pt-2.5
+
+                          text-xs
+                        "
+                      >
+                        <span className="text-slate-400">
+                          Đơn vị
+                        </span>
+
+                        <span className="font-medium text-slate-700">
+                          {session.user.departmentCode}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div
+                    className="
+                      border-t border-slate-200
+                      bg-slate-50
+                      p-1.5
+                    "
+                  >
+                    <button
+                      type="button"
+                      role="menuitem"
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        void handleLogout();
+                      }}
+                      disabled={isLoggingOut}
+                      className="
+                        flex
+                        w-full
+                        items-center
+                        gap-2.5
+
+                        rounded
+                        px-3
+                        py-2
+
+                        text-left
+                        text-xs
+                        font-medium
+                        text-slate-700
+
+                        transition-colors
+
+                        hover:bg-white
+                        hover:text-red-600
+
+                        disabled:pointer-events-none
+                        disabled:opacity-50
+
+                        cursor-pointer
+                      "
+                    >
+                      <LogOut className="h-4 w-4" />
+
+                      <span>
+                        {isLoggingOut
+                          ? 'Đang đăng xuất...'
+                          : 'Đăng xuất'}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>
 
-        {activeTab === 'master-data' && (
+        {/* {activeTab === 'master-data' && (
           <MasterDataView />
-        )}
+        )} */}
 
-        {activeTab === 'master-data-test' && (
+        {activeTab === 'master-data' && (
           <MasterDataPage_test activeMasterTab={activeMasterDataTestTab} />
         )}
 
@@ -883,11 +1101,11 @@ export default function App_test() {
           <OrganizationChartPage />
         )}
 
-        {activeTab === 'organization-chart-test' && (
+        {activeTab === 'Sơ đồ tổ chức' && (
           <OrganizationChartPage_test />
         )}
 
-        {activeTab === 'gsd-analysis' && (
+        {activeTab === 'GSD chuyền may' && (
           <GsdAnalysisView />
         )}
 
@@ -903,7 +1121,7 @@ export default function App_test() {
           <OperationClusterPage_test_v2 />
         )}
 
-        {activeTab === 'Operation-Cluster' && (
+        {activeTab === 'Kho cụm công đoạn mới' && (
           <OperationClusterTreeRealDataTest />
         )}
 
@@ -928,9 +1146,10 @@ export default function App_test() {
         )}
 
         {/* Footer info brand elements */}
-        <footer className="mt-auto px-6 py-4 bg-white border-t border-slate-200 flex flex-wrap justify-between items-center text-[10px] text-slate-400 gap-2 select-none">
-          <p>© 2026 IE Planning System - HQ5 VSN</p>
-          <p className="font-medium">All rights reserved by HQ5 VSN.</p>
+        <footer className="mt-auto px-6 py-2 bg-white border-t border-slate-200 flex flex-wrap justify-between items-center text-[10px] text-slate-800 gap-2 select-none">
+          <p className="text-[13px] font-medium">© 2026 IE Planning System - HQ5 VSN</p>
+          <p className="text-[13px] font-medium">{session?.user.unitName}</p>
+          {/* <p className="font-medium">All rights reserved by HQ5 VSN.</p> */}
         </footer>
 
       </div>

@@ -304,28 +304,33 @@ async function getActiveUserById(userId) {
             userId
         )
         .query(`
-            SELECT TOP 1
+            SELECT TOP 
+                1
                 u.id AS [id],
                 u.employee_id AS [employeeId],
                 u.username AS [username],
                 u.login_email AS [loginEmail],
                 u.token_version AS [tokenVersion],
                 u.status_id AS [userStatusId],
-                u.is_system_account
-                    AS [isSystemAccount],
+                u.is_system_account AS [isSystemAccount],
 
                 e.employee_code AS [employeeCode],
                 e.full_name AS [fullName],
-                e.department_code
-                    AS [departmentCode],
-                e.status_id AS [employeeStatusId]
+                e.department_code AS [departmentCode],
+                e.status_id AS [employeeStatusId],
+                d.department_code AS [unitCode],
+                d.department_name AS [unitName]
 
             FROM auth.users u
 
             LEFT JOIN hr.employees e
                 ON e.id = u.employee_id
+            LEFT JOIN organization_unit_employee org
+                ON e.employee_code = org.employee_code
+            LEFT JOIN departments_test d
+                ON org.unit_code = d.department_code
 
-            WHERE u.id = @user_id;
+            WHERE u.id = @user_id
         `);
 
     const user = result.recordset[0];
@@ -354,8 +359,7 @@ async function getActiveUserById(userId) {
 }
 
 async function getMe(userId) {
-    const user =
-        await getActiveUserById(userId);
+    const user = await getActiveUserById(userId);
 
     const pool = await getPool();
 
@@ -493,15 +497,13 @@ async function getMe(userId) {
         user: {
             id: user.id,
             employeeId: user.employeeId,
-            employeeCode:
-                user.employeeCode,
+            employeeCode: user.employeeCode,
             username: user.username,
             loginEmail: user.loginEmail,
-            fullName:
-                user.fullName ||
-                user.username,
-            departmentCode:
-                user.departmentCode,
+            fullName: user.fullName || user.username,
+            departmentCode: user.departmentCode,
+            unitCode: user.unitCode,
+            unitName: user.unitName
         },
 
         roles: rolesResult.recordset,

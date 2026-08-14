@@ -19,8 +19,8 @@ export default function OperationClusterListTable({
     onView,
 }: OperationClusterListTableProps) {
     return (
-        <div className="h-[630px] overflow-auto border border-slate-200 rounded-sm">
-            <table className="w-full text-sm min-w-[1100px] border-collapse">
+        <div className="h-[660px] overflow-auto border border-slate-200 rounded-sm">
+            <table className="w-full text-sm min-w-[1150px] border-collapse">
                 <thead className="bg-slate-50 sticky top-0 z-10">
                     <tr className="text-xs text-slate-500 uppercase">
                         <th className="p-3 border border-slate-200 text-left w-[20px]">
@@ -88,9 +88,14 @@ export default function OperationClusterListTable({
                                 <tr
                                     key={item.id}
                                     onClick={() => onSelect(item.id)}
-                                    className={`cursor-pointer hover:bg-blue-100 ${
-                                        isSelected ? 'bg-blue-100' : ''
-                                    }`}
+                                    className={`
+                                        cursor-pointer
+                                        transition-colors
+                                        ${isSelected
+                                            ? 'bg-blue-100'
+                                            : 'bg-white hover:bg-blue-50'
+                                        }
+                                    `}
                                 >
                                     <td className="p-3 border border-slate-200 text-slate-500">
                                         {index + 1}
@@ -134,11 +139,10 @@ export default function OperationClusterListTable({
 
                                     <td className="p-3 border border-slate-200 text-center">
                                         <span
-                                            className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                                                item.status_id === 0
+                                            className={`px-3 py-1 rounded-full text-xs font-bold border ${item.status_id === 0
                                                     ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
                                                     : 'bg-slate-100 text-slate-500 border-slate-200'
-                                            }`}
+                                                }`}
                                         >
                                             {item.status_id === 0
                                                 ? 'Đang sử dụng'

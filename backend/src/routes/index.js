@@ -52,6 +52,8 @@ const auditRoutes = require('./audit.routes');
 
 const userPermissionRoute = require('./userPermission.routes');
 
+const sewingProcessImportRoutes = require('./sewingProcessImport.route');
+
 router.use('/statuses', statusRoutes);
 router.use('/clusters', clusterRoutes);
 router.use('/data', employeeRoutes_test);
@@ -119,5 +121,7 @@ router.use('/audit', auditRoutes);
 router.use('/system', userPermissionRoute);
 
 router.use('/system/employees/options', systemRoutes);
+
+router.use('/sewing-processes/import', sewingProcessImportRoutes);
 
 module.exports = router;

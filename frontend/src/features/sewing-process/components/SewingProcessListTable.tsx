@@ -11,12 +11,6 @@ import {
   getSewingProcessImageUrl,
 } from '../utils/sewingProcessImage';
 
-import {
-    usePermissions,
-} from '../../auth/hooks/usePermissions';
-import {
-    SCREEN,
-} from '../../auth/constants/permission.constants';
 
 
 type SewingProcessListTableProps = {
@@ -36,10 +30,9 @@ export function SewingProcessListTable({
   onPreviewImage,
 }: SewingProcessListTableProps) {
 
-  const permissions = usePermissions(SCREEN.SEWING_PROCESS);
 
   return (
-    <div className="h-[630px] overflow-auto border border-slate-200 rounded-sm">
+    <div className="h-[660px] overflow-auto border border-slate-200 rounded-sm">
       <table className="w-full text-sm min-w-[1100px] border-collapse">
         <thead className="bg-slate-50 sticky top-0 z-10">
           <tr className="text-xs text-slate-500 uppercase">
@@ -81,7 +74,7 @@ export function SewingProcessListTable({
             <tr>
               <td
                 colSpan={10}
-                className="border border-slate-200 px-4 py-6 text-center text-slate-400"
+                className="border border-slate-200 px-4 py-0 text-center text-slate-400"
               >
                 Chưa có chứng từ quy trình may.
               </td>
@@ -109,14 +102,14 @@ export function SewingProcessListTable({
                   onSelect(item.id)
                 }
                 className={`
-                  cursor-pointer
-                  ${
-                    isSelected
-                      ? 'bg-blue-50'
-                      : 'hover:bg-slate-50'
-                  }
-                `}
-              >
+                        cursor-pointer
+                        transition-colors
+                        ${isSelected
+                            ? 'bg-blue-100'
+                            : 'bg-white hover:bg-blue-50'
+                        }
+                    `}
+                >
                 <td className="border border-slate-200 px-3 py-2 text-center text-blue-700">
                   {index + 1}
                 </td>

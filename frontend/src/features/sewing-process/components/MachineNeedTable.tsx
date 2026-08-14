@@ -22,11 +22,11 @@ export function MachineNeedTable({
 
         <span className="font-bold text-blue-700">
           {taktTime !== null &&
-          taktTime !== undefined
+            taktTime !== undefined
             ? formatNumber(
-                taktTime,
-                4
-              )
+              taktTime,
+              4
+            )
             : '-'}
         </span>
       </div>
@@ -45,6 +45,9 @@ export function MachineNeedTable({
             </th>
             <th className="w-[50px] border border-slate-300 px-3 py-2 text-right">
               Nhu cầu
+            </th>
+            <th className="w-[50px] border border-slate-300 px-3 py-2 text-right">
+              Hiệu suất sử dụng
             </th>
             <th className="w-[50px] border border-slate-300 px-3 py-2 text-right">
               Số lượng MMTB
@@ -85,6 +88,13 @@ export function MachineNeedTable({
                 <td className="border border-slate-300 px-3 py-2 text-right">
                   {formatNumber(
                     item.machineNeed,
+                    2
+                  )}
+                </td>
+
+                <td className="border border-slate-300 px-3 py-2 text-right">
+                  {formatNumber(
+                    item.usedEfficiency,
                     2
                   )}
                 </td>

@@ -7,18 +7,18 @@ import {
     Button
 } from '../../../shared/components';
 import {
-  Plus,
-  Trash2,
-  Save,
-  Download,
-  RefreshCw,
-  Search,
-  Pencil,
-  Edit,
-  Copy,
-  Import,
-  FileDown,
-  RefreshCcw
+    Plus,
+    Trash2,
+    Save,
+    Download,
+    RefreshCw,
+    Search,
+    Pencil,
+    Edit,
+    Copy,
+    Import,
+    FileDown,
+    RefreshCcw
 } from 'lucide-react';
 
 import {
@@ -107,6 +107,11 @@ import {
     useOperationClusterWorkflow,
 } from '../../operation-cluster/hooks/useOperationClusterWorkflow';
 
+import {
+    exportSewingProcessExcel,
+} from '../utils/sewingProcessExcel';
+
+import SewingProcessImportModal from '../components/SewingProcessImportModal';
 
 export default function SewingProcessPage() {
     const permissions = usePermissions(SCREEN.SEWING_PROCESS);
@@ -211,6 +216,11 @@ export default function SewingProcessPage() {
     const [
         imageUploading,
         setImageUploading,
+    ] = useState(false);
+
+    const [
+        importModalOpen,
+        setImportModalOpen,
     ] = useState(false);
 
 
@@ -556,6 +566,22 @@ export default function SewingProcessPage() {
         setModalMode('create');
     };
 
+    const openImport = () => {
+        if (!permissions.canCreate) {
+            return;
+        }
+
+        setSelectedId(null);
+
+        resetForm();
+
+        setActiveTab('process');
+
+        setModalMode('create');
+
+        setImportModalOpen(true);
+    };
+
     const openOperationCluster = () => {
         editor.handleOpenCreateModal();
     };
@@ -646,9 +672,167 @@ export default function SewingProcessPage() {
         setModalMode(null);
     };
 
-    const handleExportExcel = () => {
-        alert('Do you have a boyfriend ?');
-    }
+    const handleExportExcel = async () => {
+        if (!selectedId) {
+            toast.warning(
+                'Vui lòng chọn chứng từ cần xuất.',
+                {
+                    duration: 2000,
+                }
+            );
+
+            return;
+        }
+
+        try {
+            const detail =
+                await sewingProcessService
+                    .getSewingProcessById(
+                        selectedId
+                    );
+
+            await exportSewingProcessExcel(
+                detail
+            );
+
+            toast.success(
+                'Xuất Excel thành công.',
+                {
+                    duration: 2000,
+                }
+            );
+        } catch (error) {
+            console.error(
+                'Export Excel lỗi:',
+                error
+            );
+
+            toast.warning(
+                error instanceof Error
+                    ? error.message
+                    : 'Không xuất được Excel.',
+                {
+                    duration: 3000,
+                }
+            );
+        }
+    };
+
+    const normalizeMachineCode = (
+        value: unknown
+    ) => {
+        return String(
+            value ?? ''
+        )
+            .normalize('NFKC')
+            .trim()
+            .replace(/\s+/g, '')
+            .toUpperCase();
+    };
+
+
+    const handleApplyImportedLines = (
+        importedLines: SewingProcessLine[]
+    ) => {
+        const normalizedLines =
+            importedLines.map(
+                (line, index) => {
+                    const importedMachineCode =
+                        normalizeMachineCode(
+                            line.machineCode
+                        );
+
+                    const matchedMachine =
+                        importedMachineCode
+                            ? activeMachines.find(
+                                (machine) => {
+                                    const row =
+                                        machine as typeof machine & {
+                                            codeMMTB?: string | null;
+                                            code_mmtb?: string | null;
+                                        };
+
+                                    const machineCodes = [
+                                        row.codeMmtb,
+                                        row.codeMMTB,
+                                        row.code_mmtb,
+                                        row.machineCode,
+                                    ]
+                                        .map(
+                                            normalizeMachineCode
+                                        )
+                                        .filter(Boolean);
+
+                                    return machineCodes.includes(
+                                        importedMachineCode
+                                    );
+                                }
+                            )
+                            : undefined;
+
+                    return {
+                        ...line,
+
+                        lineNo:
+                            index + 1,
+
+                        lineOrder:
+                            index + 1,
+
+                        machineId:
+                            matchedMachine
+                                ? Number(
+                                    matchedMachine.id
+                                )
+                                : null,
+
+                        machineCode:
+                            matchedMachine
+                                ? (
+                                    matchedMachine.codeMmtb ||
+                                    matchedMachine.machineCode ||
+                                    line.machineCode ||
+                                    ''
+                                )
+                                : (
+                                    line.machineCode ||
+                                    ''
+                                ),
+
+                        machineName:
+                            matchedMachine
+                                ? (
+                                    matchedMachine.machineName ||
+                                    ''
+                                )
+                                : (
+                                    line.machineName ||
+                                    ''
+                                ),
+                    };
+                }
+            );
+
+        updateForm(
+            'lines',
+            normalizedLines
+        );
+
+        setActiveTab(
+            'process'
+        );
+
+        setImportModalOpen(
+            false
+        );
+
+        toast.success(
+            `Đã áp dụng ${normalizedLines.length} dòng từ Excel.`,
+            {
+                duration: 2000,
+            }
+        );
+    };
 
     const canModify =
         modalMode === 'create'
@@ -677,11 +861,11 @@ export default function SewingProcessPage() {
         <div className="h-full min-h-0 bg-slate-50 p-4 overflow-auto bg-white">
             <div className="ax-w-[1720px] mx-auto space-y-4">
                 <div className="flex items-center justify-between mb-4">
-                    <div>
+                    {/* <div>
                         <h2 className="text-lg font-bold uppercase text-slate-800">
                             Danh sách quy trình may
                         </h2>
-                    </div>
+                    </div> */}
 
                     <div className="flex gap-2">
 
@@ -691,7 +875,7 @@ export default function SewingProcessPage() {
                                 variant="primary"
                                 onClick={openCreate}
                                 size='sm'
-                                leftIcon={<Plus className='w-4 h-4'/>}
+                                leftIcon={<Plus className='w-4 h-4' />}
                             >
                                 New
                             </Button>
@@ -704,7 +888,7 @@ export default function SewingProcessPage() {
                                 onClick={openEdit}
                                 disabled={!selectedId}
                                 size='sm'
-                                leftIcon={<Edit className='w-4 h-4'/>}
+                                leftIcon={<Edit className='w-4 h-4' />}
                             >
                                 Edit
                             </Button>
@@ -723,11 +907,21 @@ export default function SewingProcessPage() {
                             </Button>
                         )} */}
 
+                        {permissions.canCreate && (
+                            <Button
+                                onClick={openImport}
+                                size='sm'
+                                leftIcon={<Import className='w-4 h-4' />}
+                            >
+                                Import
+                            </Button>
+                        )}
+
                         {permissions.canExport && (
                             <Button
                                 onClick={handleExportExcel}
                                 size='sm'
-                                leftIcon={<FileDown className='w-4 h-4'/>}
+                                leftIcon={<FileDown className='w-4 h-4' />}
                             >
                                 Export
                             </Button>
@@ -740,7 +934,7 @@ export default function SewingProcessPage() {
                             loading={loading}
                             loadingText="Loading..."
                             size='sm'
-                            leftIcon={<RefreshCcw className='w-4 h-4'/>}
+                            leftIcon={<RefreshCcw className='w-4 h-4' />}
                         >
                             Refresh
                         </Button>
@@ -764,51 +958,66 @@ export default function SewingProcessPage() {
                     mode={modalMode}
                     savingSweingProcess={saving}
                     calculating={calculating}
-                    onClose={() =>
-                        setModalMode(null)
-                    }
+                    onClose={() => {
+                        setImportModalOpen(false);
+                        setModalMode(null);
+                    }}
                     onEdit={() =>
                         setModalMode('edit')
                     }
                     onSave={save}
-                    // onOperationClusterEditorModal={openOperationCluster}
-
                     operationClusterEditor={editor}
                     operationClusterWorkflow={workflow}
                     savingOperationCluster={savingOperationCluster}
                 >
-                    <SewingProcessForm
-                        form={form}
-                        result={result}
-                        customers={activeCustomers}
-                        machines={activeMachines}
-                        readOnly={
-                            modalMode === 'view' ||
-                            !canModify
-                        }
-                        canCalculate={canCalculate}
-                        canUploadImage={canUploadImage}
-                        activeTab={activeTab}
-                        calculating={calculating}
-                        imageSrc={mainImageSrc}
-                        imageFileName={mainImageFileName}
-                        imageUploading={imageUploading}
-                        onUpdateForm={updateForm}
-                        onUpdateLine={updateLine}
-                        onCustomerChange={handleCustomerChange}
-                        onMachineChange={handleMachineChange}
-                        onRemoveLine={removeLine}
-                        onOpenActions={operationActions.open}
-                        onPreviewImage={setPreviewGsdImageUrl}
-                        onUploadImage={handleUploadMainImage}
-                        onRemoveImage={handleRemoveMainImage}
-                        onOpenOperationPicker={
-                            operationPicker.actions.open
-                        }
-                        onCalculate={calculate}
-                        onActiveTabChange={setActiveTab}
-                    />
+                    <>
+                        <SewingProcessForm
+                            form={form}
+                            result={result}
+                            customers={activeCustomers}
+                            machines={activeMachines}
+                            readOnly={
+                                modalMode === 'view' ||
+                                !canModify
+                            }
+                            canCalculate={canCalculate}
+                            canUploadImage={canUploadImage}
+                            activeTab={activeTab}
+                            calculating={calculating}
+                            imageSrc={mainImageSrc}
+                            imageFileName={mainImageFileName}
+                            imageUploading={imageUploading}
+                            onUpdateForm={updateForm}
+                            onUpdateLine={updateLine}
+                            onCustomerChange={handleCustomerChange}
+                            onMachineChange={handleMachineChange}
+                            onRemoveLine={removeLine}
+                            onOpenActions={operationActions.open}
+                            onPreviewImage={setPreviewGsdImageUrl}
+                            onUploadImage={handleUploadMainImage}
+                            onRemoveImage={handleRemoveMainImage}
+                            onOpenOperationPicker={
+                                operationPicker.actions.open
+                            }
+                            onCalculate={calculate}
+                            onActiveTabChange={setActiveTab}
+                        />
+                    </>
                 </SewingProcessModal>
+            )}
+
+            {importModalOpen && (
+                <SewingProcessImportModal
+                    open={importModalOpen}
+                    header={form}
+                    onClose={() => {
+                        setImportModalOpen(false);
+                        setModalMode(null);
+                    }}
+                    onApply={
+                        handleApplyImportedLines
+                    }
+                />
             )}
 
             {operationPicker.state.isOpen && (

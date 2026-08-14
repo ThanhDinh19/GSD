@@ -3,9 +3,14 @@ import { Cluster, ClusterPayload } from '../types';
 import { useClusters } from '../hooks/useClusters';
 import ClusterTable from '../components/cluster/ClusterTable';
 import ClusterFormModal from '../components/cluster/ClusterFormModal';
+
 import {
   Button
 } from '../shared/components';
+
+import {
+  Plus
+} from 'lucide-react'
 
 import {
   usePermissions,
@@ -54,21 +59,23 @@ export default function ClusterMasterPage() {
 
   return (
     <div className="space-y-5">
-      <div className="bg-white border-slate-200 shadow-sm p-5">
+      <div className="bg-white border-slate-200 shadow-sm p-2">
         <div className="flex items-center justify-between gap-4 mb-5">
-          <div>
+          {/* <div>
             <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
               Danh mục cụm
             </h2>
             <p className="text-xs text-slate-500 mt-1">
               Quản lý nhóm/cụm công đoạn theo tài liệu BA. Click vào một dòng để cập nhật.
             </p>
-          </div>
+          </div> */}
 
           {permissions.canCreate && (
             <Button
               variant='primary'
               onClick={openCreateForm}
+              size='sm'
+              leftIcon={<Plus className='w-4 h-4' />}
             >
               New
             </Button>

@@ -188,6 +188,125 @@ function validatePayload(header, lines) {
     }
 }
 
+// function calculateSewingProcess(payload) {
+//     const header = normalizeHeader(payload);
+//     const inputLines = Array.isArray(payload.lines) ? payload.lines : [];
+//     const normalizedLines = inputLines.map(normalizeLine);
+
+//     validatePayload(header, normalizedLines);
+
+//     const priceMode = String(header.priceMode || 'GSD').toUpperCase();
+//     const productionManpower = toNumber(header.productionManpower, 0);
+//     const workingHours = toNumber(header.workingHours, 9);
+
+//     const firstPassLines = normalizedLines.map((line) => {
+//         const samGsd = toNumber(line.samGsd, 0);
+//         const salaryCoefficient = toNumber(line.salaryCoefficient, 0);
+
+//         const usedEfficiency = normalizeEfficiency(line.requiredEfficiency);
+
+//         const adjustedSam = usedEfficiency > 0
+//             ? samGsd / usedEfficiency
+//             : samGsd;
+
+//         const standardPrice =
+//             priceMode === 'ADJUSTED'
+//                 ? adjustedSam * salaryCoefficient
+//                 : samGsd * salaryCoefficient;
+
+//         return {
+//             ...line,
+//             samGsd: round4(samGsd),
+//             salaryCoefficient: round4(salaryCoefficient),
+//             adjustedSam: round4(adjustedSam),
+//             usedEfficiency: round4(usedEfficiency),
+//             standardPrice: round4(standardPrice),
+//         };
+//     });
+
+//     const totalTime = round4(
+//         firstPassLines.reduce((sum, line) => sum + toNumber(line.adjustedSam, 0), 0)
+//     );
+
+//     const totalSamGsd = round4(
+//         firstPassLines.reduce((sum, line) => sum + toNumber(line.samGsd, 0), 0)
+//     );
+
+//     const taktTime = productionManpower > 0
+//         ? round4(totalTime / productionManpower)
+//         : 0;
+
+//     const calculatedLines = firstPassLines.map((line) => {
+//         const laborCount = taktTime > 0
+//             ? toNumber(line.adjustedSam, 0) / taktTime
+//             : 0;
+
+//         return {
+//             ...line,
+//             laborCount: round4(laborCount),
+//         };
+//     });
+
+//     const c1 = round4(totalTime / 60);
+//     const c3 = round4(taktTime / 60);
+//     const c4 = totalSamGsd > 0 ? round4(totalTime / totalSamGsd) : 0;
+
+//     const standardOutput = totalTime > 0
+//         ? round4((3600 / totalTime) * workingHours * productionManpower)
+//         : 0;
+
+//     const c5 = workingHours > 0
+//         ? round4(standardOutput / workingHours)
+//         : 0;
+
+//     const c6 = totalSamGsd > 0
+//         ? round4((3600 / totalSamGsd) * workingHours * productionManpower)
+//         : 0;
+
+//     const totalStandardPrice = round4(
+//         calculatedLines.reduce((sum, line) => sum + toNumber(line.standardPrice, 0), 0)
+//     );
+
+//     const totalPriceByOutput = round4(standardOutput * totalStandardPrice);
+
+//     const averagePrice = productionManpower > 0
+//         ? round4(totalPriceByOutput / productionManpower)
+//         : 0;
+
+//     const summary = {
+//         totalTime,
+//         c1,
+//         totalSamGsd,
+//         taktTime,
+//         c3,
+//         c4,
+//         standardOutput,
+//         c5,
+//         c6,
+//         totalStandardPrice,
+//         totalPriceByOutput,
+//         averagePrice,
+//     };
+
+//     const machineNeeds = calculateMachineNeeds(header, calculatedLines, summary);
+
+//     return {
+//         header,
+//         summary,
+//         lines: calculatedLines,
+//         machineNeeds,
+//     };
+// }
+
+
+// requiredEfficiency = 95%    ← hiệu suất yêu cầu
+// adjustedSam = 24 / 0.95     ← SAM theo yêu cầu
+// usedEfficiency = adjustedSam / totalTime
+
+// hiện tại hàm này đang dùng để tính công thức như trên: hiệu suất sử dụng = smv điều chỉnh / tổng thời gian
+// tổng thời gian = sum(smv điều chỉnh)
+// còn hàm trên là đang tính hiệu suất sử dụng là format lại của hiệu suất yêu cầu nên chưa đúng: trong file BA phân tích cũng chưa
+// file BA phân tích là hiệu suất sử dụng = smv điều chỉnh / smv gốc : cần xem xét lại
 function calculateSewingProcess(payload) {
     const header = normalizeHeader(payload);
     const inputLines = Array.isArray(payload.lines) ? payload.lines : [];
@@ -203,11 +322,13 @@ function calculateSewingProcess(payload) {
         const samGsd = toNumber(line.samGsd, 0);
         const salaryCoefficient = toNumber(line.salaryCoefficient, 0);
 
-        const usedEfficiency = normalizeEfficiency(line.requiredEfficiency);
+        const requiredEfficiency =
+            normalizeEfficiency(line.requiredEfficiency);
 
-        const adjustedSam = usedEfficiency > 0
-            ? samGsd / usedEfficiency
-            : samGsd;
+        const adjustedSam =
+            requiredEfficiency > 0
+                ? samGsd / requiredEfficiency
+                : samGsd;
 
         const standardPrice =
             priceMode === 'ADJUSTED'
@@ -219,59 +340,103 @@ function calculateSewingProcess(payload) {
             samGsd: round4(samGsd),
             salaryCoefficient: round4(salaryCoefficient),
             adjustedSam: round4(adjustedSam),
-            usedEfficiency: round4(usedEfficiency),
             standardPrice: round4(standardPrice),
         };
     });
 
     const totalTime = round4(
-        firstPassLines.reduce((sum, line) => sum + toNumber(line.adjustedSam, 0), 0)
+        firstPassLines.reduce(
+            (sum, line) =>
+                sum + toNumber(line.adjustedSam, 0),
+            0
+        )
     );
 
     const totalSamGsd = round4(
-        firstPassLines.reduce((sum, line) => sum + toNumber(line.samGsd, 0), 0)
+        firstPassLines.reduce(
+            (sum, line) =>
+                sum + toNumber(line.samGsd, 0),
+            0
+        )
     );
 
-    const taktTime = productionManpower > 0
-        ? round4(totalTime / productionManpower)
-        : 0;
+    const taktTime =
+        productionManpower > 0
+            ? round4(totalTime / productionManpower)
+            : 0;
 
     const calculatedLines = firstPassLines.map((line) => {
-        const laborCount = taktTime > 0
-            ? toNumber(line.adjustedSam, 0) / taktTime
-            : 0;
+        const adjustedSam =
+            toNumber(line.adjustedSam, 0);
+
+        const laborCount =
+            taktTime > 0
+                ? adjustedSam / taktTime
+                : 0;
+
+        const usedEfficiency =
+            totalTime > 0
+                ? adjustedSam / totalTime
+                : 0;
 
         return {
             ...line,
             laborCount: round4(laborCount),
+            usedEfficiency: round4(usedEfficiency),
         };
     });
 
     const c1 = round4(totalTime / 60);
     const c3 = round4(taktTime / 60);
-    const c4 = totalSamGsd > 0 ? round4(totalTime / totalSamGsd) : 0;
+    const c4 =
+        totalSamGsd > 0
+            ? round4(totalTime / totalSamGsd)
+            : 0;
 
-    const standardOutput = totalTime > 0
-        ? round4((3600 / totalTime) * workingHours * productionManpower)
-        : 0;
+    const standardOutput =
+        totalTime > 0
+            ? round4(
+                (3600 / totalTime) *
+                workingHours *
+                productionManpower
+            )
+            : 0;
 
-    const c5 = workingHours > 0
-        ? round4(standardOutput / workingHours)
-        : 0;
+    const c5 =
+        workingHours > 0
+            ? round4(standardOutput / workingHours)
+            : 0;
 
-    const c6 = totalSamGsd > 0
-        ? round4((3600 / totalSamGsd) * workingHours * productionManpower)
-        : 0;
+    const c6 =
+        totalSamGsd > 0
+            ? round4(
+                (3600 / totalSamGsd) *
+                workingHours *
+                productionManpower
+            )
+            : 0;
 
     const totalStandardPrice = round4(
-        calculatedLines.reduce((sum, line) => sum + toNumber(line.standardPrice, 0), 0)
+        calculatedLines.reduce(
+            (sum, line) =>
+                sum + toNumber(line.standardPrice, 0),
+            0
+        )
     );
 
-    const totalPriceByOutput = round4(standardOutput * totalStandardPrice);
+    const totalPriceByOutput =
+        round4(
+            standardOutput *
+            totalStandardPrice
+        );
 
-    const averagePrice = productionManpower > 0
-        ? round4(totalPriceByOutput / productionManpower)
-        : 0;
+    const averagePrice =
+        productionManpower > 0
+            ? round4(
+                totalPriceByOutput /
+                productionManpower
+            )
+            : 0;
 
     const summary = {
         totalTime,
@@ -288,7 +453,12 @@ function calculateSewingProcess(payload) {
         averagePrice,
     };
 
-    const machineNeeds = calculateMachineNeeds(header, calculatedLines, summary);
+    const machineNeeds =
+        calculateMachineNeeds(
+            header,
+            calculatedLines,
+            summary
+        );
 
     return {
         header,
@@ -318,17 +488,19 @@ function calculateMachineNeeds(header, lines, summary) {
                 machineCode: line.machineCode,
                 machineName: line.machineName || 'Chưa khai báo máy',
                 sumSmv: 0,
-                usedEfficiency: 1,
+                usedEfficiency: 0,
             });
         }
 
         const item = map.get(machineKey);
 
         item.sumSmv += toNumber(line.adjustedSam || line.samGsd, 0);
+        item.usedEfficiency += toNumber(line.usedEfficiency);
     }
 
     return Array.from(map.values()).map((item) => {
         const sumSmv = round4(item.sumSmv);
+        const sumUsedEfficiency = round4(item.usedEfficiency);
         const machineNeed = taktTime > 0 ? round4(sumSmv / taktTime) : 0;
 
         return {
@@ -338,7 +510,7 @@ function calculateMachineNeeds(header, lines, summary) {
             sumSmv,
             machineNeed,
             machineQuantity: Math.ceil(machineNeed),
-            usedEfficiency: item.usedEfficiency,
+            usedEfficiency: sumUsedEfficiency,
         };
     });
 }

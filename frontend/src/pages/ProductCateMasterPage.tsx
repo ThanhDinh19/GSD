@@ -52,43 +52,32 @@ export default function ProductCateMasterPage() {
     };
 
     return (
-        <div className="space-y-5">
-            <div className="bg-white border-slate-200 shadow-sm p-5">
-                <div className="flex items-center justify-between gap-4 mb-5">
-                    <div>
-                        <h2 className="text-lg font-black text-slate-800 uppercase tracking-tight">
-                            Danh mục chủng loại
-                        </h2>
-                        <p className="text-xs text-slate-500 mt-1">
-                            Quản lý chủng loại. Click vào một dòng để cập nhật.
-                        </p>
-                    </div>
+    <div className="h-full min-h-full bg-white p-5">
+      <div className="flex items-center justify-between gap-4 mb-4">
+        {permissions.canCreate && (
+          <Button
+            variant="primary"
+            onClick={openCreateForm}
+          >
+            New
+          </Button>
+        )}
+      </div>
 
-                    {permissions.canCreate && (
-                        <Button
-                            variant='primary'
-                            onClick={openCreateForm}
-                        >
-                            New
-                        </Button>
-                    )}
-                </div>
+      <ProductCateTable
+        productCates={productCates}
+        loading={loading}
+        onRowClick={openEditForm}
+      />
 
-                <ProductCateTable
-                    productCates={productCates}
-                    loading={loading}
-                    onRowClick={openEditForm}
-                />
-            </div>
-
-            {isFormOpen && (
-                <ProductCateFormModal
-                    productCate={selectedProductCate}
-                    statuses={statuses}
-                    onClose={closeForm}
-                    onSubmit={handleSubmit}
-                />
-            )}
-        </div>
-    );
+      {isFormOpen && (
+        <ProductCateFormModal
+          productCate={selectedProductCate}
+          statuses={statuses}
+          onClose={closeForm}
+          onSubmit={handleSubmit}
+        />
+      )}
+    </div>
+  );
 }
