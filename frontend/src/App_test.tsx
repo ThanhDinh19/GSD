@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MasterDataView from './components/MasterDataView';
 import GsdAnalysisView from './components/GsdAnalysisView';
+import GsdAnalysisPage from './features/gsd-analysis/pages/GsdAnalysisPage';
 import OrganizationChartPage from './pages/OrganizationChartPage';
 import OrganizationChartPage_test from './pages/OrganizationChartPage_test';
 import OperationClusterPage from './pages/OperationClusterPage';
@@ -41,6 +42,7 @@ const getBackendUrl = () => {
   if (metaEnv && metaEnv.VITE_API_URL !== undefined) return metaEnv.VITE_API_URL;
   return '';
 };
+
 const API_BASE_URL = getBackendUrl();
 
 export default function App_test() {
@@ -1106,7 +1108,7 @@ export default function App_test() {
         )}
 
         {activeTab === 'GSD chuyền may' && (
-          <GsdAnalysisView />
+          <GsdAnalysisPage />
         )}
 
         {/*  dinh 07/08/2026 */}

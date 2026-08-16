@@ -1,17 +1,17 @@
 import { useState } from 'react';
-import { GsdAnalysisSummary } from '../../types';
-import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../../services/gsdAnalysis.service';
-import { useGsdAnalysis } from '../../hooks/useGsdAnalysis';
+import { GsdAnalysisSummary } from '../types/gsdAnalysis.types';
+import { getGsdAnalysisImageUrl } from '../services/gsdAnalysis.service';
+import { useGsdAnalysis } from '../hooks/useGsdAnalysis';
 import {
     usePermissions,
-} from '../../../src/features/auth/hooks/usePermissions';
+} from '../../../../src/features/auth/hooks/usePermissions';
 import {
     SCREEN,
-} from '../../../src/features/auth/constants/permission.constants';
+} from '../../../../src/features/auth/constants/permission.constants';
 
 import {
     Button
-} from '../../shared/components';
+} from '../../../shared/components';
 import {
     Plus,
     Trash2,

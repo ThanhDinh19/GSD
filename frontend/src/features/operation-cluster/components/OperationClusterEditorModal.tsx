@@ -143,8 +143,8 @@ export default function OperationClusterEditorModal({
                             {saving
                                 ? 'Đang lưu...'
                                 : editingId
-                                  ? 'Cập nhật chứng từ'
-                                  : 'Lưu chứng từ'}
+                                  ? 'Cập nhật'
+                                  : 'Lưu'}
                         </button>
 
                         <button
