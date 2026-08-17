@@ -3,6 +3,7 @@ import {
   useMemo,
   useState,
 } from 'react';
+
 import type {
   ReactNode,
 } from 'react';
@@ -59,7 +60,7 @@ import {
 } from 'lucide-react';
 
 import GsdAnalysisModal
-  from '../../../components/GsdAnalysisModal';
+  from '../components/GsdAnalysisModal';
 
 type TreeOperation = {
   key: string;
@@ -1092,6 +1093,7 @@ async function loadDetailsInBatches(
 
 export default function OperationClusterTreeOrderedByLineNo() {
   const permissions = usePermissions(SCREEN.OPERATION_CLUSTER_NEW);
+  const permissionGSDChuyenMay = usePermissions(SCREEN.GSD_ANALYSIS);
 
   const [
     gsdAnalysisOpen,
@@ -2815,7 +2817,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
 
                   </Button>
                 )}
-                
+
                 {hasPendingChanges && (
                   <Button
                     type="button"
@@ -2827,19 +2829,22 @@ export default function OperationClusterTreeOrderedByLineNo() {
                       isSavingCurrentDocument
                     }
                     size='sm'
-                    leftIcon={<X className='w-4 h-4'/>}
+                    leftIcon={<X className='w-4 h-4' />}
                   >
                     Hủy
                   </Button>
                 )}
 
-                <Button
-                  variant="primary"
-                  onClick={openGsdAnalysis}
-                  size='sm'
-                >
-                  GSD Chuyền may
-                </Button>
+                {permissionGSDChuyenMay.canCreate && (
+                  <Button
+                    variant="primary"
+                    onClick={openGsdAnalysis}
+                    size='sm'
+                  >
+                    GSD Chuyền may
+                  </Button>
+                )}
+
               </div>
 
             </div>

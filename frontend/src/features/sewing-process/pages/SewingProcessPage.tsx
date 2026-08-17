@@ -2,6 +2,11 @@ import {
     Button,
 } from '../../../shared/components';
 
+
+import {
+    OperationClusterTreePickerModal
+} from '../components/OperationClusterTreePickerModal'
+
 import {
     Plus,
     Edit,
@@ -61,12 +66,12 @@ export default function SewingProcessPage() {
      */
     const {
         loading:
-            loadingOperationCluster,
+        loadingOperationCluster,
 
         gsdOptions,
 
         saving:
-            savingOperationCluster,
+        savingOperationCluster,
 
         createItem,
         copyItem,
@@ -160,7 +165,7 @@ export default function SewingProcessPage() {
         mainImageSrc,
 
         productCateGroups,
-        filteredOperationClusters,
+        // filteredOperationClusters,
 
         operationPicker,
         operationActions,
@@ -202,6 +207,12 @@ export default function SewingProcessPage() {
 
         closeMainModal,
         closeImportModal,
+
+        operationClusterTreePickerOpen,
+
+        openOperationClusterTreePicker,
+        closeOperationClusterTreePicker,
+        handleConfirmOperationClusterTree,
     } = page;
 
 
@@ -348,7 +359,7 @@ export default function SewingProcessPage() {
                         }
                         readOnly={
                             modalMode ===
-                                'view' ||
+                            'view' ||
                             !canModify
                         }
                         canCalculate={
@@ -401,9 +412,7 @@ export default function SewingProcessPage() {
                             handleRemoveMainImage
                         }
                         onOpenOperationPicker={
-                            operationPicker
-                                .actions
-                                .open
+                            openOperationClusterTreePicker
                         }
                         onCalculate={
                             calculate
@@ -436,7 +445,7 @@ export default function SewingProcessPage() {
 
 
             {/* OPERATION PICKER */}
-            {operationPicker.state.isOpen && (
+            {/* {operationPicker.state.isOpen && (
                 <OperationPickerModal
                     productCateGroups={
                         productCateGroups
@@ -498,6 +507,20 @@ export default function SewingProcessPage() {
                         operationPicker
                             .actions
                             .close
+                    }
+                />
+            )} */}
+            {/* OPERATION CLUSTER TREE PICKER */}
+            {operationClusterTreePickerOpen && (
+                <OperationClusterTreePickerModal
+                    open={
+                        operationClusterTreePickerOpen
+                    }
+                    onClose={
+                        closeOperationClusterTreePicker
+                    }
+                    onConfirm={
+                        handleConfirmOperationClusterTree
                     }
                 />
             )}

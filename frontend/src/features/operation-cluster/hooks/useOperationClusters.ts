@@ -51,9 +51,7 @@ export function useOperationClusters() {
         setLoading(true);
 
         try {
-            const data =
-                await operationClusterService
-                    .getAll();
+            const data = await operationClusterService.getAll();
 
             setItems(data);
 

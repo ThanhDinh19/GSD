@@ -90,21 +90,21 @@ function normalizeMachineCode(
 }
 
 
-function getProductCategoryGroupId(
-    item: unknown
-): number {
-    const row =
-        item as Record<
-            string,
-            unknown
-        >;
+// function getProductCategoryGroupId(
+//     item: unknown
+// ): number {
+//     const row =
+//         item as Record<
+//             string,
+//             unknown
+//         >;
 
-    return Number(
-        row.productCategoryGroupId ??
-        row.product_category_group_id ??
-        0
-    );
-}
+//     return Number(
+//         row.productCategoryGroupId ??
+//         row.product_category_group_id ??
+//         0
+//     );
+// }
 
 
 export function useSewingProcessPageController() {
@@ -136,17 +136,17 @@ export function useSewingProcessPageController() {
 
     const {
         items:
-            operationClusterItems,
+        operationClusterItems,
 
         loadDetail:
-            loadOperationClusterDetail,
+        loadOperationClusterDetail,
     } = useOperationClusters();
 
     const {
         productCateGroups,
 
         loading:
-            productCateGroupsLoading,
+        productCateGroupsLoading,
     } = useProductCateGroups();
 
 
@@ -191,6 +191,10 @@ export function useSewingProcessPageController() {
         setImportModalOpen,
     ] = useState(false);
 
+    const [
+        operationClusterTreePickerOpen,
+        setOperationClusterTreePickerOpen,
+    ] = useState(false);
 
     const {
         items,
@@ -361,7 +365,7 @@ export function useSewingProcessPageController() {
 
             const canModify =
                 modalMode ===
-                'create'
+                    'create'
                     ? permissions.canCreate
                     : modalMode ===
                         'edit'
@@ -538,6 +542,27 @@ export function useSewingProcessPageController() {
         );
     };
 
+    const openOperationClusterTreePicker =
+        () => {
+            if (
+                modalMode === 'view'
+            ) {
+                return;
+            }
+
+            setOperationClusterTreePickerOpen(
+                true
+            );
+        };
+
+
+    const closeOperationClusterTreePicker =
+        () => {
+            setOperationClusterTreePickerOpen(
+                false
+            );
+        };
+
 
     const operationPicker =
         useOperationPicker({
@@ -557,22 +582,22 @@ export function useSewingProcessPageController() {
         });
 
 
-    const filteredOperationClusters =
-        operationPicker
-            .state
-            .productCategoryGroupId
-            ? operationClusters.filter(
-                (item) =>
-                    getProductCategoryGroupId(
-                        item
-                    ) ===
-                    Number(
-                        operationPicker
-                            .state
-                            .productCategoryGroupId
-                    )
-            )
-            : operationClusters;
+    // const filteredOperationClusters =
+    //     operationPicker
+    //         .state
+    //         .productCategoryGroupId
+    //         ? operationClusters.filter(
+    //             (item) =>
+    //                 getProductCategoryGroupId(
+    //                     item
+    //                 ) ===
+    //                 Number(
+    //                     operationPicker
+    //                         .state
+    //                         .productCategoryGroupId
+    //                 )
+    //         )
+    //         : operationClusters;
 
 
     const openCreate = () => {
@@ -735,7 +760,7 @@ export function useSewingProcessPageController() {
 
             const response =
                 isEdit &&
-                selectedId
+                    selectedId
                     ? await updateSewingProcess(
                         selectedId
                     )
@@ -865,7 +890,7 @@ export function useSewingProcessPageController() {
                         const importedSkillGradeLevel =
                             line.skillGradeLevel !==
                                 null &&
-                            line.skillGradeLevel !==
+                                line.skillGradeLevel !==
                                 undefined
                                 ? Number(
                                     line.skillGradeLevel
@@ -882,11 +907,11 @@ export function useSewingProcessPageController() {
                                         Number(
                                             item.level
                                         ) ===
-                                            importedSkillGradeLevel &&
+                                        importedSkillGradeLevel &&
                                         Number(
                                             item.statusId
                                         ) ===
-                                            0
+                                        0
                                 )
                                 : undefined;
 
@@ -998,9 +1023,27 @@ export function useSewingProcessPageController() {
         canModify &&
         permissions.canUploadImage;
 
+    const handleConfirmOperationClusterTree =
+        (
+            rows:
+                SewingProcessLine[]
+        ) => {
+            addPickedLines(
+                rows
+            );
+
+            setOperationClusterTreePickerOpen(
+                false
+            );
+        };
+
 
     const closeMainModal =
         () => {
+            setOperationClusterTreePickerOpen(
+                false
+            );
+
             setImportModalOpen(
                 false
             );
@@ -1054,10 +1097,18 @@ export function useSewingProcessPageController() {
         productCateGroups,
         productCateGroupsLoading,
 
-        filteredOperationClusters,
+        // filteredOperationClusters,
+
+        operationActions,
+
+        operationClusterTreePickerOpen,
+
+        openOperationClusterTreePicker,
+        closeOperationClusterTreePicker,
+        handleConfirmOperationClusterTree,
 
         operationPicker,
-        operationActions,
+     
 
         canModify,
         canCalculate,

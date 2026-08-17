@@ -112,13 +112,13 @@ export default function GsdProcessTable({
         };
 
     return (
-        <div className="bg-white border-slate-200 p-5">
+        <div className="bg-white border-slate-200 p-5 pt-2">
             <div className="flex items-center justify-between gap-4 mb-5">
-                <div>
+                {/* <div>
                     <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">
                         Quy trình công đoạn
                     </h2>
-                </div>
+                </div> */}
 
                 {showActionButtons && (
                     <div className="flex items-center gap-2">

@@ -26,6 +26,7 @@ import {
 } from '../model/sewingProcess.mapper';
 
 export const sewingProcessService = {
+  
   async getActionDetailsByOperationClusterLineId(
     id: number
   ): Promise<SewingProcessActionDetail[]> {

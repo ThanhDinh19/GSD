@@ -1,15 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
-import MasterDataView from './components/MasterDataView';
-import GsdAnalysisView from './components/GsdAnalysisView';
+import { useState, useEffect, useRef } from 'react';
 import GsdAnalysisPage from './features/gsd-analysis/pages/GsdAnalysisPage';
 import OrganizationChartPage from './pages/OrganizationChartPage';
 import OrganizationChartPage_test from './pages/OrganizationChartPage_test';
-import OperationClusterPage from './pages/OperationClusterPage';
 import MasterDataPage_test from './pages/MasterDataPage_test';
-import OperationClusterPage_test from './pages/OperationClusterPage_test';
-import SewingProcessPage from './pages/SewingProcessPage'; // chưa tách file
-import SewingProcessPage_test from '../src/features/sewing-process/pages/SewingProcessPage'; // đã tách file
-import OperationClusterPage_test_v2 from '../src/features/operation-cluster/pages/operationClusterPage'; // đã tách file
+import SewingProcessPage from '../src/features/sewing-process/pages/SewingProcessPage'; // đã tách file
+import OperationClusterPage from '../src/features/operation-cluster/pages/operationClusterPage'; // đã tách file
 import OperationClusterTreeRealDataTest from '../src/features/operation-cluster/pages/OperationClusterTreeRealDataTest';
 import UserPermissionsPage from '../src/features/access-control/pages/UserPermissionsPage';
 import { useAuth } from './features/auth/hooks/useAuth';
@@ -17,6 +12,7 @@ import SystemUsersPage from './features/system-users/pages/SystemUsersPage';
 import RoleManagementPage from './features/role-management/pages/RoleManagementPage';
 import SystemEmployeesPage from './features/system-employees/pages/SystemEmployeesPage';
 import { ChevronDown, LogOut, UserRound, } from 'lucide-react';
+import MyPage from './features/myPage/page/mypage';
 
 // Import Syncfusion Spreadsheet CSS files
 import "@syncfusion/ej2-base/styles/material.css";
@@ -290,6 +286,23 @@ export default function App_test() {
 
                   </li>
                 )}
+
+                {/* <li>
+                  <button
+                    onClick={() => { setActiveTab('My page'); setMobileMenuOpen(false); }}
+                    className={`w-full text-left px-5 py-2.5 flex items-center gap-2.5 transition-all outline-none cursor-pointer ${activeTab === 'My page'
+                      ? 'bg-[#1e40af] border-r-4 border-white font-bold'
+                      : 'hover:bg-blue-800/40 text-blue-100'
+                      }`}
+                    title="My page"
+                  >
+                    <span className="h-4 w-4 shrink-0">∑</span>
+                    {!isSidebarCollapsed && (
+                      <span className="whitespace-nowrap">My page</span>
+                    )}
+                  </button>
+
+                </li> */}
               </ul>
             </div>
           )}
@@ -1120,7 +1133,7 @@ export default function App_test() {
             <OperationClusterPage_test_v2 />
           )} */}
         {activeTab === 'Kho cụm công đoạn' && (
-          <OperationClusterPage_test_v2 />
+          <OperationClusterPage />
         )}
 
         {activeTab === 'Kho cụm công đoạn mới' && (
@@ -1128,7 +1141,7 @@ export default function App_test() {
         )}
 
         {activeTab === 'Bảng quy trình may' && (
-          <SewingProcessPage_test />
+          <SewingProcessPage />
         )}
 
         {activeTab === 'Phân quyền sử dụng' && (
@@ -1145,6 +1158,10 @@ export default function App_test() {
 
         {activeTab === 'employees' && (
           <SystemEmployeesPage />
+        )}
+
+        {activeTab === 'My page' && (
+          <MyPage/>
         )}
 
         {/* Footer info brand elements */}

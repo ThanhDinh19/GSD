@@ -1,4 +1,4 @@
-import GsdAnalysisPage from '../pages/GsdAnalysisPage';
+import GsdAnalysisEditor from '../../gsd-analysis/components/GsdAnalysisEditor';
 
 type GsdAnalysisModalProps = {
   open: boolean;
@@ -40,7 +40,7 @@ export default function GsdAnalysisModal({
         </div>
 
         <div className="min-h-0 flex-1 overflow-auto bg-slate-50 p-4">
-          <GsdAnalysisPage
+          <GsdAnalysisEditor
             editAnalysisId={editAnalysisId}
             copyAnalysisId={copyAnalysisId}
             onSaveSuccess={onSaveSuccess}

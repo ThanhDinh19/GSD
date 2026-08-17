@@ -395,7 +395,7 @@ export default function GsdAnalysisEditor({
 
     return (
         <div className="space-y-5">
-            <div className="bg-white rounded-xl border-slate-200 p-5">
+            <div className="bg-white rounded-sm border-slate-200 p-5">
                 <div className="flex items-center justify-between gap-4 mb-5">
                     <div>
                         <h2 className="text-lg font-bold text-slate-800 uppercase tracking-tight">

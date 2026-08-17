@@ -54,6 +54,10 @@ const userPermissionRoute = require('./userPermission.routes');
 
 const sewingProcessImportRoutes = require('./sewingProcessImport.route');
 
+const myRoutes = require('./myRoutes');
+
+router.use('/vGSD30BizDoc', myRoutes);
+
 router.use('/statuses', statusRoutes);
 router.use('/clusters', clusterRoutes);
 router.use('/data', employeeRoutes_test);

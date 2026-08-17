@@ -1,4 +1,4 @@
-import { GsdAnalysisDetail } from '../../../types';
+import { GsdAnalysisDetail } from '../types/gsdAnalysis.types';
 import { getGsdAnalysisImageUrl } from '../services/gsdAnalysis.service';
 import { Button } from '../../../shared/components';
 interface GsdAnalysisDetailModalProps {
@@ -449,13 +449,12 @@ export default function GsdAnalysisDetailModal({
             variant='default'
             onClick={onClose}
           >
-            Close
+            Đóng
           </Button>
         </div>
       </div>
     </div>
   );
-
 }
 
 function InfoCard({

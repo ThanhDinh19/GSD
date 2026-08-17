@@ -140,8 +140,8 @@ export default function GsdOverviewPage() {
     }
 
     return (
-        <div className="space-y-0">
-            <div className="bg-white border border-slate-100 p-3">
+        <div className="h-full min-h-0 bg-slate-50 overflow-auto bg-white">
+            <div className=" pl-5 pr-5 bg-white border-slate-100 p-3">
                 <div className="flex items-center justify-between gap-4 mb-1">
                 </div>
 
@@ -204,7 +204,7 @@ export default function GsdOverviewPage() {
             )}
 
             {isWorkspaceOpen && (
-                <div className="bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div className="bg-white rounded-sm border border-slate-200 shadow-sm">
                     <div className="px-5 pt-5">
                         <div className="flex items-center justify-between gap-4 mb-4">
                             <div>
