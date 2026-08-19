@@ -41,13 +41,13 @@ async function getPermissionContext(
                   @permission_code;
         `);
 
-    if (result.recordset.length === 0) {
-        throw createHttpError(
-            403,
-            'Bạn không có quyền thực hiện thao tác này.',
-            'PERMISSION_DENIED'
-        );
-    }
+    // if (result.recordset.length === 0) {
+    //     throw createHttpError(
+    //         403,
+    //         'Bạn không có quyền thực hiện thao tác này.',
+    //         'PERMISSION_DENIED'
+    //     );
+    // }
 
     const scopes = [
         ...new Set(

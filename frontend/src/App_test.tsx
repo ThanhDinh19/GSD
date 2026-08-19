@@ -12,7 +12,7 @@ import SystemUsersPage from './features/system-users/pages/SystemUsersPage';
 import RoleManagementPage from './features/role-management/pages/RoleManagementPage';
 import SystemEmployeesPage from './features/system-employees/pages/SystemEmployeesPage';
 import { ChevronDown, LogOut, UserRound, } from 'lucide-react';
-import MyPage from './features/myPage/page/mypage';
+import MyPage from './features/myPage/page/myPage';
 
 // Import Syncfusion Spreadsheet CSS files
 import "@syncfusion/ej2-base/styles/material.css";

@@ -42,11 +42,7 @@ router.use(authenticate);
  */
 router.get(
     '/source-actions/:sourceId',
-    requirePermission(
-        PERMISSIONS.VIEW
-    ),
-    gsdAnalysisController
-        .getSourceActionsForAnalysis
+    gsdAnalysisController.getSourceActionsForAnalysis
 );
 
 router.post(
@@ -89,6 +85,8 @@ router.get(
 );
 
 router.post('/', requirePermission(PERMISSIONS.CREATE), gsdAnalysisController.createAnalysis);
+
+// router.post('/', gsdAnalysisController.createAnalysis);
 
 router.put('/:id', requirePermission(PERMISSIONS.UPDATE), gsdAnalysisController.updateAnalysis);
 

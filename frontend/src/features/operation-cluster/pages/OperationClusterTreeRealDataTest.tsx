@@ -2158,24 +2158,198 @@ export default function OperationClusterTreeOrderedByLineNo() {
       );
     };
 
+  const appendGsdsToCurrentCluster = (
+    selectedGsds:
+      GsdOption[]
+  ) => {
+    if (
+      !selectedContext ||
+      !cluster ||
+      selectedGsds.length === 0
+    ) {
+      return;
+    }
+
+
+    const requiredEfficiency =
+      cluster.requiredEfficiency;
+
+    const createdAt =
+      Date.now();
+
+
+    const newOperations:
+      TreeOperation[] =
+      selectedGsds.map(
+        (
+          gsd,
+          index
+        ) => {
+          const samGsd =
+            toNumber(
+              gsd.sam_gsd,
+              0
+            );
+
+
+          const adjustedSam =
+            requiredEfficiency > 0
+              ? samGsd /
+              requiredEfficiency
+              : samGsd;
+
+
+          const operationKey =
+            `temp:${cluster.key}:${gsd.gsd_analysis_id}:${createdAt}:${index}`;
+
+
+          return {
+            key:
+              operationKey,
+
+            id:
+              operationKey,
+
+            gsdAnalysisId:
+              gsd.gsd_analysis_id,
+
+            documentId:
+              cluster.documentId,
+
+            groupId:
+              cluster.id,
+
+            code:
+              gsd.operation_code ||
+              '',
+
+            name:
+              gsd.operation_name ||
+              '',
+
+            imageFileName:
+              (gsd as any)
+                .image_file_name ||
+              (gsd as any)
+                .imageFileName ||
+              '',
+
+            imageUrl:
+              (gsd as any)
+                .image_url ||
+              (gsd as any)
+                .imageUrl ||
+              '',
+
+            machineName:
+              gsd.machine_name ||
+              '-',
+
+            codeMmtb:
+              gsd.code_mmtb ||
+              '-',
+
+            skillLevel:
+              gsd.skill_level !==
+                null &&
+                gsd.skill_level !==
+                undefined
+                ? String(
+                  gsd.skill_level
+                )
+                : '-',
+
+            samGsd,
+
+            adjustedSam,
+
+            totalActions:
+              toNumber(
+                gsd.total_actions,
+                0
+              ),
+
+            totalActionSeconds:
+              toNumber(
+                gsd.total_action_seconds,
+                0
+              ),
+
+            manpower:
+              1,
+
+            statusLabel:
+              'Đang áp dụng',
+
+            raw:
+              gsd,
+          };
+        }
+      );
+
+
+    setTreeData(
+      (currentTree) =>
+        currentTree.map(
+          (document) => ({
+            ...document,
+
+            clusters:
+              document.clusters.map(
+                (
+                  currentCluster
+                ) =>
+                  currentCluster.key ===
+                    cluster.key
+                    ? {
+                      ...currentCluster,
+
+                      operations: [
+                        ...currentCluster.operations,
+                        ...newOperations,
+                      ],
+                    }
+                    : currentCluster
+              ),
+          })
+        )
+    );
+
+
+    setSelectedOperationKey(
+      newOperations[
+        newOperations.length - 1
+      ]?.key ??
+      null
+    );
+
+    setDirtyDocumentIds(
+      (current) => {
+        const next =
+          new Set(
+            current
+          );
+
+        next.add(
+          selectedContext
+            .document
+            .id
+        );
+
+        return next;
+      }
+    );
+  };
+
   const handleConfirmSelectGsd =
     () => {
-      if (
-        !selectedContext ||
-        !cluster
-      ) {
+      if (!selectedContext || !cluster) {
         resetGsdPopup();
         return;
       }
 
-      if (
-        checkedGsdIds.length ===
-        0
-      ) {
-        alert(
-          'Vui lòng chọn ít nhất một công đoạn GSD.'
-        );
-
+      if (checkedGsdIds.length === 0) {
+        alert('Vui lòng chọn ít nhất một công đoạn GSD.');
         return;
       }
 
@@ -2187,164 +2361,8 @@ export default function OperationClusterTreeOrderedByLineNo() {
             )
         );
 
-      const requiredEfficiency =
-        cluster.requiredEfficiency;
-
-      const createdAt =
-        Date.now();
-
-      const newOperations:
-        TreeOperation[] =
-        selectedGsds.map(
-          (
-            gsd,
-            index
-          ) => {
-            const samGsd =
-              toNumber(
-                gsd.sam_gsd,
-                0
-              );
-
-            const adjustedSam =
-              requiredEfficiency >
-                0
-                ? samGsd /
-                requiredEfficiency
-                : samGsd;
-
-            const operationKey =
-              `temp:${cluster.key}:${gsd.gsd_analysis_id}:${createdAt}:${index}`;
-
-            return {
-              key:
-                operationKey,
-
-              id:
-                operationKey,
-
-              gsdAnalysisId:
-                gsd.gsd_analysis_id,
-
-              documentId:
-                cluster.documentId,
-
-              groupId:
-                cluster.id,
-
-              code:
-                gsd.operation_code ||
-                '',
-
-              name:
-                gsd.operation_name ||
-                '',
-
-              imageFileName:
-                (gsd as any).image_file_name ||
-                (gsd as any).imageFileName ||
-                '',
-
-              imageUrl:
-                (gsd as any).image_url ||
-                (gsd as any).imageUrl ||
-                '',
-
-              machineName:
-                gsd.machine_name ||
-                '-',
-
-              codeMmtb:
-                gsd.code_mmtb ||
-                '-',
-
-              skillLevel:
-                gsd.skill_level !==
-                  null &&
-                  gsd.skill_level !==
-                  undefined
-                  ? String(
-                    gsd.skill_level
-                  )
-                  : '-',
-
-              samGsd,
-
-              adjustedSam,
-
-              totalActions:
-                toNumber(
-                  gsd.total_actions,
-                  0
-                ),
-
-              totalActionSeconds:
-                toNumber(
-                  gsd.total_action_seconds,
-                  0
-                ),
-
-              manpower:
-                1,
-
-              statusLabel:
-                'Đang áp dụng',
-
-              raw:
-                gsd,
-            };
-          }
-        );
-
-      setTreeData(
-        (currentTree) =>
-          currentTree.map(
-            (document) => ({
-              ...document,
-
-              clusters:
-                document.clusters.map(
-                  (
-                    currentCluster
-                  ) =>
-                    currentCluster.key ===
-                      cluster.key
-                      ? {
-                        ...currentCluster,
-
-                        operations:
-                          [
-                            ...currentCluster.operations,
-                            ...newOperations,
-                          ],
-                      }
-                      : currentCluster
-                ),
-            })
-          )
-      );
-
-      setSelectedOperationKey(
-        newOperations[0]
-          ?.key ||
-        null
-      );
-
-      setDirtyDocumentIds(
-        (current) => {
-          const next =
-            new Set(
-              current
-            );
-
-          next.add(
-            selectedContext
-              .document
-              .id
-          );
-
-          return next;
-        }
+      appendGsdsToCurrentCluster(
+        selectedGsds
       );
 
       resetGsdPopup();
@@ -3150,20 +3168,82 @@ export default function OperationClusterTreeOrderedByLineNo() {
       />
 
       <GsdAnalysisModal
-        open={gsdAnalysisOpen}
-        editAnalysisId={editGsdAnalysisId}
-        copyAnalysisId={copyGsdAnalysisId}
+        open={
+          gsdAnalysisOpen
+        }
+        editAnalysisId={
+          editGsdAnalysisId
+        }
+        copyAnalysisId={
+          copyGsdAnalysisId
+        }
         onClose={() => {
-          setGsdAnalysisOpen(false);
-          setEditGsdAnalysisId(null);
-          setCopyGsdAnalysisId(null);
-        }}
-        onSaveSuccess={async () => {
-          await loadGsdOptions();
+          setGsdAnalysisOpen(
+            false
+          );
 
-          setGsdAnalysisOpen(false);
-          setEditGsdAnalysisId(null);
-          setCopyGsdAnalysisId(null);
+          setEditGsdAnalysisId(
+            null
+          );
+
+          setCopyGsdAnalysisId(
+            null
+          );
+        }}
+        onSaveSuccess={async (
+          savedAnalysis
+        ) => {
+          const data =
+            await operationClusterService
+              .getGsdOptions();
+
+
+          setGsdOptions(
+            data
+          );
+
+
+          const analysisNo =
+            String(
+              savedAnalysis
+                .analysisNo ??
+              ''
+            ).trim();
+
+
+          const savedGsd =
+            data.find(
+              (item) =>
+                item.operation_code ===
+                analysisNo
+            );
+
+
+          if (savedGsd) {
+            appendGsdsToCurrentCluster(
+              [
+                savedGsd,
+              ]
+            );
+          } else {
+            console.warn(
+              'Không tìm thấy GSD vừa lưu:',
+              savedAnalysis
+            );
+          }
+
+
+          setGsdAnalysisOpen(
+            false
+          );
+
+          setEditGsdAnalysisId(
+            null
+          );
+
+          setCopyGsdAnalysisId(
+            null
+          );
         }}
       />
     </div>

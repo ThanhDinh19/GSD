@@ -10,6 +10,7 @@ import {
 import {
     Plus,
     Edit,
+    Copy,
     Import,
     FileDown,
     RefreshCcw,
@@ -199,6 +200,7 @@ export default function SewingProcessPage() {
         openImport,
         openDetail,
         openEdit,
+        openCopy,
 
         save,
 
@@ -256,6 +258,19 @@ export default function SewingProcessPage() {
                                 }
                             >
                                 Edit
+                            </Button>
+                        )}
+
+                        {permissions.canCreate && (
+                            <Button
+                                onClick={openCopy}
+                                disabled={!selectedId}
+                                size='sm'
+                                leftIcon={
+                                    <Copy className='h-4 w-4' />
+                                }
+                            >
+                                Copy
                             </Button>
                         )}
 

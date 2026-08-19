@@ -95,8 +95,7 @@ const getAnalysisCopyDraft = asyncHandler(
             });
         }
 
-        const data =
-            await gsdAnalysisService.getAnalysisCopyDraft(id);
+        const data = await gsdAnalysisService.getAnalysisCopyDraft(id);
 
         return res.json({
             success: true,

@@ -1,4 +1,11 @@
-import GsdAnalysisEditor from '../../gsd-analysis/components/GsdAnalysisEditor';
+import GsdAnalysisEditor from '../components/GsdAnalysisEditor';
+
+type GsdAnalysisSaveResult = {
+  id?: number;
+  analysisId?: number;
+  analysisNo?: string;
+};
+
 
 type GsdAnalysisModalProps = {
   open: boolean;
@@ -7,7 +14,10 @@ type GsdAnalysisModalProps = {
   copyAnalysisId?: number | null;
 
   onClose: () => void;
-  onSaveSuccess?: () => void;
+
+  onSaveSuccess?: (
+    data: GsdAnalysisSaveResult
+  ) => void | Promise<void>;
 };
 
 export default function GsdAnalysisModal({
@@ -41,10 +51,18 @@ export default function GsdAnalysisModal({
 
         <div className="min-h-0 flex-1 overflow-auto bg-slate-50 p-4">
           <GsdAnalysisEditor
-            editAnalysisId={editAnalysisId}
-            copyAnalysisId={copyAnalysisId}
-            onSaveSuccess={onSaveSuccess}
-            onCancel={onClose}
+            editAnalysisId={
+              editAnalysisId
+            }
+            copyAnalysisId={
+              copyAnalysisId
+            }
+            onSaveSuccess={
+              onSaveSuccess
+            }
+            onCancel={
+              onClose
+            }
           />
         </div>
 

@@ -6,12 +6,38 @@ import type {
     SewingProcessResult,
 } from '../types/sewingProcess.types';
 
+import {
+    getSewingProcessImageUrl,
+} from '../utils/sewingProcessImage';
+
 
 const TEMPLATE_PATH =
     `${import.meta.env.BASE_URL}templates/sewing-process-template.xlsx`;
 
 const SHEET_NAME =
     '1-Quy trình';
+
+const MAIN_IMAGE_CELL =
+    'M2';
+
+const MAIN_IMAGE_DRAWING_PATH =
+    'xl/drawings/drawing1.xml';
+
+const MAIN_IMAGE_DRAWING_RELS_PATH =
+    'xl/drawings/_rels/drawing1.xml.rels';
+
+const MAIN_IMAGE_MEDIA_PATH =
+    'xl/media/sewing-process-main-image.png';
+
+const EMU_PER_PIXEL =
+    9525;
+
+// Vùng merge M2:O8 của template.
+const MAIN_IMAGE_BOX_WIDTH_PX =
+    238;
+
+const MAIN_IMAGE_BOX_HEIGHT_PX =
+    216;
 
 const FIRST_DATA_ROW = 13;
 const LAST_DATA_ROW = 406;
@@ -20,7 +46,6 @@ const GROUP_TEMPLATE_ROW = 13;
 const OPERATION_TEMPLATE_ROW = 14;
 const MACHINE_TEMPLATE_ROW = 13;
 const FOOTER_START_ROW = 408;
-
 
 const PROCESS_COLUMNS = [
     'B',
@@ -40,7 +65,6 @@ const PROCESS_COLUMNS = [
     'P',
 ] as const;
 
-
 const MACHINE_COLUMNS = [
     'R',
     'S',
@@ -48,8 +72,8 @@ const MACHINE_COLUMNS = [
     'U',
     'V',
     'W',
+    'X'
 ] as const;
-
 
 type CellValue =
     | string
@@ -57,12 +81,10 @@ type CellValue =
     | null
     | undefined;
 
-
 type CellPatch = {
     value: CellValue;
     style?: string;
 };
-
 
 type PatchPlan =
     Map<
@@ -87,6 +109,7 @@ function escapeRegExp(
         '\\$&'
     );
 }
+
 function collapseUnusedRows(
     sheetXml: string,
     lastUsedRow: number
@@ -1568,6 +1591,8 @@ function planMachineNeeds(
                     toExcelPercent(
                         machine.usedEfficiency
                     ),
+                X:
+                    machine.sumSmv,
             };
 
 
@@ -1832,6 +1857,470 @@ async function removeCalcChain(
     }
 }
 
+/* =========================================================
+   MAIN IMAGE
+   ========================================================= */
+
+function resolveMainImageUrl(
+    data: SewingProcessResult
+) {
+    const image =
+        data.images?.[0];
+
+    if (!image) {
+        return '';
+    }
+
+    const value =
+        image.imageFileName ||
+        image.imageUrl ||
+        '';
+
+    if (!value) {
+        return '';
+    }
+
+    if (
+        /^https?:\/\//i.test(
+            value
+        ) ||
+        value.startsWith(
+            'blob:'
+        ) ||
+        value.startsWith(
+            'data:'
+        )
+    ) {
+        return value;
+    }
+
+    return getSewingProcessImageUrl(
+        value
+    );
+}
+
+
+async function loadImageAsPng(
+    imageUrl: string
+) {
+    const response =
+        await fetch(
+            imageUrl,
+            {
+                cache:
+                    'no-store',
+            }
+        );
+
+    if (!response.ok) {
+        throw new Error(
+            `Không tải được hình ảnh quy trình (${response.status}).`
+        );
+    }
+
+
+    const sourceBlob =
+        await response.blob();
+
+
+    const bitmap =
+        await createImageBitmap(
+            sourceBlob
+        );
+
+
+    try {
+        const canvas =
+            document.createElement(
+                'canvas'
+            );
+
+        canvas.width =
+            bitmap.width;
+
+        canvas.height =
+            bitmap.height;
+
+
+        const context =
+            canvas.getContext(
+                '2d'
+            );
+
+        if (!context) {
+            throw new Error(
+                'Không tạo được canvas để xử lý hình ảnh.'
+            );
+        }
+
+
+        context.drawImage(
+            bitmap,
+            0,
+            0
+        );
+
+
+        const pngBlob =
+            await new Promise<Blob>(
+                (
+                    resolve,
+                    reject
+                ) => {
+                    canvas.toBlob(
+                        (blob) => {
+                            if (!blob) {
+                                reject(
+                                    new Error(
+                                        'Không chuyển được hình ảnh sang PNG.'
+                                    )
+                                );
+
+                                return;
+                            }
+
+                            resolve(
+                                blob
+                            );
+                        },
+                        'image/png'
+                    );
+                }
+            );
+
+
+        return {
+            buffer:
+                await pngBlob
+                    .arrayBuffer(),
+
+            width:
+                bitmap.width,
+
+            height:
+                bitmap.height,
+        };
+    } finally {
+        bitmap.close();
+    }
+}
+
+
+function getNextRelationshipId(
+    xml: string
+) {
+    const ids =
+        Array.from(
+            xml.matchAll(
+                /\bId="rId(\d+)"/g
+            )
+        ).map(
+            (match) =>
+                Number(
+                    match[1]
+                )
+        );
+
+
+    return (
+        Math.max(
+            0,
+            ...ids
+        ) + 1
+    );
+}
+
+
+function getNextPictureId(
+    drawingXml: string
+) {
+    const ids =
+        Array.from(
+            drawingXml.matchAll(
+                /<xdr:cNvPr\b[^>]*\bid="(\d+)"/g
+            )
+        ).map(
+            (match) =>
+                Number(
+                    match[1]
+                )
+        );
+
+
+    return (
+        Math.max(
+            0,
+            ...ids
+        ) + 1
+    );
+}
+
+
+function calculateImagePlacement(
+    imageWidth:
+        number,
+
+    imageHeight:
+        number
+) {
+    if (
+        imageWidth <= 0 ||
+        imageHeight <= 0
+    ) {
+        throw new Error(
+            'Kích thước hình ảnh không hợp lệ.'
+        );
+    }
+
+
+    const scale =
+        Math.min(
+            MAIN_IMAGE_BOX_WIDTH_PX /
+            imageWidth,
+
+            MAIN_IMAGE_BOX_HEIGHT_PX /
+            imageHeight
+        );
+
+
+    const width =
+        imageWidth *
+        scale;
+
+
+    const height =
+        imageHeight *
+        scale;
+
+
+    const offsetX =
+        (
+            MAIN_IMAGE_BOX_WIDTH_PX -
+            width
+        ) / 2;
+
+
+    const offsetY =
+        (
+            MAIN_IMAGE_BOX_HEIGHT_PX -
+            height
+        ) / 2;
+
+
+    return {
+        offsetX:
+            Math.round(
+                offsetX *
+                EMU_PER_PIXEL
+            ),
+
+        offsetY:
+            Math.round(
+                offsetY *
+                EMU_PER_PIXEL
+            ),
+
+        width:
+            Math.round(
+                width *
+                EMU_PER_PIXEL
+            ),
+
+        height:
+            Math.round(
+                height *
+                EMU_PER_PIXEL
+            ),
+    };
+}
+
+
+async function addMainImage(
+    zip: JSZip,
+    data: SewingProcessResult
+) {
+    const imageUrl =
+        resolveMainImageUrl(
+            data
+        );
+
+
+    if (!imageUrl) {
+        return false;
+    }
+
+
+    const drawingFile =
+        zip.file(
+            MAIN_IMAGE_DRAWING_PATH
+        );
+
+
+    const drawingRelsFile =
+        zip.file(
+            MAIN_IMAGE_DRAWING_RELS_PATH
+        );
+
+
+    if (
+        !drawingFile ||
+        !drawingRelsFile
+    ) {
+        throw new Error(
+            'Template không có drawing để chèn hình ảnh.'
+        );
+    }
+
+
+    const image =
+        await loadImageAsPng(
+            imageUrl
+        );
+
+
+    let drawingXml =
+        await drawingFile.async(
+            'string'
+        );
+
+
+    let relationshipXml =
+        await drawingRelsFile.async(
+            'string'
+        );
+
+
+    const nextRelationshipNumber =
+        getNextRelationshipId(
+            relationshipXml
+        );
+
+
+    const relationshipId =
+        `rId${nextRelationshipNumber}`;
+
+
+    const pictureId =
+        getNextPictureId(
+            drawingXml
+        );
+
+
+    const placement =
+        calculateImagePlacement(
+            image.width,
+            image.height
+        );
+
+
+    /*
+     * M2:
+     *
+     * column M = zero-based 12
+     * row 2    = zero-based 1
+     *
+     * Image được contain trong vùng M2:O8,
+     * không kéo méo ảnh.
+     */
+    const anchorXml =
+        [
+            '<xdr:oneCellAnchor>',
+
+            '<xdr:from>',
+            '<xdr:col>12</xdr:col>',
+            `<xdr:colOff>${placement.offsetX}</xdr:colOff>`,
+            '<xdr:row>1</xdr:row>',
+            `<xdr:rowOff>${placement.offsetY}</xdr:rowOff>`,
+            '</xdr:from>',
+
+            `<xdr:ext cx="${placement.width}" cy="${placement.height}"/>`,
+
+            '<xdr:pic>',
+
+            '<xdr:nvPicPr>',
+
+            `<xdr:cNvPr id="${pictureId}" name="Sewing Process Main Image"/>`,
+
+            '<xdr:cNvPicPr>',
+            '<a:picLocks noChangeAspect="1"/>',
+            '</xdr:cNvPicPr>',
+
+            '</xdr:nvPicPr>',
+
+            '<xdr:blipFill>',
+
+            `<a:blip xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" r:embed="${relationshipId}"/>`,
+
+            '<a:stretch>',
+            '<a:fillRect/>',
+            '</a:stretch>',
+
+            '</xdr:blipFill>',
+
+            '<xdr:spPr>',
+
+            '<a:xfrm>',
+            '<a:off x="0" y="0"/>',
+            `<a:ext cx="${placement.width}" cy="${placement.height}"/>`,
+            '</a:xfrm>',
+
+            '<a:prstGeom prst="rect">',
+            '<a:avLst/>',
+            '</a:prstGeom>',
+
+            '<a:noFill/>',
+            '<a:ln>',
+            '<a:noFill/>',
+            '</a:ln>',
+
+            '</xdr:spPr>',
+
+            '</xdr:pic>',
+
+            '<xdr:clientData/>',
+
+            '</xdr:oneCellAnchor>',
+        ].join('');
+
+
+    drawingXml =
+        drawingXml.replace(
+            '</xdr:wsDr>',
+            `${anchorXml}</xdr:wsDr>`
+        );
+
+
+    const relationship =
+        `<Relationship Id="${relationshipId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/sewing-process-main-image.png"/>`;
+
+
+    relationshipXml =
+        relationshipXml.replace(
+            '</Relationships>',
+            `${relationship}</Relationships>`
+        );
+
+
+    zip.file(
+        MAIN_IMAGE_MEDIA_PATH,
+        image.buffer
+    );
+
+
+    zip.file(
+        MAIN_IMAGE_DRAWING_PATH,
+        drawingXml
+    );
+
+
+    zip.file(
+        MAIN_IMAGE_DRAWING_RELS_PATH,
+        relationshipXml
+    );
+
+
+    return true;
+}
 
 /* =========================================================
    DOWNLOAD
@@ -1980,7 +2469,6 @@ export async function exportSewingProcessExcel(
             MACHINE_COLUMNS
         );
 
-
     /* -------------------------------------------------------
        5. BUILD PATCH PLAN
        ------------------------------------------------------- */
@@ -2005,6 +2493,22 @@ export async function exportSewingProcessExcel(
         plan,
         data
     );
+
+    const hasMainImage =
+        Boolean(
+            resolveMainImageUrl(
+                data
+            )
+        );
+
+
+    if (hasMainImage) {
+        setPatch(
+            plan,
+            MAIN_IMAGE_CELL,
+            null
+        );
+    }
 
 
     const lastProcessRow =
@@ -2063,6 +2567,13 @@ export async function exportSewingProcessExcel(
         worksheetPath,
         nextSheetXml
     );
+
+    if (hasMainImage) {
+        await addMainImage(
+            zip,
+            data
+        );
+    }
 
 
     /* -------------------------------------------------------

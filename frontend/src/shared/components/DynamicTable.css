@@ -1,0 +1,246 @@
+.dynamic-table {
+    width: 100%;
+    font-family: Arial, sans-serif;
+    font-size: 14px;
+}
+
+.dt-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.dt-toolbar-left,
+.dt-toolbar-right {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dt-search {
+    width: 260px;
+    padding: 8px 10px;
+    border: 1px solid #d0d0d0;
+    border-radius: 6px;
+}
+
+.dt-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+.dynamic-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.dynamic-table th,
+.dynamic-table td {
+    padding: 9px 10px;
+    border-bottom: 1px solid #e5e5e5;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.dynamic-table th {
+    background: #f7f7f7;
+    font-weight: 600;
+}
+
+.dynamic-table tbody tr:hover {
+    background: #fafafa;
+}
+
+.dt-sort-button {
+    width: 100%;
+    border: none;
+    background: none;
+    text-align: left;
+    padding: 0;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.dt-filter-row input,
+.dt-filter-row select {
+    width: 100%;
+    min-width: 90px;
+    box-sizing: border-box;
+    padding: 6px;
+    border: 1px solid #d5d5d5;
+    border-radius: 4px;
+}
+
+.dt-btn {
+    border: 1px solid #ccc;
+    background: white;
+    border-radius: 5px;
+    padding: 7px 12px;
+    cursor: pointer;
+}
+
+.dt-btn:hover:not(:disabled) {
+    background: #f2f2f2;
+}
+
+.dt-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.dt-btn-primary {
+    background: #1677ff;
+    color: white;
+    border-color: #1677ff;
+}
+
+.dt-btn-primary:hover:not(:disabled) {
+    background: #0958d9;
+}
+
+.dt-btn-danger {
+    color: #d9363e;
+}
+
+.dt-btn-small {
+    padding: 5px 8px;
+}
+
+.dt-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.dt-action-column {
+    width: 130px;
+}
+
+.dt-empty {
+    text-align: center !important;
+    padding: 30px !important;
+    color: #777;
+}
+
+.dt-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    gap: 12px;
+}
+
+.dt-pagination-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.dt-pagination select {
+    padding: 7px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+/* Modal */
+
+.dt-modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.dt-modal {
+    background: white;
+    width: min(600px, 95vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.dt-modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 18px;
+    border-bottom: 1px solid #ddd;
+}
+
+.dt-modal-header h3 {
+    margin: 0;
+}
+
+.dt-modal-close {
+    border: none;
+    background: none;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.dt-form {
+    padding: 18px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.dt-form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dt-form-group input,
+.dt-form-group select {
+    padding: 9px 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-sizing: border-box;
+}
+
+.dt-required {
+    color: red;
+}
+
+.dt-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dt-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 15px 18px;
+    border-top: 1px solid #ddd;
+}
+
+@media (max-width: 600px) {
+
+    .dt-form {
+        grid-template-columns: 1fr;
+    }
+
+    .dt-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .dt-search {
+        width: 100%;
+    }
+
+    .dt-pagination {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}

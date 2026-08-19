@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
-import { GsdAnalysisPayload } from '../types/gsdAnalysis.types';
-import { useGsdAnalysis } from '../hooks/useGsdAnalysis';
-import SourceActionPickerModal from '../components/SourceActionPickerModal';
-import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../services/gsdAnalysis.service';
+import { GsdAnalysisPayload } from '../../gsd-analysis/types/gsdAnalysis.types';
+import { useGsdAnalysis } from '../../gsd-analysis/hooks/useGsdAnalysis';
+import SourceActionPickerModal from '../../gsd-analysis/components/SourceActionPickerModal';
+import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../../gsd-analysis/services/gsdAnalysis.service';
 import { MetricCard } from '../../../shared/components';
 
 
@@ -21,10 +21,21 @@ const initialForm: Omit<GsdAnalysisPayload, 'sourceId' | 'details'> = {
     images: []
 };
 
+type GsdAnalysisSaveResult = {
+    id?: number;
+    analysisId?: number;
+    analysisNo?: string;
+};
+
+
 type GsdAnalysisPageProps = {
     editAnalysisId?: number | null;
     copyAnalysisId?: number | null;
-    onSaveSuccess?: () => void;
+
+    onSaveSuccess?: (
+        data: GsdAnalysisSaveResult
+    ) => void | Promise<void>;
+
     onCancel?: () => void;
 };
 
@@ -241,7 +252,9 @@ export default function GsdAnalysisEditor({
                 return '';
             });
 
-            onSaveSuccess?.();
+            await onSaveSuccess?.(
+                response.data
+            );
         } catch (err) {
             alert(
                 err instanceof Error

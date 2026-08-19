@@ -208,6 +208,7 @@ export function useSewingProcessPageController() {
 
         refresh,
         loadDetailToForm,
+        loadCopyToForm,
 
         setForm,
         updateForm,
@@ -702,6 +703,73 @@ export function useSewingProcessPageController() {
         };
 
 
+    const openCopy =
+        async () => {
+            if (
+                !permissions.canCreate
+            ) {
+                return;
+            }
+
+
+            if (
+                !selectedId
+            ) {
+                toast.warning(
+                    'Vui lòng chọn chứng từ cần sao chép.',
+                    {
+                        duration: 2000,
+                    }
+                );
+
+                return;
+            }
+
+
+            try {
+                await loadCopyToForm(
+                    selectedId
+                );
+
+
+                /*
+                 * Copy phải trở thành CREATE mới.
+                 * Không giữ selectedId của chứng từ nguồn.
+                 */
+                setSelectedId(
+                    null
+                );
+
+
+                setActiveTab(
+                    'process'
+                );
+
+
+                setModalMode(
+                    'create'
+                );
+            } catch (
+            error
+            ) {
+                console.error(
+                    'Copy Sewing Process lỗi:',
+                    error
+                );
+
+
+                toast.warning(
+                    error instanceof Error
+                        ? error.message
+                        : 'Không sao chép được chứng từ.',
+                    {
+                        duration: 3000,
+                    }
+                );
+            }
+        };
+
+
     const handleMoveToTrash =
         async (
             id: number
@@ -1108,7 +1176,7 @@ export function useSewingProcessPageController() {
         handleConfirmOperationClusterTree,
 
         operationPicker,
-     
+
 
         canModify,
         canCalculate,
@@ -1137,6 +1205,7 @@ export function useSewingProcessPageController() {
         openImport,
         openDetail,
         openEdit,
+        openCopy,
 
         handleMoveToTrash,
         save,

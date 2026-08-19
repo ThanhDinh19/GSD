@@ -332,6 +332,169 @@ export function useSewingProcess() {
     }
   };
 
+  const loadCopyToForm =
+    async (
+      id: number
+    ) => {
+      setLoading(
+        true
+      );
+
+      try {
+        const data =
+          await sewingProcessService
+            .getSewingProcessById(
+              id
+            );
+
+
+        const sourceDocumentCode =
+          String(
+            data.header
+              .documentCode ||
+            ''
+          ).trim();
+
+
+        const baseCopyCode =
+          `${sourceDocumentCode}_COPY`;
+
+
+        const existedCodes =
+          new Set(
+            items.map(
+              (item) =>
+                String(
+                  item.documentCode ||
+                  ''
+                )
+                  .trim()
+                  .toUpperCase()
+            )
+          );
+
+
+        let nextDocumentCode =
+          baseCopyCode;
+
+
+        let copyIndex =
+          2;
+
+
+        while (
+          existedCodes.has(
+            nextDocumentCode
+              .toUpperCase()
+          )
+        ) {
+          nextDocumentCode =
+            `${baseCopyCode}_${copyIndex}`;
+
+          copyIndex +=
+            1;
+        }
+
+
+        const copiedLines =
+          data.lines.map(
+            (
+              line,
+              index
+            ) => ({
+              ...line,
+
+              // Không mang ID dòng cũ
+              // sang chứng từ mới.
+              id:
+                undefined,
+
+              lineNo:
+                index + 1,
+
+              lineOrder:
+                index + 1,
+            })
+          );
+
+
+        const copiedImages =
+          (
+            data.images ||
+            []
+          ).map(
+            (
+              image
+            ) => ({
+              ...image,
+
+              // Không mang ID record ảnh cũ.
+              id:
+                undefined,
+
+              // Ảnh sẽ thuộc chứng từ copy.
+              documentCode:
+                nextDocumentCode,
+
+              createdAt:
+                undefined,
+
+              updatedAt:
+                undefined,
+            })
+          );
+
+
+        setForm({
+          ...data.header,
+
+          documentCode:
+            nextDocumentCode,
+
+          lines:
+            copiedLines,
+
+          images:
+            copiedImages,
+        });
+
+
+        /*
+         * Quan trọng:
+         * Copy là CREATE mới.
+         *
+         * Không được giữ result của chứng từ cũ,
+         * vì createSewingProcess() hiện ưu tiên
+         * result.header/result.lines nếu result tồn tại.
+         */
+        setResult(
+          null
+        );
+
+
+        return {
+          ...data,
+
+          header: {
+            ...data.header,
+
+            documentCode:
+              nextDocumentCode,
+          },
+
+          lines:
+            copiedLines,
+
+          images:
+            copiedImages,
+        };
+      } finally {
+        setLoading(
+          false
+        );
+      }
+    };
+
   const resetForm = () => {
     setResult(null);
 
@@ -383,6 +546,7 @@ export function useSewingProcess() {
     refresh,
     loadSewingProcesses,
     loadDetailToForm,
+    loadCopyToForm,
 
     setForm,
     updateForm,

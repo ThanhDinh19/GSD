@@ -1,6 +1,6 @@
 import {
-    useState,
     useEffect,
+    useState,
 } from 'react';
 
 import {
@@ -12,43 +12,114 @@ import type {
     DynamicRow,
 } from '../types/types';
 
+
 export function useMyService() {
-    const [vGSD30BizDoc, setVGSD30BizDoc] = useState<DynamicRow[]>([]);
 
-    const [columns, setColumns] = useState<DynamicColumn[]>([]);
+    const [
+        vGSD30BizDoc,
+        setVGSD30BizDoc
+    ] = useState<DynamicRow[]>([]);
 
-    const [loading, setLoading] = useState(false);
+    const [
+        columns,
+        setColumns
+    ] = useState<DynamicColumn[]>([]);
 
-    const get_vGSD30BizDoc = async () => {
-        try {
-            setLoading(true);
+    const [
+        loading,
+        setLoading
+    ] = useState(false);
 
-            const result = await myService.vGSD30BizDoc();
 
-            setVGSD30BizDoc(result.data);
-            setColumns(result.columns);
+    const get_vGSD30BizDoc =
+        async () => {
 
-            return result;
-        } finally {
-            setLoading(false);
-        }
-    };
+            try {
 
-    const add_vGSD30BizDoc = async (formData: Record<string, unknown>) => {
-        await myService.addVGSD30BizDoc(formData);
-        await get_vGSD30BizDoc();
-    };
+                setLoading(true);
+
+                const result =
+                    await myService
+                        .vGSD30BizDoc();
+
+                setVGSD30BizDoc(
+                    result.data
+                );
+
+                setColumns(
+                    result.columns
+                );
+
+                return result;
+
+            } finally {
+
+                setLoading(false);
+            }
+        };
+
+
+    const add_vGSD30BizDoc =
+        async (
+            data: DynamicRow
+        ) => {
+
+            await myService
+                .addVGSD30BizDoc(
+                    data
+                );
+
+            await get_vGSD30BizDoc();
+        };
+
+
+    const update_vGSD30BizDoc =
+        async (
+            id: unknown,
+            data: DynamicRow
+        ) => {
+
+            await myService
+                .updateVGSD30BizDoc(
+                    id,
+                    data
+                );
+
+            await get_vGSD30BizDoc();
+        };
+
+
+    const delete_vGSD30BizDoc =
+        async (
+            id: unknown
+        ) => {
+
+            await myService
+                .deleteVGSD30BizDoc(
+                    id
+                );
+
+            await get_vGSD30BizDoc();
+        };
+
 
     useEffect(() => {
+
         get_vGSD30BizDoc();
+
     }, []);
 
+
     return {
+
         vGSD30BizDoc,
         columns,
         loading,
 
         get_vGSD30BizDoc,
-        add_vGSD30BizDoc
+
+        add_vGSD30BizDoc,
+        update_vGSD30BizDoc,
+        delete_vGSD30BizDoc,
     };
 }
