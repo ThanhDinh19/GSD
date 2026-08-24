@@ -301,7 +301,6 @@ export default function App_test() {
                       <span className="whitespace-nowrap">My page</span>
                     )}
                   </button>
-
                 </li> */}
               </ul>
             </div>

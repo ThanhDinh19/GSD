@@ -134,7 +134,8 @@ const getGsdOptions = async () => {
   // *note*: total_manual_seconds (tổng giây thao tác) = sum(tmu * số lần lặp / 27.8)
 
   const result = await pool.request().query(`
-    SELECT
+    
+SELECT
       h.id AS gsd_analysis_id,
       h.analysis_no AS operation_code,
       h.operation_name,
@@ -168,6 +169,7 @@ const getGsdOptions = async () => {
         ON h.skill_grade = sg.level
       LEFT JOIN salary_coefficients sc
         ON sc.level_id = sg.level
+      WHERE h.is_deleted = 0
       GROUP BY
         h.id,
         h.analysis_no,

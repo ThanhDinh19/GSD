@@ -707,7 +707,7 @@ async function getSewingProcessById(id) {
                 created_at AS [createdAt],
                 updated_at AS [updatedAt]
             FROM sewing_process_machine_needs
-            WHERE document_code = @document_code
+            WHERE document_code = @document_code and machine_id is not null
             ORDER BY machine_name ASC
         `);
 

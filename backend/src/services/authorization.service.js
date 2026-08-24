@@ -15,16 +15,8 @@ async function getPermissionContext(
 
     const result = await pool
         .request()
-        .input(
-            'user_id',
-            sql.BigInt,
-            userId
-        )
-        .input(
-            'permission_code',
-            sql.VarChar(200),
-            permissionCode
-        )
+        .input('user_id', sql.BigInt, userId)
+        .input('permission_code', sql.VarChar(200), permissionCode)
         .query(`
             SELECT
                 permission_id AS [permissionId],
@@ -41,13 +33,13 @@ async function getPermissionContext(
                   @permission_code;
         `);
 
-    // if (result.recordset.length === 0) {
-    //     throw createHttpError(
-    //         403,
-    //         'Bạn không có quyền thực hiện thao tác này.',
-    //         'PERMISSION_DENIED'
-    //     );
-    // }
+    if (result.recordset.length === 0) {
+        throw createHttpError(
+            403,
+            `Bạn không có quyền thực hiện thao tác này. ${permissionCode}`,
+            'PERMISSION_DENIED'
+        );
+    }
 
     const scopes = [
         ...new Set(

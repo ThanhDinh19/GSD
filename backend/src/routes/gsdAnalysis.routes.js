@@ -40,49 +40,16 @@ router.use(authenticate);
 /*
  * Đặt route cụ thể trước route /:id.
  */
-router.get(
-    '/source-actions/:sourceId',
-    gsdAnalysisController.getSourceActionsForAnalysis
+router.get( '/source-actions/:sourceId', gsdAnalysisController.getSourceActionsForAnalysis
 );
 
-router.post(
-    '/calculate',
-    requirePermission(
-        PERMISSIONS.CREATE
-    ),
-    gsdAnalysisController
-        .calculateAnalysis
-);
+router.post('/calculate', requirePermission(PERMISSIONS.CREATE), gsdAnalysisController.calculateAnalysis);
 
-router.post(
-    '/images/upload',
-    requirePermission(
-        PERMISSIONS.CREATE
-    ),
-    uploadGsdAnalysisImage.single(
-        'image'
-    ),
-    gsdAnalysisController
-        .uploadGsdAnalysisImage
-);
+router.post('/images/upload', requirePermission(PERMISSIONS.CREATE), uploadGsdAnalysisImage.single('image'), gsdAnalysisController.uploadGsdAnalysisImage);
 
-router.get(
-    '/:id/copy-draft',
-    requirePermission(
-        PERMISSIONS.VIEW
-    ),
-    gsdAnalysisController
-        .getAnalysisCopyDraft
-);
+router.get('/:id/copy-draft', requirePermission(PERMISSIONS.VIEW), gsdAnalysisController.getAnalysisCopyDraft);
 
-router.get(
-    '/',
-    requirePermission(
-        PERMISSIONS.VIEW
-    ),
-    gsdAnalysisController
-        .getAnalyses
-);
+router.get('/', requirePermission(PERMISSIONS.VIEW), gsdAnalysisController.getAnalyses);
 
 router.post('/', requirePermission(PERMISSIONS.CREATE), gsdAnalysisController.createAnalysis);
 
