@@ -24,6 +24,9 @@ export default function SalaryCoefficientFormModal({
 }: SalaryCoefficientFormModalProps) {
     const [form, setForm] = useState<SalaryCoefficientPayload>(emptyForm);
     const [saving, setSaving] = useState(false);
+    const [coefficientInput, setCoefficientInput] = useState(
+        String(form.coefficient ?? "")
+    );
 
     useEffect(() => {
         if (item) {
@@ -32,12 +35,20 @@ export default function SalaryCoefficientFormModal({
                 coefficient: item.coefficient,
                 statusId: item.statusId,
             });
+
+            setCoefficientInput(
+                String(item.coefficient ?? "")
+            );
         } else {
             setForm(emptyForm);
+
+            setCoefficientInput("");
         }
     }, [item]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handleSubmit = async (
+        e: React.FormEvent
+    ) => {
         e.preventDefault();
 
         if (!form.levelId) {
@@ -45,16 +56,31 @@ export default function SalaryCoefficientFormModal({
             return;
         }
 
-        if (!form.coefficient) {
-            alert('Vui lòng nhập hệ số');
+        const coefficient =
+            Number(coefficientInput);
+
+        if (
+            coefficientInput.trim() === "" ||
+            Number.isNaN(coefficient)
+        ) {
+            alert('Vui lòng nhập hệ số hợp lệ');
             return;
         }
 
         try {
             setSaving(true);
-            await onSubmit(form);
+
+            await onSubmit({
+                ...form,
+                coefficient,
+            });
+
         } catch (err) {
-            alert(err instanceof Error ? err.message : 'Lưu dữ liệu thất bại.');
+            alert(
+                err instanceof Error
+                    ? err.message
+                    : 'Lưu dữ liệu thất bại.'
+            );
         } finally {
             setSaving(false);
         }
@@ -99,11 +125,25 @@ export default function SalaryCoefficientFormModal({
                             Hệ số <span className="text-red-500">*</span>
                         </label>
                         <input
-                            value={form.coefficient}
-                            onChange={(e) => setForm({ ...form, coefficient: Number(e.target.value) })}
-                            className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
-                            placeholder="..."
-                            maxLength={1000}
+                            type="text"
+                            inputMode="decimal"
+                            value={coefficientInput}
+                            onChange={(e) => {
+                                let value = e.target.value.replace(",", ".");
+
+                                if (!/^\d*\.?\d*$/.test(value)) {
+                                    return;
+                                }
+
+                                setCoefficientInput(value);
+                            }}
+                            onBlur={() => {
+                                setForm({
+                                    ...form,
+                                    coefficient: Number(coefficientInput || 0),
+                                });
+                            }}
+                            className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
                         />
                     </div>
 
