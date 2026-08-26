@@ -763,7 +763,7 @@ export function SewingProcessModal({
           )}
 
 
-          {permissionOperationCluster.canCreate && (
+          {/* {permissionOperationCluster.canCreate && (
             <Button
               variant='primary'
               onClick={
@@ -774,7 +774,7 @@ export function SewingProcessModal({
             >
               Thêm cụm công đoạn
             </Button>
-          )}
+          )} */}
 
 
           <Button

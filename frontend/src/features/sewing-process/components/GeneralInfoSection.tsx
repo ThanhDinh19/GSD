@@ -17,6 +17,10 @@ import {
   ComboBox,
 } from '../../../shared/components'
 
+import {formatOperationName } from '../../gsd-analysis/utils/gsdAnalysis.formatters';
+
+import { useRef, useLayoutEffect } from 'react';
+
 type GeneralInfoSectionProps = {
   form: SewingProcessPayload;
   customers: Customer[];
@@ -39,6 +43,24 @@ export function GeneralInfoSection({
   onUpdate,
   onCustomerChange,
 }: GeneralInfoSectionProps) {
+
+  const operationNameRef = useRef<HTMLInputElement>(null);
+  const caretRef = useRef<{
+    start: number;
+    end: number;
+  } | null>(null);
+
+  useLayoutEffect(() => {
+    const input = operationNameRef.current;
+    const caret = caretRef.current;
+
+    if (!input || !caret) return;
+
+    input.setSelectionRange(caret.start, caret.end);
+
+    caretRef.current = null;
+  }, [form.documentCode]);
+
   const inputClass = `
     w-full rounded-lg border
     border-slate-300 px-3 py-2 text-sm
@@ -76,15 +98,27 @@ export function GeneralInfoSection({
             </span>
           </label>
 
+
+
+
           <input
-            disabled={readOnly}
-            value={form.documentCode}
-            onChange={(event) =>
-              onUpdate(
-                'documentCode',
-                event.target.value
-              )
-            }
+            ref={operationNameRef}
+            value={form.documentCode ?? ""}
+            onChange={(e) => {
+              const input = e.currentTarget;
+
+              const start = input.selectionStart ?? input.value.length;
+              const end = input.selectionEnd ?? start;
+
+              const formattedValue = formatOperationName(input.value);
+
+              caretRef.current = {
+                start,
+                end,
+              };
+
+              onUpdate("documentCode", formattedValue);
+            }}
             className={inputClass}
           />
         </div>

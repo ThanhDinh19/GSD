@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useLayoutEffect, useRef } from 'react';
 import { GsdAnalysisPayload } from '../../gsd-analysis/types/gsdAnalysis.types';
 import { useGsdAnalysis } from '../../gsd-analysis/hooks/useGsdAnalysis';
 import SourceActionPickerModal from '../../gsd-analysis/components/SourceActionPickerModal';
 import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../../gsd-analysis/services/gsdAnalysis.service';
 import { MetricCard } from '../../../shared/components';
+import { formatOperationName } from "../../gsd-analysis/utils/gsdAnalysis.formatters";
 
 
 // Omit lấy type GsdAnalysisPayload, bỏ cột sourceId, details
@@ -104,6 +105,12 @@ export default function GsdAnalysisEditor({
         loadAnalysisForCopy
 
     } = useGsdAnalysis();
+
+    const operationNameRef = useRef<HTMLInputElement>(null);
+    const caretRef = useRef<{
+        start: number;
+        end: number;
+    } | null>(null);
 
     const [imageUploading, setImageUploading] = useState(false);
     const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null);
@@ -306,6 +313,17 @@ export default function GsdAnalysisEditor({
         }));
     };
 
+    useLayoutEffect(() => {
+        const input = operationNameRef.current;
+        const caret = caretRef.current;
+
+        if (!input || !caret) return;
+
+        input.setSelectionRange(caret.start, caret.end);
+
+        caretRef.current = null;
+    }, [form.operationName]);
+
     useEffect(() => {
         let cancelled = false;
 
@@ -491,19 +509,20 @@ export default function GsdAnalysisEditor({
                                 </label>
 
                                 <input
-                                    value={form.operationName}
+                                    ref={operationNameRef}
+                                    value={form.operationName ?? ""}
                                     onChange={(e) => {
-                                        const value = e.target.value;
+                                        const input = e.currentTarget;
 
-                                        const formattedValue = value
-                                            .split(" ")
-                                            .map((word) =>
-                                                word
-                                                    ? word.charAt(0).toLocaleUpperCase("vi-VN") +
-                                                    word.slice(1).toLocaleLowerCase("vi-VN")
-                                                    : ""
-                                            )
-                                            .join(" ");
+                                        const start = input.selectionStart ?? input.value.length;
+                                        const end = input.selectionEnd ?? start;
+
+                                        const formattedValue = formatOperationName(input.value);
+
+                                        caretRef.current = {
+                                            start,
+                                            end,
+                                        };
 
                                         setForm((prev) => ({
                                             ...prev,

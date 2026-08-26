@@ -2596,13 +2596,9 @@ export default function OperationClusterTreeOrderedByLineNo() {
 
                                           return (
                                             <TreeNodeRow
-                                              key={
-                                                treeCluster.key
-                                              }
+                                              key={treeCluster.key}
                                               depth={3}
-                                              open={
-                                                false
-                                              }
+                                              open={false}
                                               onToggle={() => { }}
                                               onSelect={() =>
                                                 selectCluster(
@@ -2610,21 +2606,12 @@ export default function OperationClusterTreeOrderedByLineNo() {
                                                   treeCluster
                                                 )
                                               }
-                                              icon={
-                                                <ClusterIcon />
-                                              }
-                                              label={
-                                                treeCluster.name
-                                              }
-                                              selected={
-                                                selected
-                                              }
-                                              inactive={
-                                                treeCluster.inactive
-                                              }
-                                              expandable={
-                                                false
-                                              }
+                                              icon={<ClusterIcon />}
+                                              label={treeCluster.name}
+                                              selected={selected}
+                                              inactive={treeCluster.inactive}
+                                              expandable={false}
+                                              count={treeCluster.operations.length}
                                               className="text-slate-700"
                                             />
                                           );
@@ -3412,6 +3399,7 @@ function TreeNodeRow({
   inactive = false,
   expandable = true,
   className = '',
+  count,
 }: {
   depth: number;
   open: boolean;
@@ -3424,32 +3412,30 @@ function TreeNodeRow({
   inactive?: boolean;
   expandable?: boolean;
   className?: string;
+
+  // Số lượng công đoạn
+  count?: number;
 }) {
   return (
     <div
       className={`group flex min-h-8 items-center rounded pr-2 text-[12px] ${selected
-        ? 'bg-blue-50 text-blue-700'
-        : 'text-slate-700 hover:bg-slate-50'
+          ? 'bg-blue-50 text-blue-700'
+          : 'text-slate-700 hover:bg-slate-50'
         }`}
       style={{
-        paddingLeft:
-          `${6 + depth * 17}px`,
+        paddingLeft: `${6 + depth * 17}px`,
       }}
     >
       {expandable ? (
         <button
           type="button"
-          onClick={(
-            event
-          ) => {
+          onClick={(event) => {
             event.stopPropagation();
             onToggle();
           }}
           className="mr-1 flex h-6 w-5 items-center justify-center rounded text-slate-400 hover:bg-white hover:text-slate-700"
         >
-          <ChevronIcon
-            open={open}
-          />
+          <ChevronIcon open={open} />
         </button>
       ) : (
         <span className="mr-1 h-6 w-5 shrink-0" />
@@ -3457,13 +3443,8 @@ function TreeNodeRow({
 
       <button
         type="button"
-        onClick={
-          onSelect ||
-          onToggle
-        }
-        className={`flex min-w-0 flex-1 items-center gap-2 py-1 text-left ${strong
-          ? 'font-semibold text-slate-800'
-          : ''
+        onClick={onSelect || onToggle}
+        className={`flex min-w-0 flex-1 items-center gap-2 py-1 text-left ${strong ? 'font-semibold text-slate-800' : ''
           }`}
       >
         <span
@@ -3476,15 +3457,30 @@ function TreeNodeRow({
           {icon}
         </span>
 
-        <span className={`truncate ${className}`}>
+        <span className={`min-w-0 flex-1 truncate ${className}`}>
           {label}
         </span>
 
-        {inactive ? (
-          <span className="ml-auto shrink-0 rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-medium text-rose-600">
-            Ngừng
-          </span>
-        ) : null}
+        {/* Bên phải */}
+        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+          {typeof count === 'number' && (
+            <span
+              className={`inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-[10px] font-semibold ${selected
+                  ? 'bg-blue-100 text-blue-700'
+                  : 'bg-slate-100 text-slate-600'
+                }`}
+              title={`${count} công đoạn`}
+            >
+              {count}
+            </span>
+          )}
+
+          {inactive ? (
+            <span className="rounded bg-rose-50 px-1.5 py-0.5 text-[9px] font-medium text-rose-600">
+              Ngừng
+            </span>
+          ) : null}
+        </div>
       </button>
     </div>
   );
