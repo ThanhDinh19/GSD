@@ -30,37 +30,39 @@ import type {
     OperationClusterTreePickerModalProps,
 } from '../types/operationClusterTreePicker.types';
 
-
 type TreeNodeRowProps = {
     depth:
-        number;
+    number;
 
     open:
-        boolean;
+    boolean;
 
     onToggle:
-        () => void;
+    () => void;
 
     onSelect?:
-        () => void;
+    () => void;
 
     icon:
-        ReactNode;
+    ReactNode;
 
     label:
-        string;
+    string;
 
     selected?:
-        boolean;
+    boolean;
 
     inactive?:
-        boolean;
+    boolean;
 
     expandable?:
-        boolean;
+    boolean;
 
     strong?:
-        boolean;
+    boolean;
+
+    badge?:
+    number | string | null;
 };
 
 
@@ -75,14 +77,14 @@ function TreeNodeRow({
     inactive = false,
     expandable = true,
     strong = false,
+    badge = null,
 }: TreeNodeRowProps) {
     return (
         <div
-            className={`group flex min-h-8 items-center rounded pr-2 text-xs ${
-                selected
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-slate-700 hover:bg-slate-50'
-            }`}
+            className={`group flex min-h-8 items-center rounded pr-2 text-xs ${selected
+                ? 'bg-blue-50 text-blue-700'
+                : 'text-slate-700 hover:bg-slate-50'
+                }`}
             style={{
                 paddingLeft:
                     `${6 + depth * 17}px`,
@@ -99,11 +101,10 @@ function TreeNodeRow({
                     className='mr-1 flex h-6 w-5 shrink-0 items-center justify-center rounded text-slate-400 hover:bg-white hover:text-slate-700'
                 >
                     <ChevronRight
-                        className={`h-3.5 w-3.5 transition-transform ${
-                            open
-                                ? 'rotate-90'
-                                : ''
-                        }`}
+                        className={`h-3.5 w-3.5 transition-transform ${open
+                            ? 'rotate-90'
+                            : ''
+                            }`}
                     />
                 </button>
             ) : (
@@ -117,27 +118,42 @@ function TreeNodeRow({
                     onSelect ??
                     onToggle
                 }
-                className={`flex min-w-0 flex-1 items-center gap-2 py-1 text-left ${
-                    strong
-                        ? 'font-semibold text-slate-800'
-                        : ''
-                }`}
+                className={`flex min-w-0 flex-1 items-center gap-2 py-1 text-left ${strong
+                    ? 'font-semibold text-slate-800'
+                    : ''
+                    }`}
             >
                 <span className='shrink-0'>
                     {icon}
                 </span>
 
                 <span
-                    className={`truncate ${
-                        inactive
-                            ? 'text-slate-400 line-through'
-                            : ''
-                    }`}
+                    className={`truncate ${inactive
+                        ? 'text-slate-400 line-through'
+                        : ''
+                        }`}
                     title={label}
                 >
                     {label}
                 </span>
             </button>
+
+            {badge !== null &&
+                badge !== undefined && (
+                    <span
+                        className={`
+            ml-2 inline-flex min-w-6 shrink-0 items-center justify-center
+            rounded-md px-1.5 py-0.5 text-[11px] font-semibold
+            ${selected
+                                ? 'bg-blue-100 text-blue-700'
+                                : 'bg-slate-100 text-slate-600'
+                            }
+        `}
+                        title={`${badge} công đoạn`}
+                    >
+                        {badge}
+                    </span>
+                )}
         </div>
     );
 }
@@ -198,7 +214,7 @@ export function OperationClusterTreePickerModal({
 
         loadTree,
         open:
-            openPicker,
+        openPicker,
         reset,
 
         toggleNode,
@@ -305,7 +321,6 @@ export function OperationClusterTreePickerModal({
                         </div>
                     </div>
 
-
                     <button
                         type='button'
                         onClick={
@@ -340,11 +355,10 @@ export function OperationClusterTreePickerModal({
                                     className='inline-flex h-7 items-center gap-1 rounded border border-slate-300 bg-white px-2 text-[11px] font-medium text-slate-600 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50'
                                 >
                                     <RefreshCw
-                                        className={`h-3.5 w-3.5 ${
-                                            loading
-                                                ? 'animate-spin'
-                                                : ''
-                                        }`}
+                                        className={`h-3.5 w-3.5 ${loading
+                                            ? 'animate-spin'
+                                            : ''
+                                            }`}
                                     />
 
                                     Làm mới
@@ -548,7 +562,7 @@ export function OperationClusterTreePickerModal({
                                                                                                 open={
                                                                                                     false
                                                                                                 }
-                                                                                                onToggle={() => {}}
+                                                                                                onToggle={() => { }}
                                                                                                 onSelect={() =>
                                                                                                     selectCluster(
                                                                                                         document,
@@ -570,6 +584,13 @@ export function OperationClusterTreePickerModal({
                                                                                                 expandable={
                                                                                                     false
                                                                                                 }
+                                                                                                badge={
+                                                                                                    Array.isArray(
+                                                                                                        treeCluster.operations
+                                                                                                    )
+                                                                                                        ? treeCluster.operations.length
+                                                                                                        : 0
+                                                                                                }
                                                                                             />
                                                                                         );
                                                                                     }
@@ -586,10 +607,10 @@ export function OperationClusterTreePickerModal({
 
                                     {displayTree.length ===
                                         0 && (
-                                        <div className='px-3 py-10 text-center text-xs text-slate-400'>
-                                            Không có dữ liệu phù hợp.
-                                        </div>
-                                    )}
+                                            <div className='px-3 py-10 text-center text-xs text-slate-400'>
+                                                Không có dữ liệu phù hợp.
+                                            </div>
+                                        )}
                                 </>
                             )}
                         </div>
@@ -625,16 +646,16 @@ export function OperationClusterTreePickerModal({
 
                                     {selectedCount >
                                         0 && (
-                                        <button
-                                            type='button'
-                                            onClick={
-                                                clearSelection
-                                            }
-                                            className='h-7 rounded border border-slate-300 bg-white px-2.5 text-[11px] text-slate-600 hover:bg-slate-50'
-                                        >
-                                            Bỏ chọn
-                                        </button>
-                                    )}
+                                            <button
+                                                type='button'
+                                                onClick={
+                                                    clearSelection
+                                                }
+                                                className='h-7 rounded border border-slate-300 bg-white px-2.5 text-[11px] text-slate-600 hover:bg-slate-50'
+                                            >
+                                                Bỏ chọn
+                                            </button>
+                                        )}
                                 </div>
                             </div>
                         </div>
@@ -735,11 +756,10 @@ export function OperationClusterTreePickerModal({
                                                                     operation
                                                                 )
                                                             }
-                                                            className={`cursor-pointer ${
-                                                                checked
-                                                                    ? 'bg-blue-50'
-                                                                    : 'bg-white hover:bg-slate-50'
-                                                            }`}
+                                                            className={`cursor-pointer ${checked
+                                                                ? 'bg-blue-50'
+                                                                : 'bg-white hover:bg-slate-50'
+                                                                }`}
                                                         >
                                                             <td className='border-b border-r border-slate-200 px-2 py-2 text-center'>
                                                                 <input
@@ -822,19 +842,19 @@ export function OperationClusterTreePickerModal({
 
                                             {currentClusterOperations.length ===
                                                 0 && (
-                                                <tr>
-                                                    <td
-                                                        colSpan={
-                                                            12
-                                                        }
-                                                        className='h-40 px-4 text-center text-sm text-slate-400'
-                                                    >
-                                                        {cluster
-                                                            ? 'Cụm này chưa có công đoạn.'
-                                                            : 'Chọn một cụm ở cây bên trái.'}
-                                                    </td>
-                                                </tr>
-                                            )}
+                                                    <tr>
+                                                        <td
+                                                            colSpan={
+                                                                12
+                                                            }
+                                                            className='h-40 px-4 text-center text-sm text-slate-400'
+                                                        >
+                                                            {cluster
+                                                                ? 'Cụm này chưa có công đoạn.'
+                                                                : 'Chọn một cụm ở cây bên trái.'}
+                                                        </td>
+                                                    </tr>
+                                                )}
                                         </tbody>
                                     </table>
                                 </div>
