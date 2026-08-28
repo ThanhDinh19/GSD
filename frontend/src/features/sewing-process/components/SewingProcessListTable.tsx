@@ -97,7 +97,7 @@ export function SewingProcessListTable({
 
             return (
               <tr
-                key={item.id}
+                key={`${item.id}-${item.documentCode}-${index}`}
                 onClick={() =>
                   onSelect(item.id)
                 }
@@ -105,11 +105,11 @@ export function SewingProcessListTable({
                         cursor-pointer
                         transition-colors
                         ${isSelected
-                            ? 'bg-blue-100'
-                            : 'bg-white hover:bg-blue-50'
-                        }
+                    ? 'bg-blue-100'
+                    : 'bg-white hover:bg-blue-50'
+                  }
                     `}
-                >
+              >
                 <td className="border border-slate-200 px-3 py-2 text-center text-blue-700">
                   {index + 1}
                 </td>

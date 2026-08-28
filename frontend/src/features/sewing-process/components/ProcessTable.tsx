@@ -286,9 +286,9 @@ export function ProcessTable({
                 <td className="border border-slate-300 px-2 py-2 text-right">
                   {hasResult
                     ? formatNumber(
-                        line.laborCount,
-                        2
-                      )
+                      line.laborCount,
+                      2
+                    )
                     : '-'}
                 </td>
 
@@ -309,9 +309,12 @@ export function ProcessTable({
                     </option>
 
                     {machines.map(
-                      (machine) => (
+                      (
+                        machine,
+                        machineIndex
+                      ) => (
                         <option
-                          key={machine.id}
+                          key={`${machine.id}-${machine.machineCode}-${machineIndex}`}
                           value={machine.id}
                         >
                           {machine.machineName}
@@ -343,7 +346,7 @@ export function ProcessTable({
                         'samGsd',
                         Number(
                           event.target.value ||
-                            0
+                          0
                         )
                       )
                     }
@@ -365,7 +368,7 @@ export function ProcessTable({
                         'salaryCoefficient',
                         Number(
                           event.target.value ||
-                            0
+                          0
                         )
                       )
                     }
@@ -376,9 +379,9 @@ export function ProcessTable({
                 <td className="border border-slate-300 px-2 py-2 text-right font-bold text-green-700">
                   {hasResult
                     ? formatSummaryMoney(
-                        line.standardPrice,
-                        0
-                      )
+                      line.standardPrice,
+                      0
+                    )
                     : '-'}
                 </td>
 
@@ -406,18 +409,18 @@ export function ProcessTable({
                 <td className="border border-slate-300 px-2 py-2 text-right font-bold text-slate-700">
                   {hasResult
                     ? formatNumber(
-                        line.usedEfficiency,
-                        2
-                      )
+                      line.usedEfficiency,
+                      2
+                    )
                     : '-'}
                 </td>
 
                 <td className="border border-slate-300 px-2 py-2 text-right font-bold text-blue-700">
                   {hasResult
                     ? formatNumber(
-                        line.adjustedSam,
-                        2
-                      )
+                      line.adjustedSam,
+                      2
+                    )
                     : '-'}
                 </td>
 

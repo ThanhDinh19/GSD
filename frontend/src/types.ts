@@ -138,6 +138,7 @@ export interface MachineEquipmentPayload {
 
   defaultSmv?: number | null;
   skillGrade?: string | null;
+  salaryCoefficient?: string | null;
 
   note?: string | null;
   statusId: number;
@@ -157,6 +158,7 @@ export interface MachineEquipment_test {
 
   defaultSmv?: number | null;
   skillGrade?: string | null;
+  salaryCoefficient?: string | null;
 
   note?: string | null;
   statusId: number;
@@ -297,19 +299,19 @@ export interface GsdAnalysisCalculateResult {
 }
 
 export interface GsdAnalysisRow
-    extends Omit<
-        SourceActionForAnalysis,
-        'sourceActionDetailId' | 'frequency'
-    > {
-    sourceActionDetailId?: number | null;
+  extends Omit<
+    SourceActionForAnalysis,
+    'sourceActionDetailId' | 'frequency'
+  > {
+  sourceActionDetailId?: number | null;
 
-    sourceId?: number | null;
-    sourceCode?: string;
-    sourceName?: string | null;
+  sourceId?: number | null;
+  sourceCode?: string;
+  sourceName?: string | null;
 
-    stepNo?: number | string | null;
-    frequency: number;
-    isSelected: boolean;
+  stepNo?: number | string | null;
+  frequency: number;
+  isSelected: boolean;
 }
 
 

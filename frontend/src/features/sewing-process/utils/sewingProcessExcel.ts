@@ -65,6 +65,16 @@ const PROCESS_COLUMNS = [
     'P',
 ] as const;
 
+const MACHINE_STYLE_COLUMNS = [
+    'R',
+    'S',
+    'T',
+    'U',
+    'V',
+    'W',
+    'X',
+] as const;
+
 const MACHINE_COLUMNS = [
     'R',
     'S',
@@ -72,7 +82,8 @@ const MACHINE_COLUMNS = [
     'U',
     'V',
     'W',
-    'X'
+    'X',
+    'Y',
 ] as const;
 
 type CellValue =
@@ -82,7 +93,8 @@ type CellValue =
     | undefined;
 
 type CellPatch = {
-    value: CellValue;
+    value?: CellValue;
+    formula?: string;
     style?: string;
 };
 
@@ -168,6 +180,19 @@ function toNumber(
     return Number.isFinite(result)
         ? result
         : fallback;
+}
+
+function round4(
+    value: unknown
+): number {
+    return (
+        Math.round(
+            toNumber(
+                value,
+                0
+            ) * 10000
+        ) / 10000
+    );
 }
 
 
@@ -625,6 +650,28 @@ function buildCellXml(
             ? ` s="${style}"`
             : '';
 
+    if (patch.formula) {
+        const formula =
+            patch.formula.startsWith('=')
+                ? patch.formula.slice(1)
+                : patch.formula;
+
+        const cachedValue =
+            typeof patch.value === 'number' &&
+                Number.isFinite(patch.value)
+                ? `<v>${patch.value}</v>`
+                : '';
+
+        return (
+            `<c r="${address}"` +
+            styleAttribute +
+            extraAttributes +
+            `>` +
+            `<f>${escapeXmlText(formula)}</f>` +
+            cachedValue +
+            `</c>`
+        );
+    }
 
     const value =
         patch.value;
@@ -991,6 +1038,60 @@ function setPatch(
     rowPlan.set(
         column,
         {
+            value,
+            style,
+        }
+    );
+}
+
+function setFormulaPatch(
+    plan: PatchPlan,
+    address: string,
+    formula: string,
+    value?: CellValue,
+    style?: string
+) {
+    const rowNumber =
+        getRowNumber(
+            address
+        );
+
+    const column =
+        getColumnName(
+            address
+        );
+
+    if (
+        !rowNumber ||
+        !column
+    ) {
+        throw new Error(
+            `Địa chỉ ô không hợp lệ: ${address}`
+        );
+    }
+
+    let rowPlan =
+        plan.get(
+            rowNumber
+        );
+
+    if (!rowPlan) {
+        rowPlan =
+            new Map<
+                string,
+                CellPatch
+            >();
+
+        plan.set(
+            rowNumber,
+            rowPlan
+        );
+    }
+
+    rowPlan.set(
+        column,
+        {
+            formula,
             value,
             style,
         }
@@ -1591,8 +1692,19 @@ function planMachineNeeds(
                     toExcelPercent(
                         machine.usedEfficiency
                     ),
+
                 X:
-                    machine.sumSmv,
+                    nullableNumber(
+                        machine.sumSmv
+                    ),
+
+                Y:
+                    Number(
+                        machine.salaryCoefficient ??
+                        0
+                    ) === 1
+                        ? '✓'
+                        : '☐',
             };
 
 
@@ -1613,6 +1725,42 @@ function planMachineNeeds(
             }
         }
     );
+
+    const totalSmvMachineHSLuong =
+        round4(
+            machineNeeds.reduce(
+                (
+                    total,
+                    machine
+                ) => {
+                    if (
+                        Number(
+                            machine.salaryCoefficient ??
+                            0
+                        ) !== 1
+                    ) {
+                        return total;
+                    }
+
+                    return (
+                        total +
+                        toNumber(
+                            machine.sumSmv,
+                            0
+                        )
+                    );
+                },
+                0
+            )
+        );
+
+    setFormulaPatch(
+        plan,
+        'X12',
+        `SUMIF($Y$${FIRST_DATA_ROW}:$Y$${LAST_DATA_ROW},"✓",$X$${FIRST_DATA_ROW}:$X$${LAST_DATA_ROW})`,
+        totalSmvMachineHSLuong
+    );
+
     return machineNeeds.length > 0
         ? FIRST_DATA_ROW +
         machineNeeds.length -
@@ -2466,8 +2614,15 @@ export async function exportSewingProcessExcel(
         captureStyles(
             originalSheetXml,
             MACHINE_TEMPLATE_ROW,
-            MACHINE_COLUMNS
+            MACHINE_STYLE_COLUMNS
         );
+
+    /*
+     * Template chưa có cell Y13 trong XML,
+     * nên lấy style của cột X copy sang Y.
+     */
+    machineStyles.Y =
+        machineStyles.X;
 
     /* -------------------------------------------------------
        5. BUILD PATCH PLAN

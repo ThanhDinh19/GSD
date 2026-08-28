@@ -126,6 +126,7 @@ export interface SewingProcessSummary {
   totalStandardPrice: number;
   totalPriceByOutput: number;
   averagePrice: number;
+  totalSmvMachineHSLuong: number;
 }
 
 export interface SewingProcessMachineNeed {
@@ -140,6 +141,7 @@ export interface SewingProcessMachineNeed {
   machineQuantity: number;
 
   usedEfficiency?: number | null;
+  salaryCoefficient?: number | null;
 }
 
 export interface SewingProcessResult {
@@ -196,6 +198,8 @@ export interface SewingProcessListItem {
   totalStandardPrice?: number;
   totalPriceByOutput?: number;
   averagePrice?: number;
+
+  
 }
 
 export interface SewingProcessActionDetail {

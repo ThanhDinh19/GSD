@@ -39,29 +39,30 @@ async function getMachineEquipments_test(){
 
   const result = await pool.request().query(
     `
-    SELECT
-      m.id,
-      m.machine_code AS machineCode,
-      m.machine_name AS machineName,
+      SELECT
+          m.id,
+          m.machine_code AS machineCode,
+          m.machine_name AS machineName,
 
-      m.cluster_id AS clusterId,
+          m.cluster_id AS clusterId,
 
-      m.code_mmtb AS codeMmtb,
-      m.allowance,
-      m.stitch_count AS stitchCount,
-      m.machine_speed AS machineSpeed,
+          m.code_mmtb AS codeMmtb,
+          m.allowance,
+          m.stitch_count AS stitchCount,
+          m.machine_speed AS machineSpeed,
 
-      m.default_smv AS defaultSmv,
-      m.skill_grade AS skillGrade,
+          m.default_smv AS defaultSmv,
+          m.skill_grade AS skillGrade,
 
-      m.note,
-      m.status_id AS statusId,
-      s.status_name AS statusName,
-      m.created_at AS createdAt,
-      m.attached_action_time AS attachedActionTime
-    FROM machine_equipments_test m
-    LEFT JOIN master_status s ON m.status_id = s.id
-    ORDER BY m.id DESC
+          m.note,
+          m.status_id AS statusId,
+          s.status_name AS statusName,
+          m.created_at AS createdAt,
+          m.attached_action_time AS attachedActionTime,
+          m.salary_coefficient AS salaryCoefficient
+        FROM machine_equipments_test m
+        LEFT JOIN master_status s ON m.status_id = s.id
+        ORDER BY m.id DESC
     `
   );
   return result.recordset;
@@ -96,6 +97,7 @@ async function createMachineEquipment(payload) {
           machine_speed,
           default_smv,
           skill_grade,
+          salary_coefficient,
           note,
           status_id
         )
@@ -110,6 +112,7 @@ async function createMachineEquipment(payload) {
           @machine_speed,
           @default_smv,
           @skill_grade,
+          @salary_coefficient,
           @note,
           @status_id
         )
@@ -145,6 +148,7 @@ async function updateMachineEquipment(id, payload) {
     .input('machine_speed', sql.Int, payload.machineSpeed !== null && payload.machineSpeed !== undefined && payload.machineSpeed !== '' ? Number(payload.machineSpeed) : null)
     .input('default_smv', sql.Decimal(5, 2), payload.defaultSmv !== null && payload.defaultSmv !== undefined && payload.defaultSmv !== '' ? Number(payload.defaultSmv) : null)
     .input('skill_grade', sql.Char, payload.skillGrade ? String(payload.skillGrade).trim() : null)
+    .input('salary_coefficient', sql.Char, payload.salaryCoefficient ? String(payload.salaryCoefficient).trim() : null)
     .input('note', sql.NVarChar, payload.note ? String(payload.note).trim() : null)
     .input('status_id', sql.TinyInt, payload.statusId !== undefined ? Number(payload.statusId) : 0)
     .query(`
@@ -160,6 +164,7 @@ async function updateMachineEquipment(id, payload) {
         machine_speed = @machine_speed,
         default_smv = @default_smv,
         skill_grade = @skill_grade,
+        salary_coefficient = @salary_coefficient,
         note = @note,
         status_id = @status_id
       WHERE id = @id

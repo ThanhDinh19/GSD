@@ -249,6 +249,44 @@ export function useSewingProcessPageController() {
             }
         );
 
+    const supportMachine =
+        activeMachines.find(
+            (machine) => {
+                const row =
+                    machine as typeof machine & {
+                        codeMMTB?: string | null;
+                        code_mmtb?: string | null;
+                    };
+
+                const codes =
+                    [
+                        row.codeMmtb,
+                        row.codeMMTB,
+                        row.code_mmtb,
+                        row.machineCode,
+                    ]
+                        .map(
+                            normalizeMachineCode
+                        )
+                        .filter(Boolean);
+
+                return codes.includes(
+                    'PC'
+                );
+            }
+        ) ??
+        activeMachines.find(
+            (machine) =>
+                String(
+                    machine.machineName ??
+                    ''
+                )
+                    .normalize('NFKC')
+                    .trim()
+                    .toUpperCase() ===
+                'PHỤ CHUYỀN'
+        );
+
 
     const operationClusters =
         Array.isArray(
@@ -503,14 +541,113 @@ export function useSewingProcessPageController() {
                     );
 
                 const newRows =
-                    selectedRows.filter(
-                        (row) =>
-                            !currentKeys.has(
-                                getKey(
-                                    row
+                    selectedRows
+                        .filter(
+                            (row) =>
+                                !currentKeys.has(
+                                    getKey(
+                                        row
+                                    )
                                 )
-                            )
-                    );
+                        )
+                        .map(
+                            (row) => {
+                                const machineCode =
+                                    normalizeMachineCode(
+                                        row.machineCode
+                                    );
+
+                                const machineName =
+                                    String(
+                                        row.machineName ??
+                                        ''
+                                    )
+                                        .trim();
+
+                                /*
+                                 * Công đoạn được xem là đã
+                                 * khai báo máy khi có:
+                                 *
+                                 * - machineId
+                                 * hoặc
+                                 * - machineCode hợp lệ
+                                 * hoặc
+                                 * - machineName hợp lệ.
+                                 *
+                                 * Giá trị "-" không được xem
+                                 * là đã khai báo máy.
+                                 */
+                                const hasMachine =
+                                    (
+                                        row.machineId !==
+                                        null &&
+                                        row.machineId !==
+                                        undefined &&
+                                        Number(
+                                            row.machineId
+                                        ) > 0
+                                    ) ||
+                                    (
+                                        machineCode !==
+                                        '' &&
+                                        machineCode !==
+                                        '-'
+                                    ) ||
+                                    (
+                                        machineName !==
+                                        '' &&
+                                        machineName !==
+                                        '-'
+                                    );
+
+                                /*
+                                 * Đã có máy thì giữ nguyên
+                                 * dữ liệu từ Kho cụm.
+                                 */
+                                if (
+                                    hasMachine
+                                ) {
+                                    return row;
+                                }
+
+                                /*
+                                 * Không có máy và master
+                                 * không tìm thấy PHỤ CHUYỀN
+                                 * thì giữ nguyên.
+                                 */
+                                if (
+                                    !supportMachine
+                                ) {
+                                    return row;
+                                }
+
+                                /*
+                                 * Công đoạn chưa khai báo máy
+                                 * => tự động gán PHỤ CHUYỀN
+                                 * từ Master Data.
+                                 */
+                                return {
+                                    ...row,
+
+                                    machineId:
+                                        Number(
+                                            supportMachine.id
+                                        ),
+
+                                    machineCode:
+                                        supportMachine
+                                            .codeMmtb ??
+                                        supportMachine
+                                            .machineCode ??
+                                        '',
+
+                                    machineName:
+                                        supportMachine
+                                            .machineName ??
+                                        '',
+                                };
+                            }
+                        );
 
                 return {
                     ...previous,

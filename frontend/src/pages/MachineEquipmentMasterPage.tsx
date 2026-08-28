@@ -23,6 +23,7 @@ const emptyForm: MachineEquipmentPayload = {
   machineSpeed: null,
   defaultSmv: null,
   skillGrade: '',
+  salaryCoefficient: null,
   note: '',
   statusId: 0,
 };
@@ -69,6 +70,7 @@ export default function MachineEquipmentMasterPage() {
       machineSpeed: item.machineSpeed ?? null,
       defaultSmv: item.defaultSmv ?? null,
       skillGrade: item.skillGrade || '',
+      salaryCoefficient: item.salaryCoefficient || null,
       note: item.note || '',
       statusId: item.statusId,
     });
@@ -133,27 +135,66 @@ export default function MachineEquipmentMasterPage() {
         </div>
 
         <div className="overflow-x-auto border border-slate-200 rounded-lg">
-          <table className="min-w-full text-xs">
+          <table className="table-auto min-w-max text-xs">
             <thead className="bg-slate-50 text-slate-500 uppercase">
               <tr>
-                <th className="px-4 py-3 text-left">STT</th>
-                <th className="px-4 py-3 text-left">Code MMTB</th>
-                <th className="px-4 py-3 text-left">Tên MMTB</th>
-                <th className="px-4 py-3 text-left">Code</th>
-                <th className="px-4 py-3 text-right">Hao phí</th>
-                <th className="px-4 py-3 text-left">Thao tác kèm theo</th>
-                <th className="px-4 py-3 text-right">Số mũi chỉ</th>
-                <th className="px-4 py-3 text-right">Tốc độ máy</th>
-                <th className="px-4 py-3 text-right">SMV</th>
-                <th className="px-4 py-3 text-left">Bậc CĐ</th>
-                <th className="px-4 py-3 text-left">Trạng thái</th>
+                <th className="px-3 py-3 text-left whitespace-nowrap">
+                  STT
+                </th>
+
+                <th className="px-3 py-3 text-left whitespace-nowrap min-w-[90px]">
+                  Code MMTB
+                </th>
+
+                <th className="px-3 py-3 text-left whitespace-nowrap min-w-[160px]">
+                  Tên MMTB
+                </th>
+
+                <th className="px-3 py-3 text-left whitespace-nowrap min-w-[70px]">
+                  Code
+                </th>
+
+                <th className="px-3 py-3 text-right whitespace-nowrap min-w-[70px]">
+                  Hao phí
+                </th>
+
+                <th className="px-3 py-3 text-left whitespace-nowrap min-w-[120px]">
+                  Thao tác kèm theo
+                </th>
+
+                <th className="px-3 py-3 text-right whitespace-nowrap min-w-[80px]">
+                  Số mũi chỉ
+                </th>
+
+                <th className="px-3 py-3 text-right whitespace-nowrap min-w-[85px]">
+                  Tốc độ máy
+                </th>
+
+                <th className="px-3 py-3 text-right whitespace-nowrap min-w-[60px]">
+                  SMV
+                </th>
+
+                <th className="px-3 py-3 text-left whitespace-nowrap min-w-[70px]">
+                  Bậc CĐ
+                </th>
+
+                <th className="px-3 py-3 text-left whitespace-nowrap min-w-[100px]">
+                  Hệ số ăn lương
+                </th>
+
+                <th className="px-3 py-3 text-left whitespace-nowrap min-w-[90px]">
+                  Trạng thái
+                </th>
               </tr>
             </thead>
 
             <tbody className="divide-y divide-slate-100">
               {loading && (
                 <tr>
-                  <td colSpan={11} className="px-4 py-6 text-center text-slate-400">
+                  <td
+                    colSpan={12}
+                    className="px-5 py-8 text-center text-slate-400"
+                  >
                     Đang tải dữ liệu...
                   </td>
                 </tr>
@@ -161,40 +202,78 @@ export default function MachineEquipmentMasterPage() {
 
               {!loading && machineEquiments_test.length === 0 && (
                 <tr>
-                  <td colSpan={11} className="px-4 py-6 text-center text-slate-400">
+                  <td
+                    colSpan={12}
+                    className="px-5 py-8 text-center text-slate-400"
+                  >
                     Chưa có dữ liệu MMTB.
                   </td>
                 </tr>
               )}
 
-              {!loading && machineEquiments_test.map((item, index) => (
-                <tr
-                  key={item.id}
-                  onClick={() => openEditForm(item)}
-                  className="hover:bg-blue-50 cursor-pointer transition-colors"
-                >
-                  <td className="px-4 py-3 font-mono text-slate-500">{index + 1}</td>
-                  <td className="px-4 py-3 font-bold text-slate-700">{item.machineCode}</td>
-                  <td className="px-4 py-3 text-slate-700">{item.machineName}</td>
-                  <td className="px-4 py-3 text-slate-700">{item.codeMmtb || ''}</td>
-                  <td className="px-4 py-3 text-right">{item.allowance ?? ''}</td>
-                  <td className="px-4 py-3 text-slate-700">{item.attachedActionTime || ''}</td>
-                  <td className="px-4 py-3 text-right">{item.stitchCount ?? ''}</td>
-                  <td className="px-4 py-3 text-right">{item.machineSpeed ?? ''}</td>
-                  <td className="px-4 py-3 text-right font-bold">{item.defaultSmv ?? ''}</td>
-                  <td className="px-4 py-3 text-slate-700">{item.skillGrade || ''}</td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`px-2 py-1 rounded-full text-[10px] font-bold ${item.statusId === 0
+              {!loading &&
+                machineEquiments_test.map((item, index) => (
+                  <tr
+                    key={item.id}
+                    onClick={() => openEditForm(item)}
+                    className="hover:bg-blue-50 cursor-pointer transition-colors"
+                  >
+                    <td className="px-5 py-3.5 font-mono text-slate-500 whitespace-nowrap">
+                      {index + 1}
+                    </td>
+
+                    <td className="px-5 py-3.5 font-bold text-slate-700 whitespace-nowrap">
+                      {item.machineCode}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-slate-700">
+                      {item.machineName}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">
+                      {item.codeMmtb || ''}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                      {item.allowance ?? ''}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-slate-700">
+                      {item.attachedActionTime || ''}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                      {item.stitchCount ?? ''}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-right whitespace-nowrap">
+                      {item.machineSpeed ?? ''}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-right font-bold whitespace-nowrap">
+                      {item.defaultSmv ?? ''}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">
+                      {item.skillGrade || ''}
+                    </td>
+
+                    <td className="px-5 py-3.5 text-slate-700 whitespace-nowrap">
+                      {item.salaryCoefficient || 0}
+                    </td>
+
+                    <td className="px-5 py-3.5 whitespace-nowrap">
+                      <span
+                        className={`inline-flex px-2.5 py-1 rounded-full text-[10px] font-bold ${item.statusId === 0
                           ? 'bg-green-50 text-green-700 border border-green-200'
                           : 'bg-slate-100 text-slate-500 border border-slate-200'
-                        }`}
-                    >
-                      {item.statusName || 'Không rõ'}
-                    </span>
-                  </td>
-                </tr>
-              ))}
+                          }`}
+                      >
+                        {item.statusName || 'Không rõ'}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
             </tbody>
           </table>
         </div>
@@ -277,6 +356,24 @@ export default function MachineEquipmentMasterPage() {
                     className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                     maxLength={1}
                     placeholder="A/B/C..."
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-600 mb-1">
+                    Hệ số ăn lương
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={form.salaryCoefficient ?? ''}
+                    onChange={(e) =>
+                      handleNumberChange(
+                        'salaryCoefficient',
+                        e.target.value
+                      )
+                    }
+                    className="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm"
                   />
                 </div>
 

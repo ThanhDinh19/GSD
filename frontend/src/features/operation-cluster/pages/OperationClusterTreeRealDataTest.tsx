@@ -80,6 +80,7 @@ type TreeOperation = {
   codeMmtb: string;
 
   skillLevel: string;
+  salaryCoefficient: number;
   samGsd: number;
   adjustedSam: number;
   totalActions: number;
@@ -557,6 +558,7 @@ function buildTreeFromDetails(
                               operationEfficiency
                               : samGsd;
 
+
                         const operationId =
                           operation.id ??
                           `${rawGroupId}-${operationIndex + 1}`;
@@ -617,6 +619,13 @@ function buildTreeFromDetails(
                                 operation.skill_level
                               )
                               : '-',
+
+                          salaryCoefficient:
+                            toNumber(
+                              operation.salary_coefficient,
+                              0
+                            ),
+
 
                           samGsd,
                           adjustedSam,
@@ -858,6 +867,7 @@ function buildUpdatePayload(
                         0
                       )
                       : null;
+
 
                 return {
                   line_no:
@@ -2259,6 +2269,13 @@ export default function OperationClusterTreeOrderedByLineNo() {
                 )
                 : '-',
 
+            salaryCoefficient:
+              toNumber(
+                (gsd as any)
+                  .salary_coefficient,
+                0
+              ),
+
             samGsd,
 
             adjustedSam,
@@ -2875,7 +2892,11 @@ export default function OperationClusterTreeOrderedByLineNo() {
                     </TableHeader>
 
                     <TableHeader className="w-20 text-center">
-                      Bậc
+                      Bậc thợ
+                    </TableHeader>
+
+                    <TableHeader className="w-20 text-center">
+                      Hệ số bậc thợ
                     </TableHeader>
 
                     <TableHeader className="w-20 text-right">
@@ -3012,6 +3033,12 @@ export default function OperationClusterTreeOrderedByLineNo() {
                           <TableCell className="text-center">
                             {
                               operation.skillLevel
+                            }
+                          </TableCell>
+
+                          <TableCell className="text-center">
+                            {
+                              operation.salaryCoefficient
                             }
                           </TableCell>
 
@@ -3419,8 +3446,8 @@ function TreeNodeRow({
   return (
     <div
       className={`group flex min-h-8 items-center rounded pr-2 text-[12px] ${selected
-          ? 'bg-blue-50 text-blue-700'
-          : 'text-slate-700 hover:bg-slate-50'
+        ? 'bg-blue-50 text-blue-700'
+        : 'text-slate-700 hover:bg-slate-50'
         }`}
       style={{
         paddingLeft: `${6 + depth * 17}px`,
@@ -3466,8 +3493,8 @@ function TreeNodeRow({
           {typeof count === 'number' && (
             <span
               className={`inline-flex h-5 min-w-5 items-center justify-center rounded-md px-1.5 text-[10px] font-semibold ${selected
-                  ? 'bg-blue-100 text-blue-700'
-                  : 'bg-slate-100 text-slate-600'
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-slate-100 text-slate-600'
                 }`}
               title={`${count} công đoạn`}
             >

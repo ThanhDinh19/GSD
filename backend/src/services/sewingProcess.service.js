@@ -521,6 +521,43 @@ function calculateMachineNeedsOnly(payload) {
     return calculated.machineNeeds;
 }
 
+function calculateTotalSmvMachineHSLuong(
+    machineNeeds
+) {
+    return round4(
+        (
+            Array.isArray(
+                machineNeeds
+            )
+                ? machineNeeds
+                : []
+        ).reduce(
+            (
+                total,
+                item
+            ) => {
+                if (
+                    Number(
+                        item.salaryCoefficient ??
+                        0
+                    ) !== 1
+                ) {
+                    return total;
+                }
+
+                return (
+                    total +
+                    toNumber(
+                        item.sumSmv,
+                        0
+                    )
+                );
+            },
+            0
+        )
+    );
+}
+
 async function getSewingProcesses() {
     const pool = await getPool();
 
@@ -639,6 +676,9 @@ async function getSewingProcessById(id) {
                 total_standard_price AS [totalStandardPrice],
                 total_price_by_output AS [totalPriceByOutput],
                 average_price AS [averagePrice],
+
+                total_smv_machine_hs_luong AS [totalSmvMachineHSLuong],
+
                 created_at AS [createdAt],
                 updated_at AS [updatedAt]
             FROM sewing_process_summaries
@@ -704,6 +744,9 @@ async function getSewingProcessById(id) {
                 machine_need AS [machineNeed],
                 machine_quantity AS [machineQuantity],
                 used_efficiency AS [usedEfficiency],
+                
+                salary_coefficient AS [salaryCoefficient],
+
                 created_at AS [createdAt],
                 updated_at AS [updatedAt]
             FROM sewing_process_machine_needs
@@ -755,6 +798,76 @@ async function ensureDocumentCodeNotExists(pool, documentCode, exceptId = null) 
     }
 }
 
+async function attachMachineSalaryCoefficient(
+    transaction,
+    machineNeeds
+) {
+    if (
+        !Array.isArray(machineNeeds) ||
+        machineNeeds.length === 0
+    ) {
+        return [];
+    }
+
+    /*
+     * Đọc master một lần.
+     * Không query từng machine => đỡ N+1 query.
+     */
+    const result =
+        await new sql.Request(
+            transaction
+        ).query(`
+            SELECT
+                id,
+                salary_coefficient
+            FROM dbo.machine_equipments_test
+            WHERE status_id = 0
+        `);
+
+    const salaryMap =
+        new Map(
+            result.recordset.map(
+                (machine) => [
+                    Number(machine.id),
+
+                    machine.salary_coefficient !==
+                        null &&
+                        machine.salary_coefficient !==
+                        undefined
+                        ? Number(
+                            machine.salary_coefficient
+                        )
+                        : null,
+                ]
+            )
+        );
+
+    return machineNeeds.map(
+        (item) => ({
+            ...item,
+
+            /*
+             * Đây chính là SNAPSHOT.
+             */
+            salaryCoefficient:
+                item.machineId !==
+                    null &&
+                    item.machineId !==
+                    undefined
+                    ? (
+                        salaryMap.get(
+                            Number(
+                                item.machineId
+                            )
+                        ) ??
+                        null
+                    )
+                    : null,
+        })
+    );
+}
+
+
 async function createSewingProcess(payload, context = {}) {
 
     const userId = Number(context.userId)
@@ -787,22 +900,79 @@ async function createSewingProcess(payload, context = {}) {
     await transaction.begin();
 
     try {
-        const sewingProcessId = await insertHeader(transaction, header, userId, employeeId, departmentCode);
+        const sewingProcessId =
+            await insertHeader(
+                transaction,
+                header,
+                userId,
+                employeeId,
+                departmentCode
+            );
 
-        await insertSummary(transaction, header.documentCode, summary);
-        await insertLines(transaction, header.documentCode, lines);
-        await insertMachineNeeds(transaction, header.documentCode, machineNeeds);
-        await insertImages(transaction, sewingProcessId, images);
+        /*
+         * Snapshot hệ số máy từ Master.
+         */
+        const machineNeedsWithSnapshot =
+            await attachMachineSalaryCoefficient(
+                transaction,
+                machineNeeds
+            );
+
+        /*
+         * Tổng SMV của máy có hệ số lương = 1.
+         */
+        const totalSmvMachineHSLuong =
+            calculateTotalSmvMachineHSLuong(
+                machineNeedsWithSnapshot
+            );
+
+        const summaryWithSnapshot = {
+            ...summary,
+
+            totalSmvMachineHSLuong,
+        };
+
+        await insertSummary(
+            transaction,
+            header.documentCode,
+            summaryWithSnapshot
+        );
+
+        await insertLines(
+            transaction,
+            header.documentCode,
+            lines
+        );
+
+        await insertMachineNeeds(
+            transaction,
+            header.documentCode,
+            machineNeedsWithSnapshot
+        );
+
+        await insertImages(
+            transaction,
+            sewingProcessId,
+            images
+        );
+
         await transaction.commit();
 
         return {
-            documentCode: header.documentCode,
-            summary,
+            documentCode:
+                header.documentCode,
+
+            summary:
+                summaryWithSnapshot,
+
             lines,
-            machineNeeds,
+
+            machineNeeds:
+                machineNeedsWithSnapshot,
         };
     } catch (err) {
         await transaction.rollback();
+
         throw err;
     }
 }
@@ -859,30 +1029,93 @@ async function updateSewingProcess(id, payload, context = {}) {
     await transaction.begin();
 
     try {
-        await updateHeader(transaction, id, header, userId);
+        await updateHeader(
+            transaction,
+            id,
+            header,
+            userId
+        );
 
-        await deleteChildData(transaction, oldDocumentCode);
+        await deleteChildData(
+            transaction,
+            oldDocumentCode
+        );
 
-        await insertSummary(transaction, newDocumentCode, summary);
-        await insertLines(transaction, newDocumentCode, lines);
-        await insertMachineNeeds(transaction, newDocumentCode, machineNeeds);
-        if (images !== null) {
-            await deleteImages(transaction, id);
-            await insertImages(transaction, id, images);
+        const machineNeedsWithSnapshot =
+            await attachMachineSalaryCoefficient(
+                transaction,
+                machineNeeds
+            );
+
+        const totalSmvMachineHSLuong =
+            calculateTotalSmvMachineHSLuong(
+                machineNeedsWithSnapshot
+            );
+
+        const summaryWithSnapshot = {
+            ...summary,
+
+            totalSmvMachineHSLuong,
+        };
+
+        await insertSummary(
+            transaction,
+            newDocumentCode,
+            summaryWithSnapshot
+        );
+
+        await insertLines(
+            transaction,
+            newDocumentCode,
+            lines
+        );
+
+        await insertMachineNeeds(
+            transaction,
+            newDocumentCode,
+            machineNeedsWithSnapshot
+        );
+
+        if (
+            images !== null
+        ) {
+            await deleteImages(
+                transaction,
+                id
+            );
+
+            await insertImages(
+                transaction,
+                id,
+                images
+            );
         } else {
-            await moveImagesToNewDocumentCode(transaction, oldDocumentCode, newDocumentCode);
+            await moveImagesToNewDocumentCode(
+                transaction,
+                oldDocumentCode,
+                newDocumentCode
+            );
         }
+
         await transaction.commit();
 
         return {
             id,
-            documentCode: newDocumentCode,
-            summary,
+
+            documentCode:
+                newDocumentCode,
+
+            summary:
+                summaryWithSnapshot,
+
             lines,
-            machineNeeds,
+
+            machineNeeds:
+                machineNeedsWithSnapshot,
         };
     } catch (err) {
         await transaction.rollback();
+
         throw err;
     }
 }
@@ -1007,55 +1240,146 @@ async function updateHeader(transaction, id, header, userId) {
         `);
 }
 
-async function insertSummary(transaction, documentCode, summary) {
-    await new sql.Request(transaction)
-        .input('document_code', sql.VarChar(32), documentCode)
-        .input('total_time', sql.Decimal(18, 4), summary.totalTime)
-        .input('c1', sql.Decimal(18, 4), summary.c1)
-        .input('total_sam_gsd', sql.Decimal(18, 4), summary.totalSamGsd)
-        .input('takt_time', sql.Decimal(18, 4), summary.taktTime)
-        .input('c3', sql.Decimal(18, 4), summary.c3)
-        .input('c4', sql.Decimal(18, 4), summary.c4)
-        .input('standard_output', sql.Decimal(18, 4), summary.standardOutput)
-        .input('c5', sql.Decimal(18, 4), summary.c5)
-        .input('c6', sql.Decimal(18, 4), summary.c6)
-        .input('total_standard_price', sql.Decimal(18, 4), summary.totalStandardPrice)
-        .input('total_price_by_output', sql.Decimal(18, 4), summary.totalPriceByOutput)
-        .input('average_price', sql.Decimal(18, 4), summary.averagePrice)
+async function insertSummary(
+    transaction,
+    documentCode,
+    summary
+) {
+    await new sql.Request(
+        transaction
+    )
+        .input(
+            'document_code',
+            sql.VarChar(32),
+            documentCode
+        )
+
+        .input(
+            'total_time',
+            sql.Decimal(18, 4),
+            summary.totalTime
+        )
+
+        .input(
+            'c1',
+            sql.Decimal(18, 4),
+            summary.c1
+        )
+
+        .input(
+            'total_sam_gsd',
+            sql.Decimal(18, 4),
+            summary.totalSamGsd
+        )
+
+        .input(
+            'takt_time',
+            sql.Decimal(18, 4),
+            summary.taktTime
+        )
+
+        .input(
+            'c3',
+            sql.Decimal(18, 4),
+            summary.c3
+        )
+
+        .input(
+            'c4',
+            sql.Decimal(18, 4),
+            summary.c4
+        )
+
+        .input(
+            'standard_output',
+            sql.Decimal(18, 4),
+            summary.standardOutput
+        )
+
+        .input(
+            'c5',
+            sql.Decimal(18, 4),
+            summary.c5
+        )
+
+        .input(
+            'c6',
+            sql.Decimal(18, 4),
+            summary.c6
+        )
+
+        .input(
+            'total_standard_price',
+            sql.Decimal(18, 4),
+            summary.totalStandardPrice
+        )
+
+        .input(
+            'total_price_by_output',
+            sql.Decimal(18, 4),
+            summary.totalPriceByOutput
+        )
+
+        .input(
+            'average_price',
+            sql.Decimal(18, 4),
+            summary.averagePrice
+        )
+
+        .input(
+            'total_smv_machine_hs_luong',
+            sql.Decimal(18, 4),
+            summary.totalSmvMachineHSLuong ??
+            0
+        )
+
         .query(`
             INSERT INTO sewing_process_summaries (
                 document_code,
+
                 total_time,
                 c1,
                 total_sam_gsd,
                 takt_time,
+
                 c3,
                 c4,
+
                 standard_output,
+
                 c5,
                 c6,
+
                 total_standard_price,
                 total_price_by_output,
-                average_price
+                average_price,
+
+                total_smv_machine_hs_luong
             )
             VALUES (
                 @document_code,
+
                 @total_time,
                 @c1,
                 @total_sam_gsd,
                 @takt_time,
+
                 @c3,
                 @c4,
+
                 @standard_output,
+
                 @c5,
                 @c6,
+
                 @total_standard_price,
                 @total_price_by_output,
-                @average_price
+                @average_price,
+
+                @total_smv_machine_hs_luong
             )
         `);
 }
-
 async function insertLines(transaction, documentCode, lines) {
     for (const line of lines) {
         await new sql.Request(transaction)
@@ -1149,37 +1473,101 @@ async function insertLines(transaction, documentCode, lines) {
     }
 }
 
-async function insertMachineNeeds(transaction, documentCode, machineNeeds) {
-    for (const item of machineNeeds) {
-        await new sql.Request(transaction)
-            .input('document_code', sql.VarChar(32), documentCode)
-            .input('machine_id', sql.Int, item.machineId)
-            .input('machine_code', sql.VarChar(32), item.machineCode)
-            .input('machine_name', sql.NVarChar(200), item.machineName)
-            .input('sum_smv', sql.Decimal(18, 4), item.sumSmv)
-            .input('machine_need', sql.Decimal(18, 4), item.machineNeed)
-            .input('machine_quantity', sql.Decimal(18, 4), item.machineQuantity)
-            .input('used_efficiency', sql.Decimal(18, 4), item.usedEfficiency)
+async function insertMachineNeeds(
+    transaction,
+    documentCode,
+    machineNeeds
+) {
+    for (
+        const item of machineNeeds
+    ) {
+        await new sql.Request(
+            transaction
+        )
+            .input(
+                'document_code',
+                sql.VarChar(32),
+                documentCode
+            )
+
+            .input(
+                'machine_id',
+                sql.Int,
+                item.machineId
+            )
+
+            .input(
+                'machine_code',
+                sql.VarChar(32),
+                item.machineCode
+            )
+
+            .input(
+                'machine_name',
+                sql.NVarChar(200),
+                item.machineName
+            )
+
+            .input(
+                'sum_smv',
+                sql.Decimal(18, 4),
+                item.sumSmv
+            )
+
+            .input(
+                'machine_need',
+                sql.Decimal(18, 4),
+                item.machineNeed
+            )
+
+            .input(
+                'machine_quantity',
+                sql.Decimal(18, 4),
+                item.machineQuantity
+            )
+
+            .input(
+                'used_efficiency',
+                sql.Decimal(18, 4),
+                item.usedEfficiency
+            )
+
+            .input(
+                'salary_coefficient',
+                sql.Int,
+                item.salaryCoefficient ??
+                null
+            )
+
             .query(`
-                INSERT INTO sewing_process_machine_needs (
+                INSERT INTO
+                    sewing_process_machine_needs
+                (
                     document_code,
                     machine_id,
                     machine_code,
                     machine_name,
+
                     sum_smv,
                     machine_need,
                     machine_quantity,
-                    used_efficiency
+                    used_efficiency,
+
+                    salary_coefficient
                 )
-                VALUES (
+                VALUES
+                (
                     @document_code,
                     @machine_id,
                     @machine_code,
                     @machine_name,
+
                     @sum_smv,
                     @machine_need,
                     @machine_quantity,
-                    @used_efficiency
+                    @used_efficiency,
+
+                    @salary_coefficient
                 )
             `);
     }

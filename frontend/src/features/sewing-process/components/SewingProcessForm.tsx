@@ -265,6 +265,9 @@ export function SewingProcessForm({
             taktTime={
               result?.summary.taktTime
             }
+            totalSmvMachineHSLuong={
+              result?.summary.totalSmvMachineHSLuong
+            }
           />
         )}
       </div>
