@@ -1138,6 +1138,7 @@ export default function GsdAnalysisEditor({
 
             {isPickerOpen && (
                 <SourceActionPickerModal
+                    sourceActionMap={sourceActionMap}
                     sources={sources}
                     popupSourceId={popupSourceId}
                     popupRows={popupRows}
