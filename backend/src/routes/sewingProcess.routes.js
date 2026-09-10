@@ -145,6 +145,12 @@ router.get(
     controller.getSewingProcesses
 );
 
+router.put(
+    '/deactivate/:id',
+    controller.deactivate
+);
+
+
 router.get(
     '/:id',
     controller.getSewingProcessById
@@ -160,9 +166,5 @@ router.put(
     controller.updateSewingProcess
 );
 
-router.put(
-    '/deactivate/:id',
-    controller.deactivate
-);
 
 module.exports = router;

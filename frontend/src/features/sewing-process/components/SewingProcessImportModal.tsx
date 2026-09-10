@@ -5,6 +5,7 @@ import {
 } from 'react';
 
 import {
+    Download,
     FileSpreadsheet,
     Maximize2,
     Minimize2,
@@ -100,6 +101,12 @@ export default function SewingProcessImportModal({
         isMaximized,
         setIsMaximized,
     ] = useState(false);
+
+    const templateUrl =
+        '/templates/sewing-process-import-template.xlsx';
+
+    const templateFileName =
+        'mau-import-quy-trinh-may.xlsx';
 
     const [
         windowRect,
@@ -320,6 +327,27 @@ export default function SewingProcessImportModal({
                 false
             );
         }
+    };
+
+    const handleDownloadTemplate = () => {
+        const link =
+            document.createElement('a');
+
+        link.href =
+            templateUrl;
+
+        link.download =
+            templateFileName;
+
+        document.body.appendChild(
+            link
+        );
+
+        link.click();
+
+        document.body.removeChild(
+            link
+        );
     };
 
 
@@ -1217,6 +1245,17 @@ export default function SewingProcessImportModal({
                                 ? 'Đang đọc...'
                                 : 'Preview'}
                         </button>
+
+                        <button
+                            type='button'
+                            onClick={handleDownloadTemplate}
+                            disabled={loading}
+                            className='inline-flex h-7 items-center gap-1.5 rounded border border-emerald-300 bg-emerald-50 px-3 text-xs font-medium text-emerald-700 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50'
+                            title='Tải file Excel mẫu'
+                        >
+                            <Download className='h-3.5 w-3.5' />
+                            Tải mẫu
+                        </button>
                     </div>
 
                     {/* ERROR */}
@@ -1446,8 +1485,8 @@ export default function SewingProcessImportModal({
                                                                                         )
                                                                                     }
                                                                                     className={`w-full min-w-24 border-0 bg-transparent px-1 py-0.5 text-xs outline-none ${cellError
-                                                                                            ? 'text-red-800'
-                                                                                            : 'text-slate-700'
+                                                                                        ? 'text-red-800'
+                                                                                        : 'text-slate-700'
                                                                                         }`}
                                                                                 />
                                                                             ) : (

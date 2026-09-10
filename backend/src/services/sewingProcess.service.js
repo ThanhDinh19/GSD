@@ -644,7 +644,7 @@ async function getSewingProcessById(id) {
                 created_at AS [createdAt],
                 updated_at AS [updatedAt]
             FROM sewing_process_headers
-            WHERE id = @id
+            WHERE id = @id AND is_deleted = 0
         `);
 
     const header = headerResult.recordset[0];
@@ -867,7 +867,6 @@ async function attachMachineSalaryCoefficient(
     );
 }
 
-
 async function createSewingProcess(payload, context = {}) {
 
     const userId = Number(context.userId)
@@ -1002,7 +1001,7 @@ async function updateSewingProcess(id, payload, context = {}) {
         .query(`
             SELECT TOP 1 id, document_code AS [documentCode]
             FROM sewing_process_headers
-            WHERE id = @id
+            WHERE id = @id AND is_deleted = 0
         `);
 
     const images = normalizeImages(payload);
@@ -1872,9 +1871,9 @@ async function getActionDetailsByOperationClusterLineId(operationLineId) {
 }
 
 async function deactivate(id, context = {}) {
-    const pool = getPool();
-
-    const userId = Number(context.userId);
+    const userId = Number(
+        context.userId
+    );
 
     if (
         !Number.isInteger(userId) ||
@@ -1888,26 +1887,32 @@ async function deactivate(id, context = {}) {
         throw err;
     }
 
-    const result = await pool.request()
-        .input('id', sql.Int, id)
-        .query(`
-            UPDATE sewing_process_headers
-            SET 
-                is_deleted = 1,
-                deleted_at = SYSDATETIME()
-            WHERE id = @id    
-                AND is_deleted = 0
-        `);
+    const pool =
+        await getPool();
 
-    const userUpdated = await pool.request()
-        .input('id', sql.Int, id)
-        .input('deleted_by_user_id', sql.Int, userId)
-        .query(`
-                UPDATE sewing_process_headers
-                SET deleted_by_user_id = @deleted_by_user_id
+    const result =
+        await pool.request()
+            .input(
+                'id',
+                sql.Int,
+                id
+            )
+            .input(
+                'deleted_by_user_id',
+                sql.BigInt,
+                userId
+            )
+            .query(`
+                UPDATE dbo.sewing_process_headers
+                SET
+                    is_deleted = 1,
+                    deleted_by_user_id = @deleted_by_user_id,
+                    deleted_at = SYSDATETIME(),
+                    updated_by_user_id = @deleted_by_user_id,
+                    updated_at = SYSDATETIME()
                 WHERE id = @id
-            `)
-
+                  AND is_deleted = 0;
+            `);
 
     return result.rowsAffected[0] > 0;
 }
@@ -1926,3 +1931,6 @@ module.exports = {
     getActionDetailsByOperationClusterLineId,
     deactivate,
 };
+
+
+

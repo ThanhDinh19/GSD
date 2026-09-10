@@ -1,11 +1,18 @@
 import GsdAnalysisEditor from '../components/GsdAnalysisEditor';
 
-type GsdAnalysisSaveResult = {
-  id?: number;
-  analysisId?: number;
-  analysisNo?: string;
-};
+export type GsdAnalysisSaveResult = {
+  id?: number | string;
+  analysisId?: number | string;
+  analysis_id?: number | string;
+  gsdAnalysisId?: number | string;
+  gsd_analysis_id?: number | string;
 
+  analysisNo?: string | null;
+  analysis_no?: string | null;
+
+  operationName?: string | null;
+  operation_name?: string | null;
+};
 
 type GsdAnalysisModalProps = {
   open: boolean;
@@ -34,10 +41,13 @@ export default function GsdAnalysisModal({
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-3">
       <div className="flex h-[94vh] w-[98vw] max-w-[1800px] flex-col overflow-hidden rounded-sm bg-white shadow-2xl">
-
-        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-3">
+        <div className="flex shrink-0 items-center justify-between border-b border-slate-200 px-5 py-3">
           <h3 className="text-sm font-bold uppercase text-slate-800">
-            Phân tích công đoạn GSD
+            {copyAnalysisId
+              ? 'Sao chép phân tích công đoạn GSD'
+              : editAnalysisId
+                ? 'Cập nhật phân tích công đoạn GSD'
+                : 'Phân tích công đoạn GSD'}
           </h3>
 
           <button
@@ -65,7 +75,6 @@ export default function GsdAnalysisModal({
             }
           />
         </div>
-
       </div>
     </div>
   );

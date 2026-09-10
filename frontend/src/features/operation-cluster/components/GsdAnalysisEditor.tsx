@@ -23,11 +23,18 @@ const initialForm: Omit<GsdAnalysisPayload, 'sourceId' | 'details'> = {
 };
 
 type GsdAnalysisSaveResult = {
-    id?: number;
-    analysisId?: number;
-    analysisNo?: string;
-};
+    id?: number | string;
+    analysisId?: number | string;
+    analysis_id?: number | string;
+    gsdAnalysisId?: number | string;
+    gsd_analysis_id?: number | string;
 
+    analysisNo?: string | null;
+    analysis_no?: string | null;
+
+    operationName?: string | null;
+    operation_name?: string | null;
+};
 
 type GsdAnalysisPageProps = {
     editAnalysisId?: number | null;
@@ -40,7 +47,9 @@ type GsdAnalysisPageProps = {
     onCancel?: () => void;
 };
 
-function formatNumber(value: number | null | undefined, digits = 4) {
+
+
+function formatNumber(value: number | null | undefined, digits = 2) {
     const numberValue = Number(value || 0);
     return numberValue.toFixed(digits);
 }
@@ -54,6 +63,28 @@ function getLaborGradeByDifficulty(value: number | null | undefined) {
     return 6;
 }
 
+function buildCopyOperationName(
+    value: unknown
+): string {
+    const name =
+        String(
+            value ?? ''
+        ).trim();
+
+    if (!name) {
+        return '';
+    }
+
+    if (
+        name
+            .toUpperCase()
+            .endsWith('_COPY')
+    ) {
+        return name;
+    }
+
+    return `${name}_COPY`;
+}
 
 export default function GsdAnalysisEditor({
     editAnalysisId = null,
@@ -355,7 +386,11 @@ export default function GsdAnalysisEditor({
                         detail.machineId ?? null,
 
                     operationName:
-                        detail.operationName ?? '',
+                        copyAnalysisId
+                            ? buildCopyOperationName(
+                                detail.operationName
+                            )
+                            : detail.operationName ?? '',
 
                     seamLength: Number(
                         detail.seamLength || 0
@@ -938,9 +973,9 @@ export default function GsdAnalysisEditor({
                             result
                                 ? formatNumber(
                                     result.totalManualSeconds,
-                                    4
+                                    2
                                 )
-                                : '0.0000'
+                                : '0.00'
                         }
                         tone="blue"
                     />
@@ -960,9 +995,9 @@ export default function GsdAnalysisEditor({
                             result
                                 ? formatNumber(
                                     result.machineSeconds,
-                                    4
+                                    2
                                 )
-                                : '0.0000'
+                                : '0.00'
                         }
                         tone="orange"
                     />
@@ -981,9 +1016,9 @@ export default function GsdAnalysisEditor({
                             result
                                 ? formatNumber(
                                     result.difficultySeconds,
-                                    4
+                                    2
                                 )
-                                : '0.0000'
+                                : '0.00'
                         }
                         tone="amber"
                     />
@@ -1002,7 +1037,7 @@ export default function GsdAnalysisEditor({
                             result
                                 ? formatNumber(
                                     result.totalSmvBeforeDifficulty,
-                                    4
+                                    2
                                 )
                                 : '-'
                         }
@@ -1106,6 +1141,7 @@ export default function GsdAnalysisEditor({
                     sources={sources}
                     popupSourceId={popupSourceId}
                     popupRows={popupRows}
+                    selectedDraftRows={selectedDraftRows}
                     loadingSourceActions={loadingSourceActions}
                     selectedDraftCount={selectedDraftRows.length}
                     onSelectSource={selectPopupSource}
@@ -1114,12 +1150,20 @@ export default function GsdAnalysisEditor({
                     onUncheckRow={uncheckPopupRow}
                     onToggleRowSelection={togglePopupActionRow}
                     onTakeData={() => {
-                        const count = takeSelectedActionsToAnalysis();
+                        const count =
+                            takeSelectedActionsToAnalysis();
+
                         if (count > 0) {
-                            setIsPickerOpen(false);
+                            setIsPickerOpen(
+                                false
+                            );
                         }
                     }}
-                    onClose={() => setIsPickerOpen(false)}
+                    onClose={() =>
+                        setIsPickerOpen(
+                            false
+                        )
+                    }
                 />
             )}
         </div>

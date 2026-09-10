@@ -1121,6 +1121,11 @@ export default function OperationClusterTreeOrderedByLineNo() {
   ] = useState<number | null>(null);
 
   const [
+    copyFromGsdPicker,
+    setCopyFromGsdPicker,
+  ] = useState(false);
+
+  const [
     treeData,
     setTreeData,
   ] = useState<
@@ -2385,6 +2390,52 @@ export default function OperationClusterTreeOrderedByLineNo() {
       resetGsdPopup();
     };
 
+  const handleCopySelectedGsd =
+    () => {
+      if (!cluster) {
+        alert(
+          'Vui lòng chọn một cụm trước khi copy công đoạn.'
+        );
+
+        return;
+      }
+
+      if (checkedGsdIds.length !== 1) {
+        alert(
+          'Vui lòng chỉ chọn 1 công đoạn để copy.'
+        );
+
+        return;
+      }
+
+      const selectedGsdId =
+        checkedGsdIds[0];
+
+      setEditGsdAnalysisId(
+        null
+      );
+
+      setCopyGsdAnalysisId(
+        selectedGsdId
+      );
+
+      setCopyFromGsdPicker(
+        true
+      );
+
+      /*
+       * Đóng popup chọn GSD trước,
+       * tránh 2 modal chồng nhau khó nhìn.
+       */
+      setIsGsdPopupOpen(
+        false
+      );
+
+      setGsdAnalysisOpen(
+        true
+      );
+    };
+
   const openGsdAnalysis = () => {
     setEditGsdAnalysisId(null);
     setCopyGsdAnalysisId(null);
@@ -2392,10 +2443,10 @@ export default function OperationClusterTreeOrderedByLineNo() {
   };
 
   return (
-    <div className="h-full min-h-0 bg-slate-50 p-3 text-slate-800">
-      <div className="grid h-full min-h-[620px] grid-cols-1 gap-3 xl:grid-cols-[360px_minmax(0,1fr)]">
+    <div className="h-[calc(100dvh-72px)] min-h-0 overflow-hidden bg-slate-50 p-3 text-slate-800">
+      <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-hidden xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white">
-          <div className="border-b border-slate-200 px-3 py-3">
+          <div className="shrink-0 border-b border-slate-200 px-3 py-3">
             <div className="flex items-center justify-between gap-2">
               <h1 className="text-sm font-semibold text-slate-900">
                 Cây cấu trúc cụm công đoạn
@@ -2466,7 +2517,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
             ) : null}
           </div>
 
-          <div className="min-h-0 flex-1 overflow-auto px-2 py-2">
+          <div className="thin-scrollbar min-h-0 flex-1 overflow-auto px-2 py-2">
             {loading ? (
               <div className="px-3 py-10 text-center text-xs text-slate-500">
                 Đang tải dữ liệu...
@@ -2656,7 +2707,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
           </div>
         </aside>
 
-        <section className="min-w-0 space-y-3 overflow-auto">
+        <section className="flex min-h-0 min-w-0 flex-col overflow-hidden">
           {/* <section className="rounded-lg border border-slate-200 bg-white">
             <div className="border-b border-slate-100 px-4 py-2.5">
               <h2 className="text-sm font-semibold text-slate-900">
@@ -2736,7 +2787,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
             </div>
           </section> */}
 
-          <section className="rounded-lg border border-slate-200 bg-white">
+          {/* <section className="rounded-lg border border-slate-200 bg-white">
             <div className="flex items-center justify-between border-b border-slate-100 px-4 py-2">
               <h2 className="text-sm font-semibold text-slate-900">
                 Thông tin tổng quan
@@ -2796,10 +2847,10 @@ export default function OperationClusterTreeOrderedByLineNo() {
                 className="border-slate-200 bg-slate-50 text-slate-700"
               />
             </div>
-          </section>
+          </section> */}
 
-          <section className="overflow-hidden rounded-lg border border-slate-200 bg-white">
-            <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-2.5">
+          <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white">
+            <div className="shrink-0 flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-2.5">
               <div>
                 <h2 className="text-sm font-semibold text-slate-900">
                   Danh sách công đoạn
@@ -2870,8 +2921,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
               </div>
 
             </div>
-
-            <div className="max-h-[500px] overflow-auto">
+            <div className="thin-scrollbar min-h-0 flex-1 overflow-auto">
               <table className="w-full min-w-[1000px] border-collapse text-xs">
                 <thead className="sticky top-0 z-10 bg-slate-50 text-slate-600">
                   <tr>
@@ -3102,7 +3152,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
               </table>
             </div>
 
-            <div className="border-t border-slate-200 px-4 py-2 text-[11px] text-slate-500">
+            <div className="shrink-0 border-t border-slate-200 px-4 py-2 text-[11px] text-slate-500">
               Hiển thị{' '}
               <span className="font-medium text-slate-700">
                 {cluster
@@ -3179,6 +3229,12 @@ export default function OperationClusterTreeOrderedByLineNo() {
         onConfirm={
           handleConfirmSelectGsd
         }
+        onCopy={
+          handleCopySelectedGsd
+        }
+        copyDisabled={
+          checkedGsdIds.length !== 1
+        }
       />
 
       <GsdAnalysisModal
@@ -3203,6 +3259,10 @@ export default function OperationClusterTreeOrderedByLineNo() {
           setCopyGsdAnalysisId(
             null
           );
+
+          setCopyFromGsdPicker(
+            false
+          );
         }}
         onSaveSuccess={async (
           savedAnalysis
@@ -3211,27 +3271,36 @@ export default function OperationClusterTreeOrderedByLineNo() {
             await operationClusterService
               .getGsdOptions();
 
-
           setGsdOptions(
             data
           );
 
+          const savedId =
+            Number(
+              savedAnalysis?.id ??
+              savedAnalysis?.analysisId ??
+              savedAnalysis?.analysis_id ??
+              savedAnalysis?.gsdAnalysisId ??
+              savedAnalysis?.gsd_analysis_id ??
+              0
+            );
 
           const analysisNo =
             String(
-              savedAnalysis
-                .analysisNo ??
+              savedAnalysis?.analysisNo ??
+              savedAnalysis?.analysis_no ??
               ''
             ).trim();
-
 
           const savedGsd =
             data.find(
               (item) =>
-                item.operation_code ===
-                analysisNo
+                Number(
+                  item.gsd_analysis_id
+                ) === savedId ||
+                item.operation_code === analysisNo ||
+                item.analysis_no === analysisNo
             );
-
 
           if (savedGsd) {
             appendGsdsToCurrentCluster(
@@ -3246,6 +3315,15 @@ export default function OperationClusterTreeOrderedByLineNo() {
             );
           }
 
+          /*
+           * Nếu copy từ popup GSD thì sau khi lưu:
+           * - đóng popup
+           * - clear tick cũ
+           * - giữ lại công đoạn mới đã append vào cụm
+           */
+          if (copyFromGsdPicker) {
+            resetGsdPopup();
+          }
 
           setGsdAnalysisOpen(
             false
@@ -3257,6 +3335,10 @@ export default function OperationClusterTreeOrderedByLineNo() {
 
           setCopyGsdAnalysisId(
             null
+          );
+
+          setCopyFromGsdPicker(
+            false
           );
         }}
       />

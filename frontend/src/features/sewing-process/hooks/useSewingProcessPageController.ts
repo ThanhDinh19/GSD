@@ -911,6 +911,20 @@ export function useSewingProcessPageController() {
         async (
             id: number
         ) => {
+            if (
+                !permissions.canDelete
+            ) {
+                toast.warning(
+                    'Bạn không có quyền xóa chứng từ này.',
+                    {
+                        duration:
+                            2000,
+                    }
+                );
+
+                return;
+            }
+
             const confirmed =
                 window.confirm(
                     'Bạn có chắc muốn chuyển chứng từ này vào thùng rác?'
@@ -926,15 +940,33 @@ export function useSewingProcessPageController() {
                         id
                     );
 
-                alert(
-                    response.message
+                setSelectedId(
+                    null
+                );
+
+                setModalMode(
+                    null
+                );
+
+                await refresh();
+
+                toast.success(
+                    response.message ||
+                    'Đã chuyển chứng từ vào thùng rác.',
+                    {
+                        duration:
+                            2500,
+                    }
                 );
             } catch (error) {
-                alert(
-                    error instanceof
-                        Error
+                toast.warning(
+                    error instanceof Error
                         ? error.message
-                        : 'Không thể chuyển vào thùng rác'
+                        : 'Không thể chuyển vào thùng rác.',
+                    {
+                        duration:
+                            3000,
+                    }
                 );
             }
         };

@@ -504,28 +504,37 @@ export function useSewingProcess() {
   };
 
   const deactivateSewingProcess =
-    async (id: number) => {
-      if (
-        !Number.isInteger(id) ||
-        id <= 0
-      ) {
-        throw new Error(
-          'ID chứng từ không hợp lệ'
-        );
-      }
-
-      setDeactivatingId(id);
+    async (
+      id: number
+    ) => {
+      setDeactivatingId(
+        id
+      );
 
       try {
         const response =
           await sewingProcessService
-            .deactivate(id);
+            .deactivate(
+              id
+            );
 
-        await loadSewingProcesses();
+        setItems(
+          (previous) =>
+            previous.filter(
+              (item) =>
+                Number(
+                  item.id
+                ) !== Number(
+                  id
+                )
+            )
+        );
 
         return response;
       } finally {
-        setDeactivatingId(null);
+        setDeactivatingId(
+          null
+        );
       }
     };
 

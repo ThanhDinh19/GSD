@@ -54,6 +54,15 @@ export interface OperationClusterDetail {
 
 export interface GsdOption {
     gsd_analysis_id: number;
+
+    /**
+     * Mã phân tích GSD.
+     * Một số API trả analysis_no,
+     * một số chỗ dùng operation_code làm mã công đoạn.
+     */
+    analysisNo?: string | null;
+    analysis_no?: string | null;
+
     operation_code: string;
     operation_name: string;
 
@@ -65,11 +74,16 @@ export interface GsdOption {
     machine_code: string | null;
     machine_name: string | null;
     code_mmtb?: string | null;
+
     total_tmu?: number | null;
 
     sam_gsd: number;
     total_action_seconds: number;
     total_actions: number;
+
+    customer_name?: string | null;
+    product_name?: string | null;
+    fabric_group_name?: string | null;
 }
 
 export interface OperationClusterOperationPayload {
@@ -93,7 +107,6 @@ export interface OperationClusterOperationPayload {
     manpower?: number | null;
     required_efficiency?: number | string | null;
 
-    // Các giá trị có thể trả về từ detail API khi Edit/Copy.
     standard_price?: number;
     adjusted_sam?: number;
     utilization_rate?: number | null;

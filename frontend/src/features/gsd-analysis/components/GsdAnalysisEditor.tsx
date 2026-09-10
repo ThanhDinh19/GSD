@@ -30,7 +30,7 @@ type GsdAnalysisPageProps = {
     onCancel?: () => void;
 };
 
-function formatNumber(value: number | null | undefined, digits = 4) {
+function formatNumber(value: number | null | undefined, digits = 2) {
     const numberValue = Number(value || 0);
     return numberValue.toFixed(digits);
 }
@@ -925,9 +925,9 @@ export default function GsdAnalysisEditor({
                             result
                                 ? formatNumber(
                                     result.totalManualSeconds,
-                                    4
+                                    2
                                 )
-                                : '0.0000'
+                                : '0.00'
                         }
                         tone="blue"
                     />
@@ -947,9 +947,9 @@ export default function GsdAnalysisEditor({
                             result
                                 ? formatNumber(
                                     result.machineSeconds,
-                                    4
+                                    2
                                 )
-                                : '0.0000'
+                                : '0.00'
                         }
                         tone="orange"
                     />
@@ -968,9 +968,9 @@ export default function GsdAnalysisEditor({
                             result
                                 ? formatNumber(
                                     result.difficultySeconds,
-                                    4
+                                    2
                                 )
-                                : '0.0000'
+                                : '0.00'
                         }
                         tone="amber"
                     />
@@ -989,7 +989,7 @@ export default function GsdAnalysisEditor({
                             result
                                 ? formatNumber(
                                     result.totalSmvBeforeDifficulty,
-                                    4
+                                    2
                                 )
                                 : '-'
                         }
@@ -1093,6 +1093,7 @@ export default function GsdAnalysisEditor({
                     sources={sources}
                     popupSourceId={popupSourceId}
                     popupRows={popupRows}
+                    selectedDraftRows={selectedDraftRows}
                     loadingSourceActions={loadingSourceActions}
                     selectedDraftCount={selectedDraftRows.length}
                     onSelectSource={selectPopupSource}
@@ -1101,12 +1102,20 @@ export default function GsdAnalysisEditor({
                     onUncheckRow={uncheckPopupRow}
                     onToggleRowSelection={togglePopupActionRow}
                     onTakeData={() => {
-                        const count = takeSelectedActionsToAnalysis();
+                        const count =
+                            takeSelectedActionsToAnalysis();
+
                         if (count > 0) {
-                            setIsPickerOpen(false);
+                            setIsPickerOpen(
+                                false
+                            );
                         }
                     }}
-                    onClose={() => setIsPickerOpen(false)}
+                    onClose={() =>
+                        setIsPickerOpen(
+                            false
+                        )
+                    }
                 />
             )}
         </div>

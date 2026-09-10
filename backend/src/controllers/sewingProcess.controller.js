@@ -207,7 +207,10 @@ async function getGsdActionDetailsById(req, res, next) {
             });
         }
 
-        const data = await service.getActionDetailsById(id);
+        const data =
+            await sewingProcessService.getActionDetailsById(
+                id
+            );
 
         return res.json({
             success: true,
@@ -241,32 +244,80 @@ async function getActionDetailsByOperationClusterLineId(req, res, next) {
     }
 }
 
-const deactivate = async (req, res) => {
-    const { id } = req.params;
+async function deactivate(req, res) {
+    try {
+        const id =
+            Number(
+                req.params.id
+            );
 
-    const updated = await sewingProcessService.deactivate(Number(id), {
-        userId:
-            req.user.id,
+        if (
+            !Number.isInteger(id) ||
+            id <= 0
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'ID quy trình may không hợp lệ.',
+            });
+        }
 
-        employeeId:
-            req.user
-                .employeeId,
+        const userId =
+            Number(
+                req.user?.id ??
+                req.user?.userId ??
+                req.auth?.userId ??
+                req.authUser?.id ??
+                0
+            );
 
-        departmentCode:
-            req.user
-                .departmentCode,
-    });
+        if (
+            !Number.isInteger(userId) ||
+            userId <= 0
+        ) {
+            return res.status(401).json({
+                success: false,
+                message: 'Bạn chưa đăng nhập.',
+            });
+        }
 
-    if (!updated) {
-        return res.status(404).json({
-            error: 'Không tìm thấy chứng từ'
-        })
+        const deleted =
+            await sewingProcessService.deactivate(
+                id,
+                {
+                    userId,
+                }
+            );
+
+        if (!deleted) {
+            return res.status(404).json({
+                success: false,
+                message: 'Không tìm thấy chứng từ hoặc chứng từ đã được xóa.',
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: 'Đã chuyển chứng từ vào thùng rác.',
+            data: {
+                id,
+            },
+        });
+    } catch (err) {
+        console.error(
+            'deactivateSewingProcess error:',
+            err
+        );
+
+        return res.status(
+            err.statusCode || 500
+        ).json({
+            success: false,
+            message:
+                err.message ||
+                'Không thể chuyển chứng từ vào thùng rác.',
+        });
     }
-
-    return res.json({
-        message: 'Đã chuyển vào thùng rác'
-    });
-};
+}
 
 module.exports = {
     getSewingProcesses,

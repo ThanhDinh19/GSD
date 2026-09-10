@@ -102,6 +102,7 @@ export default function GsdProcessTable({
                     await deactivateGsdAnalysis(id);
 
                 alert(response.message);
+                await onRefresh?.();
             } catch (error) {
                 alert(
                     error instanceof Error
@@ -157,18 +158,20 @@ export default function GsdProcessTable({
                             </Button>
                         )}
 
-                        {/* 
+
                         {permissions.canDelete && (
                             <Button
                                 variant='danger'
                                 disabled={!selectedId}
+                                size='sm'
+                                leftIcon={<Trash2 className='w-4 h-4' />}
                                 onClick={() =>
                                     void handleMoveToTrash(Number(selectedId))
                                 }
                             >
                                 Trash
                             </Button>
-                        )} */}
+                        )}
 
                         {onRefresh && (
                             <Button

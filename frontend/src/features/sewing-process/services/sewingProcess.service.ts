@@ -26,7 +26,7 @@ import {
 } from '../model/sewingProcess.mapper';
 
 export const sewingProcessService = {
-  
+
   async getActionDetailsByOperationClusterLineId(
     id: number
   ): Promise<SewingProcessActionDetail[]> {
@@ -79,14 +79,15 @@ export const sewingProcessService = {
     return response.data;
   },
 
-  async deactivate(id: number): Promise<DeactivateResponse> {
-    const response = await request<ApiResponse<DeactivateResponse>>(
+  async deactivate(
+    id: number
+  ): Promise<ApiResponse<DeactivateResponse>> {
+    return request<ApiResponse<DeactivateResponse>>(
       `/api/sewing-processes/deactivate/${id}`,
       {
-        method: 'PUT'
+        method: 'PUT',
       }
     );
-    return response;
   },
 
   async calculateSewingProcess(

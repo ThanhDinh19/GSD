@@ -14,6 +14,7 @@ import {
     Import,
     FileDown,
     RefreshCcw,
+    Trash2,
 } from 'lucide-react';
 
 import {
@@ -148,6 +149,7 @@ export default function SewingProcessPage() {
         loading,
         calculating,
         saving,
+        deactivatingId,
 
         selectedId,
         modalMode,
@@ -202,6 +204,8 @@ export default function SewingProcessPage() {
         openEdit,
         openCopy,
 
+        handleMoveToTrash,
+
         save,
 
         handleExportExcel,
@@ -225,6 +229,11 @@ export default function SewingProcessPage() {
             </div>
         );
     }
+
+    const isTrashingSelected =
+        selectedId !== null &&
+        deactivatingId !== null &&
+        Number(deactivatingId) === Number(selectedId);
 
 
     return (
@@ -299,6 +308,35 @@ export default function SewingProcessPage() {
                                 }
                             >
                                 Export
+                            </Button>
+                        )}
+
+                        {permissions.canDelete && (
+                            <Button
+                                variant="danger"
+                                onClick={() => {
+                                    if (!selectedId) {
+                                        return;
+                                    }
+
+                                    void handleMoveToTrash(
+                                        selectedId
+                                    );
+                                }}
+                                disabled={
+                                    !selectedId ||
+                                    isTrashingSelected
+                                }
+                                loading={
+                                    isTrashingSelected
+                                }
+                                loadingText="Trashing..."
+                                size="sm"
+                                leftIcon={
+                                    <Trash2 className="h-4 w-4" />
+                                }
+                            >
+                                Trash
                             </Button>
                         )}
 
