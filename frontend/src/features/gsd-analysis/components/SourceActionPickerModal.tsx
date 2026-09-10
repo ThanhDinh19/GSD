@@ -12,6 +12,9 @@ import type {
     GsdAnalysisRow,
 } from '../types/gsdAnalysis.types';
 
+type SourceActionMap =
+    Record<number, GsdAnalysisRow[]>;
+
 interface SourceActionPickerModalProps {
     sources: SourceMaster[];
     popupSourceId: number | null;
@@ -19,7 +22,7 @@ interface SourceActionPickerModalProps {
     selectedDraftRows: GsdAnalysisRow[];
     loadingSourceActions: boolean;
     selectedDraftCount: number;
-
+    sourceActionMap: SourceActionMap;
     onSelectSource: (
         sourceId: number
     ) => Promise<void>;
@@ -75,6 +78,7 @@ export default function SourceActionPickerModal({
     selectedDraftRows,
     loadingSourceActions,
     selectedDraftCount,
+    sourceActionMap,
     onSelectSource,
     onStepChange,
     onFrequencyChange,
@@ -87,6 +91,16 @@ export default function SourceActionPickerModal({
         keyword,
         setKeyword,
     ] = useState('');
+
+    const [
+        viewAllOpen,
+        setViewAllOpen,
+    ] = useState(false);
+
+    const [
+        loadingViewAll,
+        setLoadingViewAll,
+    ] = useState(false);
 
     const sourceButtonRefs =
         useRef<
@@ -207,6 +221,66 @@ export default function SourceActionPickerModal({
             ]
         );
 
+    const viewAllGroups =
+        useMemo(
+            () =>
+                sources.map(
+                    (source) => {
+                        const sourceId =
+                            Number(source.id);
+
+                        const rows =
+                            sourceActionMap[sourceId] ||
+                            [];
+
+                        const selectedCount =
+                            rows.filter(
+                                (row) =>
+                                    row.isSelected ||
+                                    (
+                                        row.stepNo !== null &&
+                                        row.stepNo !== undefined &&
+                                        String(row.stepNo).trim() !== ''
+                                    )
+                            ).length;
+
+                        const totalTmu =
+                            rows.reduce(
+                                (sum, row) =>
+                                    sum +
+                                    Number(row.tmu || 0) *
+                                    Number(row.frequency || 1),
+                                0
+                            );
+
+                        return {
+                            sourceId,
+                            sourceName:
+                                getSourceLabel(
+                                    source,
+                                    sourceId
+                                ),
+                            note:
+                                source.note ?? null,
+                            rows,
+                            selectedCount,
+                            totalTmu,
+                        };
+                    }
+                ),
+            [
+                sources,
+                sourceActionMap,
+            ]
+        );
+
+    const totalViewAllActions =
+        viewAllGroups.reduce(
+            (sum, group) =>
+                sum + group.rows.length,
+            0
+        );
+
     const handleJumpToSource =
         async (
             sourceId: number
@@ -260,6 +334,62 @@ export default function SourceActionPickerModal({
             );
         };
 
+    const handleViewAll =
+        async () => {
+            setViewAllOpen(
+                true
+            );
+
+            setLoadingViewAll(
+                true
+            );
+
+            const restoreSourceId =
+                popupSourceId;
+
+            try {
+                for (
+                    const source of sources
+                ) {
+                    const sourceId =
+                        Number(source.id);
+
+                    if (
+                        !Number.isFinite(sourceId) ||
+                        sourceId <= 0
+                    ) {
+                        continue;
+                    }
+
+                    if (
+                        sourceActionMap[sourceId]
+                    ) {
+                        continue;
+                    }
+
+                    await onSelectSource(
+                        sourceId
+                    );
+                }
+
+                if (
+                    restoreSourceId
+                ) {
+                    await onSelectSource(
+                        restoreSourceId
+                    );
+
+                    scrollToSource(
+                        restoreSourceId
+                    );
+                }
+            } finally {
+                setLoadingViewAll(
+                    false
+                );
+            }
+        };
+
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4">
             <div className="flex h-[820px] max-h-[92vh] w-[1500px] max-w-[96vw] flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl">
@@ -303,8 +433,8 @@ export default function SourceActionPickerModal({
                                                         );
                                                     }}
                                                     className={`inline-flex items-center gap-1 rounded-full  px-3 py-1 text-xs font-bold transition ${active
-                                                            ? 'border-blue-300 bg-blue-100 text-blue-800'
-                                                            : 'border-blue-100 bg-blue-50 text-blue-700 hover:border-blue-400 hover:bg-blue-100'
+                                                        ? 'border-blue-300 bg-blue-100 text-blue-800'
+                                                        : 'border-blue-100 bg-blue-50 text-blue-700 hover:border-blue-400 hover:bg-blue-100'
                                                         }`}
                                                     title={
                                                         item.note ||
@@ -317,8 +447,8 @@ export default function SourceActionPickerModal({
 
                                                     <span
                                                         className={`rounded-full px-1.5 py-0.5 text-[10px] ${active
-                                                                ? 'bg-white/20 text-white'
-                                                                : 'bg-white text-blue-700'
+                                                            ? 'bg-white/20 text-white'
+                                                            : 'bg-white text-blue-700'
                                                             }`}
                                                     >
                                                         {item.count}
@@ -426,10 +556,10 @@ export default function SourceActionPickerModal({
                                                                 );
                                                             }}
                                                             className={`w-full rounded-lg border px-3 py-2 text-left text-sm transition ${isActive
-                                                                    ? 'border-blue-600 bg-blue-600 text-white'
-                                                                    : selectedSummary
-                                                                        ? 'border-blue-200 bg-blue-50 text-slate-700 hover:bg-blue-100'
-                                                                        : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
+                                                                ? 'border-blue-600 bg-blue-600 text-white'
+                                                                : selectedSummary
+                                                                    ? 'border-blue-200 bg-blue-50 text-slate-700 hover:bg-blue-100'
+                                                                    : 'border-slate-200 bg-white text-slate-700 hover:bg-slate-50'
                                                                 }`}
                                                         >
                                                             <div className="flex items-start justify-between gap-2">
@@ -441,8 +571,8 @@ export default function SourceActionPickerModal({
                                                                     {source.note && (
                                                                         <div
                                                                             className={`mt-1 truncate text-xs ${isActive
-                                                                                    ? 'text-blue-100'
-                                                                                    : 'text-slate-400'
+                                                                                ? 'text-blue-100'
+                                                                                : 'text-slate-400'
                                                                                 }`}
                                                                         >
                                                                             {source.note}
@@ -453,8 +583,8 @@ export default function SourceActionPickerModal({
                                                                 {selectedSummary && (
                                                                     <span
                                                                         className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-bold ${isActive
-                                                                                ? 'bg-white/20 text-white'
-                                                                                : 'bg-blue-100 text-blue-700'
+                                                                            ? 'bg-white/20 text-white'
+                                                                            : 'bg-blue-100 text-blue-700'
                                                                             }`}
                                                                     >
                                                                         {selectedSummary.count}
@@ -485,18 +615,37 @@ export default function SourceActionPickerModal({
                                     </div>
                                 </div>
 
-                                <div className="w-44">
-                                    <label className="mb-1 block text-xs font-bold text-slate-600">
-                                        Đã chọn
-                                    </label>
-
-                                    <input
-                                        value={
-                                            selectedDraftCount
+                                <div className="flex shrink-0 items-end gap-3">
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            void handleViewAll();
+                                        }}
+                                        disabled={
+                                            loadingViewAll ||
+                                            loadingSourceActions ||
+                                            sources.length === 0
                                         }
-                                        readOnly
-                                        className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold"
-                                    />
+                                        className="h-11 rounded border border-red-300 bg-white px-5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+                                    >
+                                        {loadingViewAll
+                                            ? 'Loading...'
+                                            : 'View all'}
+                                    </button>
+
+                                    <div className="w-44">
+                                        <label className="mb-1 block text-xs font-bold text-slate-600">
+                                            Đã chọn
+                                        </label>
+
+                                        <input
+                                            value={
+                                                selectedDraftCount
+                                            }
+                                            readOnly
+                                            className="w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-bold"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 
@@ -703,6 +852,347 @@ export default function SourceActionPickerModal({
                             </div>
                         </div>
                     </div>
+                </div>
+            </div>
+            {viewAllOpen && (
+                <SourceActionViewAllModal
+                    groups={viewAllGroups}
+                    loading={loadingViewAll}
+                    totalActionCount={totalViewAllActions}
+                    onJumpToSource={(sourceId) => {
+                        setViewAllOpen(false);
+
+                        void handleJumpToSource(
+                            sourceId
+                        );
+                    }}
+                    onClose={() =>
+                        setViewAllOpen(false)
+                    }
+                />
+            )}
+        </div>
+    );
+}
+
+
+function SourceActionViewAllModal({
+    groups,
+    loading,
+    totalActionCount,
+    onJumpToSource,
+    onClose,
+}: {
+    groups: Array<{
+        sourceId: number;
+        sourceName: string;
+        note?: string | null;
+        rows: GsdAnalysisRow[];
+        selectedCount: number;
+        totalTmu: number;
+    }>;
+    loading: boolean;
+    totalActionCount: number;
+    onJumpToSource: (
+        sourceId: number
+    ) => void;
+    onClose: () => void;
+}) {
+
+
+    const [
+        expandedSourceIds,
+        setExpandedSourceIds,
+    ] = useState<Set<number>>(
+        () => new Set()
+    );
+
+    const toggleExpanded =
+        (
+            sourceId: number
+        ) => {
+            setExpandedSourceIds(
+                (previous) => {
+                    const next =
+                        new Set(previous);
+
+                    if (
+                        next.has(sourceId)
+                    ) {
+                        next.delete(sourceId);
+                    } else {
+                        next.add(sourceId);
+                    }
+
+                    return next;
+                }
+            );
+        };
+
+    return (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/40 p-4">
+            <div className="flex h-[90vh] w-[1450px] max-w-[96vw] flex-col overflow-hidden rounded-lg bg-white shadow-2xl">
+                <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-3">
+                    <div>
+                        <h2 className="text-lg font-bold text-slate-800">
+                            Tất cả source và thao tác
+                        </h2>
+
+                        <p className="mt-0.5 text-xs text-slate-500">
+                            Xem toàn bộ source và thao tác trước khi chọn vào phân tích.
+                        </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                            Source:{' '}
+                            <span className="font-bold text-slate-800">
+                                {groups.length}
+                            </span>
+                            {' · '}
+                            Thao tác:{' '}
+                            <span className="font-bold text-slate-800">
+                                {totalActionCount}
+                            </span>
+                        </div>
+
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="h-9 w-9 rounded-full text-slate-500 hover:bg-slate-100"
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+
+                <div className="min-h-0 flex-1 overflow-auto bg-white">
+                    {loading && (
+                        <div className="p-10 text-center text-sm text-slate-400">
+                            Đang tải toàn bộ thao tác của source...
+                        </div>
+                    )}
+
+                    {!loading &&
+                        groups.length === 0 && (
+                            <div className="p-10 text-center text-sm text-slate-400">
+                                Không có source để hiển thị.
+                            </div>
+                        )}
+
+                    {!loading &&
+                        groups.map(
+                            (
+                                group,
+                                groupIndex
+                            ) => {
+                                const isExpanded =
+                                    expandedSourceIds.has(
+                                        group.sourceId
+                                    );
+
+                                return (
+                                    <div
+                                        key={group.sourceId}
+                                        className="border-b border-slate-200"
+                                    >
+                                        <button
+                                            type="button"
+                                            onClick={() =>
+                                                toggleExpanded(
+                                                    group.sourceId
+                                                )
+                                            }
+                                            className="w-full border-b border-blue-100 bg-blue-50 px-5 py-3 text-left hover:bg-blue-100"
+                                        >
+                                            <div className="flex items-start justify-between gap-4">
+                                                <div className="flex min-w-0 items-start gap-3">
+                                                    <span className="mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border border-blue-200 bg-white text-sm font-bold text-blue-700">
+                                                        {isExpanded
+                                                            ? '⌄'
+                                                            : '>'}
+                                                    </span>
+
+                                                    <div className="min-w-0">
+                                                        <div className="text-sm font-bold text-blue-700">
+                                                            Source {groupIndex + 1}: {group.sourceName}
+                                                        </div>
+
+                                                        <div className="mt-1 text-xs text-slate-500">
+                                                            {group.rows.length} thao tác
+                                                            {' · '}
+                                                            Đã chọn: {group.selectedCount}
+                                                            {' · '}
+                                                            Tổng TMU: {group.totalTmu.toFixed(2)}
+                                                            {group.note
+                                                                ? ` · ${group.note}`
+                                                                : ''}
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <span
+                                                    role="button"
+                                                    tabIndex={0}
+                                                    onClick={(event) => {
+                                                        event.stopPropagation();
+
+                                                        onJumpToSource(
+                                                            group.sourceId
+                                                        );
+                                                    }}
+                                                    onKeyDown={(event) => {
+                                                        if (
+                                                            event.key === 'Enter' ||
+                                                            event.key === ' '
+                                                        ) {
+                                                            event.preventDefault();
+                                                            event.stopPropagation();
+
+                                                            onJumpToSource(
+                                                                group.sourceId
+                                                            );
+                                                        }
+                                                    }}
+                                                    className="rounded border border-blue-200 bg-white px-3 py-1.5 text-xs font-bold text-blue-700 hover:bg-blue-50"
+                                                >
+                                                    Mở source này
+                                                </span>
+                                            </div>
+                                        </button>
+
+                                        {isExpanded && (
+                                            <div className="overflow-auto">
+                                                <table className="w-full min-w-[1200px] border-collapse text-sm">
+                                                    <thead className="bg-white">
+                                                        <tr className="text-xs uppercase text-slate-500">
+                                                            <th className="w-[60px] border border-slate-100 p-3 text-center">
+                                                                STT
+                                                            </th>
+
+                                                            <th className="w-[80px] border border-slate-100 p-3 text-center">
+                                                                Chọn
+                                                            </th>
+
+                                                            <th className="w-[90px] border border-slate-100 p-3 text-center">
+                                                                Bước
+                                                            </th>
+
+                                                            <th className="border border-slate-100 p-3 text-left">
+                                                                Thao tác
+                                                            </th>
+
+                                                            <th className="w-[120px] border border-slate-100 p-3 text-left">
+                                                                Code
+                                                            </th>
+
+                                                            <th className="w-[120px] border border-slate-100 p-3 text-right">
+                                                                Tần suất
+                                                            </th>
+
+                                                            <th className="w-[100px] border border-slate-100 p-3 text-right">
+                                                                TMU
+                                                            </th>
+
+                                                            <th className="border border-slate-100 p-3 text-left">
+                                                                Ghi chú
+                                                            </th>
+                                                        </tr>
+                                                    </thead>
+
+                                                    <tbody>
+                                                        {group.rows.length === 0 && (
+                                                            <tr>
+                                                                <td
+                                                                    colSpan={8}
+                                                                    className="border border-slate-100 p-8 text-center text-slate-400"
+                                                                >
+                                                                    Source này chưa có thao tác.
+                                                                </td>
+                                                            </tr>
+                                                        )}
+
+                                                        {group.rows.map(
+                                                            (
+                                                                row,
+                                                                rowIndex
+                                                            ) => {
+                                                                const checked =
+                                                                    row.isSelected === true ||
+                                                                    (
+                                                                        row.stepNo !== null &&
+                                                                        row.stepNo !== undefined &&
+                                                                        String(row.stepNo).trim() !== ''
+                                                                    );
+
+                                                                return (
+                                                                    <tr
+                                                                        key={`${group.sourceId}-${row.sourceActionDetailId}-${rowIndex}`}
+                                                                        className={
+                                                                            checked
+                                                                                ? 'bg-blue-50/50'
+                                                                                : 'hover:bg-slate-50'
+                                                                        }
+                                                                    >
+                                                                        <td className="border border-slate-100 p-3 text-center text-slate-500">
+                                                                            {rowIndex + 1}
+                                                                        </td>
+
+                                                                        <td className="border border-slate-100 p-3 text-center">
+                                                                            {checked ? (
+                                                                                <span className="font-bold text-blue-700">
+                                                                                    ✓
+                                                                                </span>
+                                                                            ) : (
+                                                                                '-'
+                                                                            )}
+                                                                        </td>
+
+                                                                        <td className="border border-slate-100 p-3 text-center font-bold text-blue-700">
+                                                                            {row.stepNo || '-'}
+                                                                        </td>
+
+                                                                        <td className="border border-slate-100 p-3 text-slate-800">
+                                                                            {row.actionName || '-'}
+                                                                        </td>
+
+                                                                        <td className="border border-slate-100 p-3 text-slate-700">
+                                                                            {row.gsdCode || '-'}
+                                                                        </td>
+
+                                                                        <td className="border border-slate-100 p-3 text-right">
+                                                                            {row.frequency ?? 1}
+                                                                        </td>
+
+                                                                        <td className="border border-slate-100 p-3 text-right font-bold text-slate-800">
+                                                                            {row.tmu ?? 0}
+                                                                        </td>
+
+                                                                        <td className="border border-slate-100 p-3 text-slate-500">
+                                                                            {row.note || ''}
+                                                                        </td>
+                                                                    </tr>
+                                                                );
+                                                            }
+                                                        )}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            }
+                        )}
+                </div>
+
+                <div className="flex shrink-0 justify-end border-t border-slate-200 bg-slate-50 px-5 py-3">
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="rounded-sm border border-slate-300 bg-white px-5 py-2 text-sm hover:bg-slate-50"
+                    >
+                        Đóng
+                    </button>
                 </div>
             </div>
         </div>

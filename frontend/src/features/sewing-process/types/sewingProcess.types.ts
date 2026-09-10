@@ -101,6 +101,8 @@ export interface SewingProcessHeader {
   statusId: number;
 
   note?: string | null;
+
+  departmentName?: string | null;
 }
 
 export interface SewingProcessPayload extends SewingProcessHeader {
@@ -200,6 +202,7 @@ export interface SewingProcessListItem {
   averagePrice?: number;
 
   
+  departmentName?: string | null;
 }
 
 export interface SewingProcessActionDetail {

@@ -2886,7 +2886,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
                       ? 'Đang lưu...'
                       : hasPendingChanges
                         ? 'Lưu'
-                        : 'Thêm'}
+                        : 'Copy'}
 
                   </Button>
                 )}

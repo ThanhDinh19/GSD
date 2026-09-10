@@ -1101,6 +1101,7 @@ export default function GsdAnalysisEditor({
                     onFrequencyChange={updatePopupFrequency}
                     onUncheckRow={uncheckPopupRow}
                     onToggleRowSelection={togglePopupActionRow}
+                        sourceActionMap={sourceActionMap}
                     onTakeData={() => {
                         const count =
                             takeSelectedActionsToAnalysis();

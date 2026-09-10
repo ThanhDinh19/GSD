@@ -562,56 +562,72 @@ async function getSewingProcesses() {
     const pool = await getPool();
 
     const result = await pool.request().query(`
-             SELECT
-            h.id AS [id],
-            h.document_code AS [documentCode],
-            h.customer_code AS [customerCode],
-            h.customer_name AS [customerName],
-            h.item_code AS [itemCode],
-            h.production_line AS [productionLine],
-            h.production_round AS [productionRound],
-            h.working_hours AS [workingHours],
-            h.manpower AS [manpower],
-            h.production_manpower AS [productionManpower],
-            h.quantity AS [quantity],
-            h.effective_date AS [effectiveDate],
-            h.issued_date AS [issuedDate],
-            h.price_mode AS [priceMode],
-            h.status_id AS [statusId],
-            h.note AS [note],
-            h.created_at AS [createdAt],
-            h.updated_at AS [updatedAt],
+           SELECT
+           h.id AS [id],
+           h.document_code AS [documentCode],
+           h.customer_code AS [customerCode],
+           h.customer_name AS [customerName],
+           h.item_code AS [itemCode],
+           h.production_line AS [productionLine],
+           h.production_round AS [productionRound],
+           h.working_hours AS [workingHours],
+           h.manpower AS [manpower],
+           h.production_manpower AS [productionManpower],
+           h.quantity AS [quantity],
+           h.effective_date AS [effectiveDate],
+           h.issued_date AS [issuedDate],
+           h.price_mode AS [priceMode],
+           h.status_id AS [statusId],
+           h.note AS [note],
+           h.created_at AS [createdAt],
+           h.updated_at AS [updatedAt],
 
-            img.image_file_name AS [imageFileName],
-            img.image_url AS [imageUrl],
+           img.image_file_name AS [imageFileName],
+           img.image_url AS [imageUrl],
 
-            s.total_time AS [totalTime],
-            s.total_sam_gsd AS [totalSamGsd],
-            s.takt_time AS [taktTime],
-            s.standard_output AS [standardOutput],
-            s.total_standard_price AS [totalStandardPrice],
-            s.average_price AS [averagePrice]
+           s.total_time AS [totalTime],
+           s.total_sam_gsd AS [totalSamGsd],
+           s.takt_time AS [taktTime],
+           s.standard_output AS [standardOutput],
+           s.total_standard_price AS [totalStandardPrice],
+           s.average_price AS [averagePrice],
+           d.department_name AS [departmentName]
 
-        FROM dbo.sewing_process_headers h
 
-        LEFT JOIN dbo.sewing_process_summaries s
-            ON s.document_code = h.document_code
+       FROM dbo.sewing_process_headers h
 
-        OUTER APPLY (
-            SELECT TOP 1
-                m.image_url,
-                m.image_file_name
-            FROM dbo.sewing_process_image_links link
-            INNER JOIN dbo.media_files m
-                ON m.id = link.media_file_id
-            WHERE link.sewing_process_id = h.id
-            ORDER BY
-                link.sort_order ASC,
-                link.media_file_id ASC
-        ) img
-        WHERE h.is_deleted = 0
+       LEFT JOIN dbo.sewing_process_summaries s
+           ON s.document_code = h.document_code
 
-        ORDER BY h.id DESC;
+       LEFT JOIN auth.users u
+           ON u.id = h.created_by_user_id
+
+       LEFT JOIN hr.employees emp
+           ON emp.id = u.employee_id
+
+       LEFT JOIN dbo.organization_unit_employee orn 
+           ON orn.employee_code = emp.employee_code
+
+       LEFT JOIN dbo.departments_test d
+           ON d.department_code = orn.unit_code
+
+
+       OUTER APPLY (
+           SELECT TOP 1
+               m.image_url,
+               m.image_file_name
+           FROM dbo.sewing_process_image_links link
+           INNER JOIN dbo.media_files m
+               ON m.id = link.media_file_id
+           WHERE link.sewing_process_id = h.id
+           ORDER BY
+               link.sort_order ASC,
+               link.media_file_id ASC
+       ) img
+       WHERE h.is_deleted = 0
+
+       ORDER BY h.id DESC;
+
     `);
 
     return result.recordset;
