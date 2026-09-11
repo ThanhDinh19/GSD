@@ -15,6 +15,39 @@ import { gsdAnalysisService } from '../services/gsdAnalysis.service';
 
 type SourceActionMap = Record<number, GsdAnalysisRow[]>;
 
+function isPickedActionRow(
+    row: GsdAnalysisRow
+) {
+    return (
+        row.isSelected === true &&
+        row.stepNo !== null &&
+        row.stepNo !== undefined &&
+        String(row.stepNo).trim() !== ''
+    );
+}
+
+function getActionMergeKey(
+    row: Partial<GsdAnalysisRow> & {
+        id?: number | string | null;
+    }
+) {
+    const sourceActionDetailId =
+        Number(
+            row.sourceActionDetailId ??
+            row.id ??
+            0
+        );
+
+    if (
+        Number.isFinite(sourceActionDetailId) &&
+        sourceActionDetailId > 0
+    ) {
+        return `id:${sourceActionDetailId}`;
+    }
+
+    return `text:${String(row.gsdCode ?? '').trim().toLowerCase()}::${String(row.actionName ?? '').trim().toLowerCase()}`;
+}
+
 export function useGsdAnalysis() {
     const [form, setForm] = useState<GsdAnalysisPayload>();
     const [sources, setSources] = useState<SourceMaster[]>([]);
@@ -23,6 +56,14 @@ export function useGsdAnalysis() {
 
     const [popupSourceId, setPopupSourceId] = useState<number | null>(null);
     const [sourceActionMap, setSourceActionMap] = useState<SourceActionMap>({});
+
+    const [
+        loadedSourceActionIds,
+        setLoadedSourceActionIds,
+    ] = useState<Set<number>>(
+        () => new Set()
+    );
+
     const [analysisRows, setAnalysisRows] = useState<GsdAnalysisRow[]>([]);
 
 
@@ -189,32 +230,193 @@ export function useGsdAnalysis() {
         });
     };
 
-    const selectPopupSource = async (sourceId: number) => {
-        setPopupSourceId(sourceId);
+    const selectPopupSource = async (
+        sourceId: number
+    ) => {
+        const normalizedSourceId =
+            Number(sourceId);
+
+        if (
+            !Number.isFinite(normalizedSourceId) ||
+            normalizedSourceId <= 0
+        ) {
+            return;
+        }
+
+        setPopupSourceId(
+            normalizedSourceId
+        );
+
         setResult(null);
 
-        if (sourceActionMap[sourceId]) {
+        /*
+         * Chỉ return khi source này đã load FULL từ API.
+         * Source được set từ copy/edit chưa tính là full,
+         * vì nó chỉ chứa thao tác đã chọn.
+         */
+        if (
+            loadedSourceActionIds.has(
+                normalizedSourceId
+            )
+        ) {
             return;
         }
 
         setLoadingSourceActions(true);
 
         try {
-            const source = sources.find((item) => item.id === sourceId);
-            const data = await gsdAnalysisService.getSourceActions(sourceId);
+            const source =
+                sources.find(
+                    (item) =>
+                        Number(item.id) ===
+                        normalizedSourceId
+                );
 
-            setSourceActionMap((prev) => ({
-                ...prev,
-                [sourceId]: data.map((item) => ({
-                    ...item,
-                    sourceId,
-                    sourceCode: source?.sourceCode || '',
-                    sourceName: source?.sourceName || '',
-                    stepNo: null,
-                    frequency: item.frequency ?? 1,
-                    isSelected: false,
-                })),
-            }));
+            const data =
+                await gsdAnalysisService
+                    .getSourceActions(
+                        normalizedSourceId
+                    );
+
+            setSourceActionMap(
+                (prev) => {
+                    const currentRows =
+                        prev[normalizedSourceId] ||
+                        [];
+
+                    const selectedRowMap =
+                        new Map<
+                            string,
+                            GsdAnalysisRow
+                        >();
+
+                    currentRows.forEach(
+                        (row) => {
+                            if (
+                                isPickedActionRow(
+                                    row
+                                )
+                            ) {
+                                selectedRowMap.set(
+                                    getActionMergeKey(
+                                        row
+                                    ),
+                                    row
+                                );
+                            }
+                        }
+                    );
+
+                    const nextRows:
+                        GsdAnalysisRow[] =
+                        data.map(
+                            (
+                                item: any,
+                                index: number
+                            ) => {
+                                const selectedRow =
+                                    selectedRowMap.get(
+                                        getActionMergeKey(
+                                            item
+                                        )
+                                    );
+
+                                return {
+                                    ...item,
+
+                                    sourceId:
+                                        normalizedSourceId,
+
+                                    sourceCode:
+                                        source?.sourceCode ||
+                                        selectedRow?.sourceCode ||
+                                        '',
+
+                                    sourceName:
+                                        source?.sourceName ||
+                                        selectedRow?.sourceName ||
+                                        '',
+
+                                    lineNo:
+                                        Number(
+                                            item.lineNo ??
+                                            index + 1
+                                        ),
+
+                                    stepNo:
+                                        selectedRow
+                                            ? selectedRow.stepNo
+                                            : null,
+
+                                    frequency:
+                                        selectedRow
+                                            ? Number(
+                                                selectedRow.frequency ??
+                                                1
+                                            )
+                                            : Number(
+                                                item.frequency ??
+                                                1
+                                            ),
+
+                                    isSelected:
+                                        Boolean(
+                                            selectedRow
+                                        ),
+                                };
+                            }
+                        );
+
+                    /*
+                     * Phòng trường hợp source_action_detail_id cũ không còn
+                     * trong master source hiện tại, vẫn giữ lại dòng đã chọn.
+                     */
+                    const nextKeys =
+                        new Set(
+                            nextRows.map(
+                                (row) =>
+                                    getActionMergeKey(
+                                        row
+                                    )
+                            )
+                        );
+
+                    const missingSelectedRows =
+                        currentRows.filter(
+                            (row) =>
+                                isPickedActionRow(
+                                    row
+                                ) &&
+                                !nextKeys.has(
+                                    getActionMergeKey(
+                                        row
+                                    )
+                                )
+                        );
+
+                    return {
+                        ...prev,
+
+                        [normalizedSourceId]: [
+                            ...nextRows,
+                            ...missingSelectedRows,
+                        ],
+                    };
+                }
+            );
+
+            setLoadedSourceActionIds(
+                (prev) => {
+                    const next =
+                        new Set(prev);
+
+                    next.add(
+                        normalizedSourceId
+                    );
+
+                    return next;
+                }
+            );
         } finally {
             setLoadingSourceActions(false);
         }
@@ -274,6 +476,11 @@ export function useGsdAnalysis() {
 
     const clearAnalysisRows = () => {
         setAnalysisRows([]);
+        setSourceActionMap({});
+        setPopupSourceId(null);
+        setLoadedSourceActionIds(
+            new Set()
+        );
         setResult(null);
     };
 
@@ -608,12 +815,20 @@ export function useGsdAnalysis() {
 
         setSourceActionMap(nextSourceMap);
 
+        /*
+         * Dữ liệu vừa apply từ edit/copy chỉ là thao tác đã lưu,
+         * chưa phải full thao tác của source.
+         * Khi mở source, selectPopupSource sẽ fetch full rồi merge tick.
+         */
+        setLoadedSourceActionIds(
+            new Set()
+        );
+
         setPopupSourceId(
             rows[0]?.sourceId
                 ? Number(rows[0].sourceId)
                 : null
         );
-
         const resultDetails:
             GsdAnalysisCalculateResult['details'] =
             rows.map((row, index) => {

@@ -463,6 +463,28 @@ export default function GsdAnalysisEditor({
         caretRef.current = null;
     }, [form.operationName]);
 
+    const handleOpenSourceActionPicker =
+        () => {
+            setIsPickerOpen(true);
+
+            const sourceId =
+                Number(
+                    popupSourceId ??
+                    selectedDraftRows[0]?.sourceId ??
+                    analysisRows[0]?.sourceId ??
+                    0
+                );
+
+            if (
+                Number.isFinite(sourceId) &&
+                sourceId > 0
+            ) {
+                void selectPopupSource(
+                    sourceId
+                );
+            }
+        };
+
     return (
         <div className="space-y-5">
             <div className="bg-white rounded-sm border-slate-200 p-5">
@@ -478,7 +500,8 @@ export default function GsdAnalysisEditor({
 
                     <div className="flex gap-2">
                         <button
-                            onClick={() => setIsPickerOpen(true)}
+                            type="button"
+                            onClick={handleOpenSourceActionPicker}
                             className="px-4 py-2 bg-blue-700 text-white rounded-lg text-xs font-bold hover:bg-blue-800"
                         >
                             Lấy thao tác
@@ -1358,8 +1381,8 @@ function SearchableMachineSelect({
                                             setOpen(false);
                                         }}
                                         className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50 ${selected
-                                                ? 'bg-blue-100 text-blue-800'
-                                                : 'text-slate-700'
+                                            ? 'bg-blue-100 text-blue-800'
+                                            : 'text-slate-700'
                                             }`}
                                     >
                                         <div className="font-semibold">

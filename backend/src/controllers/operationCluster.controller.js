@@ -80,7 +80,7 @@ const createOperationCluster = async (req, res) => {
     const data = await operationClusterService.createOperationCluster(req.body, {
       userId:
         req.user.id,
-        
+
       employeeId:
         req.user
           .employeeId,
@@ -110,10 +110,20 @@ const updateOperationCluster = async (req, res) => {
       });
     }
 
-    const data = await operationClusterService.updateOperationCluster(
-      id,
-      req.body
-    );
+    const data = await operationClusterService.updateOperationCluster(id, req.body,
+      {
+        userId:
+          req.user.id,
+
+        employeeId:
+          req.user
+            .employeeId,
+
+        departmentCode:
+          req.user
+            .departmentCode,
+
+      });
 
     res.json(data);
   } catch (error) {
@@ -125,30 +135,38 @@ const updateOperationCluster = async (req, res) => {
   }
 };
 
-const copyOperationCluster = async (req, res, next) => {
+const copyOperationCluster = async (req, res) => {
   try {
-    const data = await operationClusterService.copyOperationCluster(req.body);
+    const data =
+      await operationClusterService.copyOperationCluster(
+        req.body,
+        {
+          userId:
+            req.user.id,
 
-    res.status(201).json(data);
+          employeeId:
+            req.user.employeeId,
+
+          departmentCode:
+            req.user.departmentCode,
+        }
+      );
+
+    return res.status(201).json(data);
   } catch (error) {
     console.error(
-      'copyOperationCluster original error:',
+      'copyOperationCluster error:',
       error
     );
 
-    try {
-      await transaction.rollback();
-    } catch (rollbackError) {
-      if (rollbackError.code !== 'EABORT') {
-        console.error(
-          'Rollback error:',
-          rollbackError
-        );
-      }
-      next(error);
-    }
-
-    throw error;
+    return res.status(
+      error.statusCode || 400
+    ).json({
+      success: false,
+      message:
+        error.message ||
+        'Không sao chép được kho cụm công đoạn',
+    });
   }
 };
 

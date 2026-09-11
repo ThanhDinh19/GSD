@@ -86,6 +86,8 @@ type TreeOperation = {
   totalActions: number;
   totalActionSeconds: number;
   manpower: number;
+  createdByName: string;
+  createdByUnitName: string;
   statusLabel: string;
 
   raw: any;
@@ -171,6 +173,33 @@ function getNodeKey(
   id: number | string
 ) {
   return `${level}:${id}`;
+}
+
+function getPersistedOperationId(
+  operation: TreeOperation
+): number | null {
+  const key =
+    String(
+      operation.key ?? ''
+    );
+
+  if (
+    key.startsWith('temp:')
+  ) {
+    return null;
+  }
+
+  const id =
+    Number(
+      operation.raw?.id ??
+      operation.id ??
+      0
+    );
+
+  return Number.isInteger(id) &&
+    id > 0
+    ? id
+    : null;
 }
 
 /**
@@ -648,6 +677,24 @@ function buildTreeFromDetails(
                               0
                             ),
 
+                          createdByName:
+                            operation.created_by_full_name ||
+                            operation.createdByFullName ||
+                            operation.created_by_username ||
+                            operation.createdByUsername ||
+                            (
+                              operation.created_by_user_id
+                                ? `User #${operation.created_by_user_id}`
+                                : '-'
+                            ),
+
+                          createdByUnitName:
+                            operation.created_by_unit_name ||
+                            operation.createdByUnitName ||
+                            operation.created_by_unit_code ||
+                            operation.createdByUnitCode ||
+                            '-',
+
                           statusLabel:
                             resolveStatusLabel(
                               operation.status_name,
@@ -844,6 +891,11 @@ function buildUpdatePayload(
                   operation.raw ||
                   {};
 
+                const persistedOperationId =
+                  getPersistedOperationId(
+                    operation
+                  );
+
                 const requiredEfficiency =
                   toNumber(
                     raw.required_efficiency,
@@ -870,6 +922,13 @@ function buildUpdatePayload(
 
 
                 return {
+                  ...(persistedOperationId
+                    ? {
+                      id:
+                        persistedOperationId,
+                    }
+                    : {}),
+
                   line_no:
                     operationIndex + 1,
 
@@ -2300,6 +2359,12 @@ export default function OperationClusterTreeOrderedByLineNo() {
             manpower:
               1,
 
+            createdByName:
+              '-',
+
+            createdByUnitName:
+              '-',
+
             statusLabel:
               'Đang áp dụng',
 
@@ -2961,8 +3026,12 @@ export default function OperationClusterTreeOrderedByLineNo() {
                       Giây GSD
                     </TableHeader>
 
-                    <TableHeader className="w-20 text-center">
-                      Nhân lực
+                    <TableHeader className="min-w-[140px] text-left">
+                      Người tạo
+                    </TableHeader>
+
+                    <TableHeader className="min-w-[150px] text-left">
+                      Chi nhánh
                     </TableHeader>
 
                     <TableHeader className="w-28 text-center">
@@ -3110,10 +3179,16 @@ export default function OperationClusterTreeOrderedByLineNo() {
                             )}
                           </TableCell>
 
-                          <TableCell className="text-center">
-                            {
-                              operation.manpower
-                            }
+                          <TableCell>
+                            <span className="font-medium text-slate-700">
+                              {operation.createdByName || '-'}
+                            </span>
+                          </TableCell>
+
+                          <TableCell>
+                            <span className="text-slate-700">
+                              {operation.createdByUnitName || '-'}
+                            </span>
                           </TableCell>
 
                           <TableCell className="text-center">
@@ -3123,9 +3198,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
                                 : 'bg-emerald-50 text-emerald-700'
                                 }`}
                             >
-                              {
-                                operation.statusLabel
-                              }
+                              {operation.statusLabel}
                             </span>
                           </TableCell>
                         </tr>
@@ -3133,15 +3206,10 @@ export default function OperationClusterTreeOrderedByLineNo() {
                     }
                   )}
 
-                  {!cluster ||
-                    cluster.operations
-                      .length ===
-                    0 ? (
+                  {!cluster || cluster.operations.length === 0 ? (
                     <tr>
                       <td
-                        colSpan={
-                          10
-                        }
+                        colSpan={12}
                         className="h-32 text-center text-xs text-slate-400"
                       >
                         Cụm chưa có công đoạn.
