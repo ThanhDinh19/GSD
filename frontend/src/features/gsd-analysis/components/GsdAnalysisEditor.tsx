@@ -44,6 +44,58 @@ function getLaborGradeByDifficulty(value: number | null | undefined) {
     return 6;
 }
 
+type MachineSearchOption = {
+    id: number | string;
+    codeMmtb?: string | null;
+    codeMMTB?: string | null;
+    code_mmtb?: string | null;
+    machineCode?: string | null;
+    machineName?: string | null;
+    attachedActionTime?: number | null;
+    stitchCount?: number | null;
+    machineSpeed?: number | null;
+    allowance?: number | null;
+};
+
+function getMachineCode(
+    machine: MachineSearchOption
+) {
+    return String(
+        machine.codeMmtb ??
+        machine.codeMMTB ??
+        machine.code_mmtb ??
+        machine.machineCode ??
+        ''
+    ).trim();
+}
+
+function getMachineLabel(
+    machine: MachineSearchOption | null
+) {
+    if (!machine) {
+        return '';
+    }
+
+    const code =
+        getMachineCode(
+            machine
+        );
+
+    const name =
+        String(
+            machine.machineName ?? ''
+        ).trim();
+
+    if (
+        code &&
+        name
+    ) {
+        return `${code} - ${name}`;
+    }
+
+    return code || name;
+}
+
 
 export default function GsdAnalysisEditor({
     editAnalysisId = null,
@@ -526,64 +578,48 @@ export default function GsdAnalysisEditor({
                                     Loại máy / MMTB
                                 </label>
 
-                                <select
-                                    value={form.machineId ?? ''}
-                                    onChange={(e) => {
+                                <SearchableMachineSelect
+                                    machines={machines_test}
+                                    value={form.machineId}
+                                    disabled={loadingMachines_test}
+                                    placeholder={
+                                        loadingMachines_test
+                                            ? 'Đang tải máy...'
+                                            : '-- Chọn máy --'
+                                    }
+                                    onChange={(machine) => {
                                         const machineId =
-                                            e.target.value
-                                                ? Number(
-                                                    e.target.value
-                                                )
+                                            machine
+                                                ? Number(machine.id)
                                                 : null;
-
-                                        const machine =
-                                            machines_test.find(
-                                                (item) =>
-                                                    item.id ===
-                                                    machineId
-                                            ) || null;
 
                                         setForm((prev) => ({
                                             ...prev,
+
                                             machineId,
+
                                             attachedActionTime:
                                                 machine
                                                     ?.attachedActionTime ??
                                                 0,
+
                                             stitchCount:
                                                 machine
                                                     ?.stitchCount ??
                                                 0,
+
                                             machineSpeed:
                                                 machine
                                                     ?.machineSpeed ??
                                                 0,
+
                                             allowance:
                                                 machine
                                                     ?.allowance ??
                                                 0,
                                         }));
                                     }}
-                                    className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                                >
-                                    <option value="">
-                                        -- Chọn máy --
-                                    </option>
-
-                                    {machines_test.map(
-                                        (machine) => (
-                                            <option
-                                                key={machine.id}
-                                                value={machine.id}
-                                            >
-                                                {machine.codeMmtb} -{' '}
-                                                {
-                                                    machine.machineName
-                                                }
-                                            </option>
-                                        )
-                                    )}
-                                </select>
+                                />
                             </div>
 
                             <div>
@@ -1101,7 +1137,7 @@ export default function GsdAnalysisEditor({
                     onFrequencyChange={updatePopupFrequency}
                     onUncheckRow={uncheckPopupRow}
                     onToggleRowSelection={togglePopupActionRow}
-                        sourceActionMap={sourceActionMap}
+                    sourceActionMap={sourceActionMap}
                     onTakeData={() => {
                         const count =
                             takeSelectedActionsToAnalysis();
@@ -1118,6 +1154,245 @@ export default function GsdAnalysisEditor({
                         )
                     }
                 />
+            )}
+        </div>
+    );
+}
+
+
+function SearchableMachineSelect({
+    machines,
+    value,
+    disabled = false,
+    placeholder = '-- Chọn máy --',
+    onChange,
+}: {
+    machines: MachineSearchOption[];
+    value: number | string | null | undefined;
+    disabled?: boolean;
+    placeholder?: string;
+    onChange: (
+        machine: MachineSearchOption | null
+    ) => void;
+}) {
+    const [
+        open,
+        setOpen,
+    ] = useState(false);
+
+    const [
+        keyword,
+        setKeyword,
+    ] = useState('');
+
+    const rootRef =
+        useRef<HTMLDivElement | null>(
+            null
+        );
+
+    const selectedMachine =
+        useMemo(
+            () =>
+                machines.find(
+                    (machine) =>
+                        Number(machine.id) ===
+                        Number(value)
+                ) ?? null,
+            [
+                machines,
+                value,
+            ]
+        );
+
+    const filteredMachines =
+        useMemo(
+            () => {
+                const text =
+                    keyword
+                        .trim()
+                        .toLowerCase();
+
+                if (!text) {
+                    return machines;
+                }
+
+                return machines.filter(
+                    (machine) => {
+                        const code =
+                            getMachineCode(
+                                machine
+                            ).toLowerCase();
+
+                        const name =
+                            String(
+                                machine.machineName ?? ''
+                            ).toLowerCase();
+
+                        return (
+                            code.includes(text) ||
+                            name.includes(text)
+                        );
+                    }
+                );
+            },
+            [
+                machines,
+                keyword,
+            ]
+        );
+
+    useEffect(
+        () => {
+            if (!open) {
+                return;
+            }
+
+            const handleMouseDown =
+                (event: MouseEvent) => {
+                    if (
+                        rootRef.current &&
+                        !rootRef.current.contains(
+                            event.target as Node
+                        )
+                    ) {
+                        setOpen(false);
+                    }
+                };
+
+            document.addEventListener(
+                'mousedown',
+                handleMouseDown
+            );
+
+            return () => {
+                document.removeEventListener(
+                    'mousedown',
+                    handleMouseDown
+                );
+            };
+        },
+        [open]
+    );
+
+    return (
+        <div
+            ref={rootRef}
+            className="relative"
+        >
+            <button
+                type="button"
+                disabled={disabled}
+                onClick={() => {
+                    if (disabled) {
+                        return;
+                    }
+
+                    setOpen(
+                        (previous) => !previous
+                    );
+                }}
+                className="flex h-10 w-full items-center justify-between gap-2 rounded-lg border border-slate-300 bg-white px-3 text-left text-sm outline-none transition hover:border-blue-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+            >
+                <span
+                    className={
+                        selectedMachine
+                            ? 'truncate text-slate-800'
+                            : 'truncate text-slate-400'
+                    }
+                >
+                    {selectedMachine
+                        ? getMachineLabel(
+                            selectedMachine
+                        )
+                        : placeholder}
+                </span>
+
+                <span className="shrink-0 text-xs text-slate-400">
+                    ▼
+                </span>
+            </button>
+
+            {open && (
+                <div className="absolute left-0 top-full z-50 mt-1 w-full min-w-[360px] overflow-hidden rounded-lg border border-slate-300 bg-white shadow-xl">
+                    <div className="border-b border-slate-100 p-2">
+                        <input
+                            type="text"
+                            autoFocus
+                            value={keyword}
+                            onChange={(event) =>
+                                setKeyword(
+                                    event.target.value
+                                )
+                            }
+                            placeholder="Tìm mã máy hoặc tên máy..."
+                            className="h-9 w-full rounded border border-slate-300 px-3 text-sm outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
+                        />
+                    </div>
+
+                    <div className="max-h-72 overflow-auto py-1">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                onChange(null);
+                                setKeyword('');
+                                setOpen(false);
+                            }}
+                            className="w-full px-3 py-2 text-left text-sm text-slate-500 hover:bg-slate-50"
+                        >
+                            -- Chọn máy --
+                        </button>
+
+                        {filteredMachines.map(
+                            (machine) => {
+                                const selected =
+                                    Number(machine.id) ===
+                                    Number(value);
+
+                                return (
+                                    <button
+                                        key={machine.id}
+                                        type="button"
+                                        onClick={() => {
+                                            onChange(machine);
+                                            setKeyword('');
+                                            setOpen(false);
+                                        }}
+                                        className={`w-full px-3 py-2 text-left text-sm hover:bg-blue-50 ${selected
+                                                ? 'bg-blue-100 text-blue-800'
+                                                : 'text-slate-700'
+                                            }`}
+                                    >
+                                        <div className="font-semibold">
+                                            {getMachineLabel(
+                                                machine
+                                            ) || '-'}
+                                        </div>
+
+                                        {/* <div className="mt-0.5 text-xs text-slate-400">
+                                            Thao tác kèm theo:{' '}
+                                            {machine.attachedActionTime ?? 0}
+                                            {' · '}
+                                            Số mũi:{' '}
+                                            {machine.stitchCount ?? 0}
+                                            {' · '}
+                                            Tốc độ:{' '}
+                                            {machine.machineSpeed ?? 0}
+                                            {' · '}
+                                            Hao phí:{' '}
+                                            {machine.allowance ?? 0}
+                                        </div> */}
+                                    </button>
+                                );
+                            }
+                        )}
+
+                        {filteredMachines.length === 0 && (
+                            <div className="px-3 py-4 text-center text-sm text-slate-400">
+                                Không tìm thấy máy phù hợp.
+                            </div>
+                        )}
+                    </div>
+                </div>
             )}
         </div>
     );

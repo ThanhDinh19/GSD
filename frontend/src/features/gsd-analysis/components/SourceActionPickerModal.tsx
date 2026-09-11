@@ -61,6 +61,28 @@ type SelectedSourceSummary = {
     count: number;
 };
 
+type SourceActionViewGroup = {
+    sourceId: number;
+    sourceName: string;
+    note?: string | null;
+    rows: GsdAnalysisRow[];
+    selectedCount: number;
+    totalTmu: number;
+};
+
+function isSelectedActionRow(
+    row: GsdAnalysisRow
+): boolean {
+    return (
+        row.isSelected === true ||
+        (
+            row.stepNo !== null &&
+            row.stepNo !== undefined &&
+            String(row.stepNo).trim() !== ''
+        )
+    );
+}
+
 function getSourceLabel(
     source: SourceMaster | undefined,
     sourceId: number
@@ -222,64 +244,138 @@ export default function SourceActionPickerModal({
         );
 
     const viewAllGroups =
-        useMemo(
-            () =>
-                sources.map(
-                    (source) => {
-                        const sourceId =
-                            Number(source.id);
+        useMemo<SourceActionViewGroup[]>(
+            () => {
+                const map =
+                    new Map<
+                        number,
+                        SourceActionViewGroup
+                    >();
 
-                        const rows =
-                            sourceActionMap[sourceId] ||
-                            [];
-
-                        const selectedCount =
-                            rows.filter(
-                                (row) =>
-                                    row.isSelected ||
-                                    (
-                                        row.stepNo !== null &&
-                                        row.stepNo !== undefined &&
-                                        String(row.stepNo).trim() !== ''
-                                    )
-                            ).length;
-
-                        const totalTmu =
-                            rows.reduce(
-                                (sum, row) =>
-                                    sum +
-                                    Number(row.tmu || 0) *
-                                    Number(row.frequency || 1),
-                                0
-                            );
-
-                        return {
-                            sourceId,
-                            sourceName:
-                                getSourceLabel(
-                                    source,
-                                    sourceId
-                                ),
-                            note:
-                                source.note ?? null,
-                            rows,
-                            selectedCount,
-                            totalTmu,
-                        };
+                for (
+                    const row
+                    of selectedDraftRows
+                ) {
+                    if (
+                        !isSelectedActionRow(
+                            row
+                        )
+                    ) {
+                        continue;
                     }
-                ),
+
+                    const sourceId =
+                        Number(
+                            row.sourceId ?? 0
+                        );
+
+                    if (
+                        !Number.isFinite(sourceId) ||
+                        sourceId <= 0
+                    ) {
+                        continue;
+                    }
+
+                    const source =
+                        sources.find(
+                            (item) =>
+                                Number(item.id) ===
+                                sourceId
+                        );
+
+                    if (
+                        !map.has(sourceId)
+                    ) {
+                        map.set(
+                            sourceId,
+                            {
+                                sourceId,
+
+                                sourceName:
+                                    getSourceLabel(
+                                        source,
+                                        sourceId
+                                    ),
+
+                                note:
+                                    source?.note ?? null,
+
+                                rows: [],
+
+                                selectedCount: 0,
+
+                                totalTmu: 0,
+                            }
+                        );
+                    }
+
+                    const group =
+                        map.get(sourceId)!;
+
+                    group.rows.push(row);
+
+                    group.selectedCount += 1;
+
+                    group.totalTmu +=
+                        Number(row.tmu || 0) *
+                        Number(row.frequency || 1);
+                }
+
+                return Array.from(
+                    map.values()
+                )
+                    .map(
+                        (group) => ({
+                            ...group,
+
+                            rows:
+                                [...group.rows].sort(
+                                    (
+                                        first,
+                                        second
+                                    ) =>
+                                        Number(
+                                            first.stepNo ?? 0
+                                        ) -
+                                        Number(
+                                            second.stepNo ?? 0
+                                        )
+                                ),
+
+                            totalTmu:
+                                Number(
+                                    group.totalTmu.toFixed(2)
+                                ),
+                        })
+                    )
+                    .sort(
+                        (
+                            first,
+                            second
+                        ) =>
+                            first.sourceName.localeCompare(
+                                second.sourceName,
+                                'vi'
+                            )
+                    );
+            },
             [
+                selectedDraftRows,
                 sources,
-                sourceActionMap,
             ]
         );
 
     const totalViewAllActions =
         viewAllGroups.reduce(
-            (sum, group) =>
+            (
+                sum,
+                group
+            ) =>
                 sum + group.rows.length,
             0
         );
+
+
 
     const handleJumpToSource =
         async (
@@ -335,60 +431,22 @@ export default function SourceActionPickerModal({
         };
 
     const handleViewAll =
-        async () => {
+        () => {
+            if (
+                viewAllGroups.length === 0
+            ) {
+                alert(
+                    'Chưa có thao tác nào được chọn.'
+                );
+
+                return;
+            }
+
             setViewAllOpen(
                 true
             );
-
-            setLoadingViewAll(
-                true
-            );
-
-            const restoreSourceId =
-                popupSourceId;
-
-            try {
-                for (
-                    const source of sources
-                ) {
-                    const sourceId =
-                        Number(source.id);
-
-                    if (
-                        !Number.isFinite(sourceId) ||
-                        sourceId <= 0
-                    ) {
-                        continue;
-                    }
-
-                    if (
-                        sourceActionMap[sourceId]
-                    ) {
-                        continue;
-                    }
-
-                    await onSelectSource(
-                        sourceId
-                    );
-                }
-
-                if (
-                    restoreSourceId
-                ) {
-                    await onSelectSource(
-                        restoreSourceId
-                    );
-
-                    scrollToSource(
-                        restoreSourceId
-                    );
-                }
-            } finally {
-                setLoadingViewAll(
-                    false
-                );
-            }
         };
+
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4">
@@ -618,19 +676,13 @@ export default function SourceActionPickerModal({
                                 <div className="flex shrink-0 items-end gap-3">
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            void handleViewAll();
-                                        }}
+                                        onClick={handleViewAll}
                                         disabled={
-                                            loadingViewAll ||
-                                            loadingSourceActions ||
-                                            sources.length === 0
+                                            selectedDraftCount === 0
                                         }
                                         className="h-11 rounded border border-red-300 bg-white px-5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
                                     >
-                                        {loadingViewAll
-                                            ? 'Loading...'
-                                            : 'View all'}
+                                        View all
                                     </button>
 
                                     <div className="w-44">
@@ -935,11 +987,11 @@ function SourceActionViewAllModal({
                 <div className="flex shrink-0 items-center justify-between gap-4 border-b border-slate-200 bg-white px-5 py-3">
                     <div>
                         <h2 className="text-lg font-bold text-slate-800">
-                            Tất cả source và thao tác
+                            Source có thao tác đã chọn
                         </h2>
 
                         <p className="mt-0.5 text-xs text-slate-500">
-                            Xem toàn bộ source và thao tác trước khi chọn vào phân tích.
+                            Các source đang có thao tác được chọn.
                         </p>
                     </div>
 
