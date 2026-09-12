@@ -1,6 +1,7 @@
 import {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 
@@ -86,8 +87,13 @@ type TreeOperation = {
   totalActions: number;
   totalActionSeconds: number;
   manpower: number;
+
   createdByName: string;
   createdByUnitName: string;
+
+  gsdCreatedByName: string;
+  gsdCreatedByUnitName: string;
+
   statusLabel: string;
 
   raw: any;
@@ -200,6 +206,60 @@ function getPersistedOperationId(
     id > 0
     ? id
     : null;
+}
+
+type SelectedFilterValues =
+  Set<string> | null;
+
+function toFilterValue(
+  value: unknown
+) {
+  const text =
+    String(value ?? '').trim();
+
+  return text || '-';
+}
+
+function uniqueOptions(
+  values: unknown[]
+) {
+  return Array.from(
+    new Set(
+      values.map(toFilterValue)
+    )
+  ).sort((a, b) =>
+    a.localeCompare(b, 'vi')
+  );
+}
+
+function isFilterMatch(
+  value: unknown,
+  selectedValues: SelectedFilterValues
+) {
+  if (selectedValues === null) {
+    return true;
+  }
+
+  return selectedValues.has(
+    toFilterValue(value)
+  );
+}
+
+function getOperationImageStatus(
+  operation: TreeOperation
+) {
+  const imageValue =
+    operation.imageFileName ||
+    operation.imageUrl ||
+    operation.raw?.image_file_name ||
+    operation.raw?.imageFileName ||
+    operation.raw?.image_url ||
+    operation.raw?.imageUrl ||
+    '';
+
+  return imageValue
+    ? 'Có hình'
+    : 'Không hình';
 }
 
 /**
@@ -693,6 +753,24 @@ function buildTreeFromDetails(
                             operation.createdByUnitName ||
                             operation.created_by_unit_code ||
                             operation.createdByUnitCode ||
+                            '-',
+
+                          gsdCreatedByName:
+                            operation.gsd_created_by_full_name ||
+                            operation.gsdCreatedByFullName ||
+                            operation.gsd_created_by_username ||
+                            operation.gsdCreatedByUsername ||
+                            (
+                              operation.gsd_created_by_user_id
+                                ? `User #${operation.gsd_created_by_user_id}`
+                                : '-'
+                            ),
+
+                          gsdCreatedByUnitName:
+                            operation.gsd_created_by_unit_name ||
+                            operation.gsdCreatedByUnitName ||
+                            operation.gsd_created_by_unit_code ||
+                            operation.gsdCreatedByUnitCode ||
                             '-',
 
                           statusLabel:
@@ -1301,6 +1379,61 @@ export default function OperationClusterTreeOrderedByLineNo() {
     setPreviewImageUrl,
   ] = useState('');
 
+  const [
+    selectedOperationNameValues,
+    setSelectedOperationNameValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const [
+    selectedImageValues,
+    setSelectedImageValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const [
+    selectedCodeMmtbValues,
+    setSelectedCodeMmtbValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const [
+    selectedSkillLevelValues,
+    setSelectedSkillLevelValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const [
+    selectedSalaryCoefficientValues,
+    setSelectedSalaryCoefficientValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const [
+    selectedSamGsdValues,
+    setSelectedSamGsdValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const [
+    selectedTotalActionsValues,
+    setSelectedTotalActionsValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const [
+    selectedTotalSecondsValues,
+    setSelectedTotalSecondsValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const [
+    selectedGsdCreatorValues,
+    setSelectedGsdCreatorValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const [
+    selectedGsdCreatorUnitValues,
+    setSelectedGsdCreatorUnitValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const [
+    selectedStatusValues,
+    setSelectedStatusValues,
+  ] = useState<SelectedFilterValues>(null);
+
 
   const [
     dirtyDocumentIds,
@@ -1754,6 +1887,234 @@ export default function OperationClusterTreeOrderedByLineNo() {
   const cluster =
     selectedContext
       ?.cluster;
+
+  const currentOperations =
+    useMemo(
+      () =>
+        cluster?.operations || [],
+      [
+        cluster?.operations,
+      ]
+    );
+
+  const operationNameOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            (operation) =>
+              operation.name
+          )
+        ),
+      [currentOperations]
+    );
+
+  const imageOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            getOperationImageStatus
+          )
+        ),
+      [currentOperations]
+    );
+
+  const codeMmtbOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            (operation) =>
+              operation.codeMmtb
+          )
+        ),
+      [currentOperations]
+    );
+
+  const skillLevelOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            (operation) =>
+              operation.skillLevel
+          )
+        ),
+      [currentOperations]
+    );
+
+  const salaryCoefficientOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            (operation) =>
+              operation.salaryCoefficient
+          )
+        ),
+      [currentOperations]
+    );
+
+  const samGsdOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            (operation) =>
+              formatNumber(
+                operation.samGsd
+              )
+          )
+        ),
+      [currentOperations]
+    );
+
+  const totalActionsOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            (operation) =>
+              operation.totalActions
+          )
+        ),
+      [currentOperations]
+    );
+
+  const totalSecondsOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            (operation) =>
+              formatNumber(
+                operation.totalActionSeconds
+              )
+          )
+        ),
+      [currentOperations]
+    );
+
+  const gsdCreatorOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            (operation) =>
+              operation.gsdCreatedByName
+          )
+        ),
+      [currentOperations]
+    );
+
+  const gsdCreatorUnitOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            (operation) =>
+              operation.gsdCreatedByUnitName
+          )
+        ),
+      [currentOperations]
+    );
+
+  const statusOptions =
+    useMemo(
+      () =>
+        uniqueOptions(
+          currentOperations.map(
+            (operation) =>
+              operation.statusLabel
+          )
+        ),
+      [currentOperations]
+    );
+
+  const filteredOperations =
+    useMemo(
+      () => {
+        return currentOperations.filter(
+          (operation) =>
+            isFilterMatch(
+              operation.name,
+              selectedOperationNameValues
+            ) &&
+            isFilterMatch(
+              getOperationImageStatus(operation),
+              selectedImageValues
+            ) &&
+            isFilterMatch(
+              operation.codeMmtb,
+              selectedCodeMmtbValues
+            ) &&
+            isFilterMatch(
+              operation.skillLevel,
+              selectedSkillLevelValues
+            ) &&
+            isFilterMatch(
+              operation.salaryCoefficient,
+              selectedSalaryCoefficientValues
+            ) &&
+            isFilterMatch(
+              formatNumber(operation.samGsd),
+              selectedSamGsdValues
+            ) &&
+            isFilterMatch(
+              operation.totalActions,
+              selectedTotalActionsValues
+            ) &&
+            isFilterMatch(
+              formatNumber(operation.totalActionSeconds),
+              selectedTotalSecondsValues
+            ) &&
+            isFilterMatch(
+              operation.gsdCreatedByName,
+              selectedGsdCreatorValues
+            ) &&
+            isFilterMatch(
+              operation.gsdCreatedByUnitName,
+              selectedGsdCreatorUnitValues
+            ) &&
+            isFilterMatch(
+              operation.statusLabel,
+              selectedStatusValues
+            )
+        );
+      },
+      [
+        currentOperations,
+        selectedOperationNameValues,
+        selectedImageValues,
+        selectedCodeMmtbValues,
+        selectedSkillLevelValues,
+        selectedSalaryCoefficientValues,
+        selectedSamGsdValues,
+        selectedTotalActionsValues,
+        selectedTotalSecondsValues,
+        selectedGsdCreatorValues,
+        selectedGsdCreatorUnitValues,
+        selectedStatusValues,
+      ]
+    );
+
+  useEffect(
+    () => {
+      setSelectedOperationNameValues(null);
+      setSelectedImageValues(null);
+      setSelectedCodeMmtbValues(null);
+      setSelectedSkillLevelValues(null);
+      setSelectedSalaryCoefficientValues(null);
+      setSelectedSamGsdValues(null);
+      setSelectedTotalActionsValues(null);
+      setSelectedTotalSecondsValues(null);
+      setSelectedGsdCreatorValues(null);
+      setSelectedGsdCreatorUnitValues(null);
+      setSelectedStatusValues(null);
+    },
+    [selectedClusterKey]
+  );
 
 
   const currentDocument =
@@ -2363,6 +2724,20 @@ export default function OperationClusterTreeOrderedByLineNo() {
               '-',
 
             createdByUnitName:
+              '-',
+
+            gsdCreatedByName:
+              (gsd as any).gsd_created_by_full_name ||
+              (gsd as any).gsdCreatedByFullName ||
+              (gsd as any).gsd_created_by_username ||
+              (gsd as any).gsdCreatedByUsername ||
+              '-',
+
+            gsdCreatedByUnitName:
+              (gsd as any).gsd_created_by_unit_name ||
+              (gsd as any).gsdCreatedByUnitName ||
+              (gsd as any).gsd_created_by_unit_code ||
+              (gsd as any).gsdCreatedByUnitCode ||
               '-',
 
             statusLabel:
@@ -2987,61 +3362,123 @@ export default function OperationClusterTreeOrderedByLineNo() {
 
             </div>
             <div className="thin-scrollbar min-h-0 flex-1 overflow-auto">
-              <table className="w-full min-w-[1000px] border-collapse text-xs">
+              <table className="w-full min-w-[1500px] border-collapse text-xs">
                 <thead className="sticky top-0 z-10 bg-slate-50 text-slate-600">
                   <tr>
                     <TableHeader className="w-12 text-center">
                       STT
                     </TableHeader>
 
-                    <TableHeader className="min-w-[120px]">
-                      Tên công đoạn
+                    <TableHeader className="relative min-w-[120px]">
+                      <DropdownColumnFilter
+                        title="Tên công đoạn"
+                        options={operationNameOptions}
+                        selectedValues={selectedOperationNameValues}
+                        onChange={setSelectedOperationNameValues}
+                      />
                     </TableHeader>
 
-                    <TableHeader className="w-[76px] text-center">
-                      Hình ảnh
+                    <TableHeader className="relative w-[76px] text-center">
+                      <DropdownColumnFilter
+                        title="Hình ảnh"
+                        options={imageOptions}
+                        selectedValues={selectedImageValues}
+                        onChange={setSelectedImageValues}
+                        align="center"
+                      />
                     </TableHeader>
 
-                    <TableHeader className="min-w-[80px]">
-                      MMTB code
+                    <TableHeader className="relative min-w-[80px]">
+                      <DropdownColumnFilter
+                        title="MMTB code"
+                        options={codeMmtbOptions}
+                        selectedValues={selectedCodeMmtbValues}
+                        onChange={setSelectedCodeMmtbValues}
+                      />
                     </TableHeader>
 
-                    <TableHeader className="w-20 text-center">
-                      Bậc thợ
+                    <TableHeader className="relative w-20 text-center">
+                      <DropdownColumnFilter
+                        title="Bậc thợ"
+                        options={skillLevelOptions}
+                        selectedValues={selectedSkillLevelValues}
+                        onChange={setSelectedSkillLevelValues}
+                        align="center"
+                      />
                     </TableHeader>
 
-                    <TableHeader className="w-20 text-center">
-                      Hệ số bậc thợ
+                    <TableHeader className="relative w-20 text-center">
+                      <DropdownColumnFilter
+                        title="Hệ số bậc thợ"
+                        options={salaryCoefficientOptions}
+                        selectedValues={selectedSalaryCoefficientValues}
+                        onChange={setSelectedSalaryCoefficientValues}
+                        align="center"
+                      />
                     </TableHeader>
 
-                    <TableHeader className="w-20 text-right">
-                      SMV
+                    <TableHeader className="relative w-20 text-right">
+                      <DropdownColumnFilter
+                        title="SMV"
+                        options={samGsdOptions}
+                        selectedValues={selectedSamGsdValues}
+                        onChange={setSelectedSamGsdValues}
+                        align="right"
+                      />
                     </TableHeader>
 
-                    <TableHeader className="w-24 text-center">
-                      GSD bước
+                    <TableHeader className="relative w-24 text-center">
+                      <DropdownColumnFilter
+                        title="GSD bước"
+                        options={totalActionsOptions}
+                        selectedValues={selectedTotalActionsValues}
+                        onChange={setSelectedTotalActionsValues}
+                        align="center"
+                      />
                     </TableHeader>
 
-                    <TableHeader className="w-24 text-right">
-                      Giây GSD
+                    <TableHeader className="relative w-24 text-right">
+                      <DropdownColumnFilter
+                        title="Giây GSD"
+                        options={totalSecondsOptions}
+                        selectedValues={selectedTotalSecondsValues}
+                        onChange={setSelectedTotalSecondsValues}
+                        align="right"
+                      />
                     </TableHeader>
 
-                    <TableHeader className="min-w-[140px] text-left">
-                      Người tạo
+                    <TableHeader className="relative min-w-[140px] text-left">
+                      <DropdownColumnFilter
+                        title="Người tạo"
+                        options={gsdCreatorOptions}
+                        selectedValues={selectedGsdCreatorValues}
+                        onChange={setSelectedGsdCreatorValues}
+                      />
                     </TableHeader>
 
-                    <TableHeader className="min-w-[150px] text-left">
-                      Chi nhánh
+                    <TableHeader className="relative min-w-[170px] text-left">
+                      <DropdownColumnFilter
+                        title="Chi nhánh người tạo"
+                        options={gsdCreatorUnitOptions}
+                        selectedValues={selectedGsdCreatorUnitValues}
+                        onChange={setSelectedGsdCreatorUnitValues}
+                      />
                     </TableHeader>
 
-                    <TableHeader className="w-28 text-center">
-                      Trạng thái
+                    <TableHeader className="relative w-28 text-center">
+                      <DropdownColumnFilter
+                        title="Trạng thái"
+                        options={statusOptions}
+                        selectedValues={selectedStatusValues}
+                        onChange={setSelectedStatusValues}
+                        align="center"
+                      />
                     </TableHeader>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {cluster?.operations.map(
+                  {filteredOperations.map(
                     (
                       operation,
                       index
@@ -3181,6 +3618,18 @@ export default function OperationClusterTreeOrderedByLineNo() {
 
                           <TableCell>
                             <span className="font-medium text-slate-700">
+                              {operation.gsdCreatedByName || '-'}
+                            </span>
+                          </TableCell>
+
+                          <TableCell>
+                            <span className="text-slate-700">
+                              {operation.gsdCreatedByUnitName || '-'}
+                            </span>
+                          </TableCell>
+
+                          {/* <TableCell>
+                            <span className="font-medium text-slate-700">
                               {operation.createdByName || '-'}
                             </span>
                           </TableCell>
@@ -3189,7 +3638,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
                             <span className="text-slate-700">
                               {operation.createdByUnitName || '-'}
                             </span>
-                          </TableCell>
+                          </TableCell> */}
 
                           <TableCell className="text-center">
                             <span
@@ -3206,13 +3655,26 @@ export default function OperationClusterTreeOrderedByLineNo() {
                     }
                   )}
 
-                  {!cluster || cluster.operations.length === 0 ? (
+                  {!cluster || currentOperations.length === 0 ? (
                     <tr>
                       <td
                         colSpan={12}
                         className="h-32 text-center text-xs text-slate-400"
                       >
                         Cụm chưa có công đoạn.
+                      </td>
+                    </tr>
+                  ) : null}
+
+                  {cluster &&
+                    currentOperations.length > 0 &&
+                    filteredOperations.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={12}
+                        className="h-32 text-center text-xs text-slate-400"
+                      >
+                        Không có công đoạn phù hợp với bộ lọc.
                       </td>
                     </tr>
                   ) : null}
@@ -3223,10 +3685,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
             <div className="shrink-0 border-t border-slate-200 px-4 py-2 text-[11px] text-slate-500">
               Hiển thị{' '}
               <span className="font-medium text-slate-700">
-                {cluster
-                  ?.operations
-                  .length ||
-                  0}
+                {filteredOperations.length}
               </span>{' '}
               bản ghi
             </div>
@@ -3848,5 +4307,324 @@ function ClusterIcon() {
 
       <path d="M12 7.2v4M12 11.2 7.2 16M12 11.2 16.8 16" />
     </svg>
+  );
+}
+
+function DropdownColumnFilter({
+  title,
+  options,
+  selectedValues,
+  onChange,
+  align = 'left',
+}: {
+  title: string;
+  options: string[];
+  selectedValues: SelectedFilterValues;
+  onChange: (values: SelectedFilterValues) => void;
+  align?: 'left' | 'center' | 'right';
+}) {
+  const [
+    open,
+    setOpen,
+  ] = useState(false);
+
+  const [
+    search,
+    setSearch,
+  ] = useState('');
+
+  const [
+    draftSelectedValues,
+    setDraftSelectedValues,
+  ] = useState<SelectedFilterValues>(null);
+
+  const rootRef =
+    useRef<HTMLDivElement | null>(
+      null
+    );
+
+  useEffect(
+    () => {
+      if (!open) {
+        return;
+      }
+
+      setDraftSelectedValues(
+        selectedValues === null
+          ? null
+          : new Set(selectedValues)
+      );
+    },
+    [
+      open,
+      selectedValues,
+    ]
+  );
+
+  const filteredOptions =
+    useMemo(
+      () => {
+        const keyword =
+          search
+            .trim()
+            .toLowerCase();
+
+        if (!keyword) {
+          return options;
+        }
+
+        return options.filter(
+          (option) =>
+            option
+              .toLowerCase()
+              .includes(keyword)
+        );
+      },
+      [
+        options,
+        search,
+      ]
+    );
+
+  const allSelected =
+    draftSelectedValues === null ||
+    draftSelectedValues.size === options.length;
+
+  const isOptionChecked =
+    (option: string) => {
+      if (draftSelectedValues === null) {
+        return true;
+      }
+
+      return draftSelectedValues.has(option);
+    };
+
+  const toggleSelectAll =
+    (checked: boolean) => {
+      if (checked) {
+        setDraftSelectedValues(null);
+        return;
+      }
+
+      setDraftSelectedValues(
+        new Set()
+      );
+    };
+
+  const toggleOption =
+    (
+      option: string,
+      checked: boolean
+    ) => {
+      setDraftSelectedValues(
+        (current) => {
+          const next =
+            current === null
+              ? new Set(options)
+              : new Set(current);
+
+          if (checked) {
+            next.add(option);
+          } else {
+            next.delete(option);
+          }
+
+          if (
+            next.size ===
+            options.length
+          ) {
+            return null;
+          }
+
+          return next;
+        }
+      );
+    };
+
+  const handleApply =
+    () => {
+      onChange(
+        draftSelectedValues
+      );
+
+      setOpen(false);
+    };
+
+  const handleClear =
+    () => {
+      setDraftSelectedValues(null);
+      setSearch('');
+      onChange(null);
+      setOpen(false);
+    };
+
+  const selectedCount =
+    selectedValues === null
+      ? options.length
+      : selectedValues.size;
+
+  useEffect(
+    () => {
+      if (!open) {
+        return;
+      }
+
+      const handleMouseDown =
+        (event: MouseEvent) => {
+          if (
+            rootRef.current &&
+            !rootRef.current.contains(
+              event.target as Node
+            )
+          ) {
+            setOpen(false);
+          }
+        };
+
+      document.addEventListener(
+        'mousedown',
+        handleMouseDown
+      );
+
+      return () => {
+        document.removeEventListener(
+          'mousedown',
+          handleMouseDown
+        );
+      };
+    },
+    [open]
+  );
+
+  return (
+    <div
+      ref={rootRef}
+      className={`relative ${align === 'center'
+        ? 'text-center'
+        : align === 'right'
+          ? 'text-right'
+          : 'text-left'
+        }`}
+    >
+      <button
+        type="button"
+        onClick={() =>
+          setOpen(
+            (previous) => !previous
+          )
+        }
+        className={`inline-flex w-full items-center gap-1 text-[10px] font-semibold uppercase tracking-wide text-slate-600 hover:text-slate-900 ${align === 'right'
+          ? 'justify-end'
+          : align === 'center'
+            ? 'justify-center'
+            : 'justify-start'
+          }`}
+      >
+        <span>
+          {title}
+        </span>
+
+        <span className="text-[10px]">
+          ▼
+        </span>
+
+        {selectedValues !== null && (
+          <span className="ml-1 rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">
+            {selectedCount}
+          </span>
+        )}
+      </button>
+
+      {open && (
+        <div
+          className={`absolute top-full z-[120] mt-1 w-[320px] rounded border border-slate-200 bg-white text-left normal-case shadow-xl ${align === 'right'
+            ? 'right-0'
+            : 'left-0'
+            }`}
+        >
+          <div className="border-b border-slate-100 p-2">
+            <input
+              autoFocus
+              value={search}
+              onChange={(event) =>
+                setSearch(
+                  event.target.value
+                )
+              }
+              placeholder="Search"
+              className="h-8 w-full rounded border border-blue-400 px-2 text-xs outline-none"
+            />
+          </div>
+
+          <div className="max-h-64 overflow-auto px-2 py-2">
+            <label className="flex cursor-pointer items-center gap-2 px-1 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
+              <input
+                type="checkbox"
+                checked={allSelected}
+                onChange={(event) =>
+                  toggleSelectAll(
+                    event.target.checked
+                  )
+                }
+              />
+
+              <span>
+                (Select All)
+              </span>
+            </label>
+
+            {filteredOptions.map(
+              (option) => (
+                <label
+                  key={option}
+                  className="flex cursor-pointer items-center gap-2 px-1 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                >
+                  <input
+                    type="checkbox"
+                    checked={isOptionChecked(
+                      option
+                    )}
+                    onChange={(event) =>
+                      toggleOption(
+                        option,
+                        event.target.checked
+                      )
+                    }
+                  />
+
+                  <span className="break-words">
+                    {option}
+                  </span>
+                </label>
+              )
+            )}
+
+            {filteredOptions.length === 0 && (
+              <div className="px-2 py-4 text-center text-xs text-slate-400">
+                Không có dữ liệu
+              </div>
+            )}
+          </div>
+
+          <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-2 py-2">
+            <button
+              type="button"
+              onClick={handleClear}
+              className="rounded border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+            >
+              Clear
+            </button>
+
+            <button
+              type="button"
+              onClick={handleApply}
+              className="rounded bg-slate-800 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-900"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

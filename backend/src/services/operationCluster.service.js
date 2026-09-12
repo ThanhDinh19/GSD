@@ -128,22 +128,21 @@ const getOperationClusterHeaders = async () => {
 };
 
 // lấy danh sách công đoạn
+// lấy danh sách công đoạn
 const getGsdOptions = async () => {
   const pool = await getPool();
 
-  // *note*: total_manual_seconds (tổng giây thao tác) = sum(tmu * số lần lặp / 27.8)
-
   const result = await pool.request().query(`
-    
-SELECT
+    SELECT
       h.id AS gsd_analysis_id,
       h.analysis_no AS operation_code,
       h.operation_name,
 
-      TRY_CAST(h.skill_grade AS INT) AS skill_level, 
+      TRY_CAST(h.skill_grade AS INT) AS skill_level,
       sg.level,
-      sc.level_id as level_coe,
-      sc.coefficient as salary_coefficient,
+
+      sc.level_id AS level_coe,
+      sc.coefficient AS salary_coefficient,
 
       h.machine_id AS machine_equipment_id,
       m.machine_code,
@@ -151,40 +150,117 @@ SELECT
       m.code_mmtb,
       h.total_tmu,
 
-      CAST(ISNULL(h.final_smv, 0) AS DECIMAL(10,2)) AS sam_gsd,
+      CAST(ISNULL(h.final_smv, 0) AS DECIMAL(10, 2)) AS sam_gsd,
 
       CAST(
         ISNULL(SUM((ISNULL(d.tmu, 0) * ISNULL(d.frequency, 1)) / 27.8), 0)
-        AS DECIMAL(18,2)
-      ) AS total_action_seconds,  
+        AS DECIMAL(18, 2)
+      ) AS total_action_seconds,
 
-      COUNT(d.id) AS total_actions
+      COUNT(d.id) AS total_actions,
 
-    FROM gsd_analysis_headers h
-      LEFT JOIN gsd_analysis_details d
-        ON d.analysis_id = h.id
-      LEFT JOIN machine_equipments_test m
-        ON m.id = h.machine_id
-      LEFT JOIN skill_grade sg
-        ON h.skill_grade = sg.level
-      LEFT JOIN salary_coefficients sc
-        ON sc.level_id = sg.level
-      WHERE h.is_deleted = 0
-      GROUP BY
-        h.id,
-        h.analysis_no,
-        h.operation_name,
-        h.skill_grade,
-        h.machine_id,
-        m.machine_code,
-        m.machine_name,
-        m.code_mmtb,
-        h.final_smv,
-        h.total_tmu,
-        sg.level,
-        sc.level_id,
-        sc.coefficient
-      ORDER BY h.id DESC
+      /*
+       * Người tạo công đoạn GSD gốc
+       */
+      COALESCE(
+        h.created_by_user_id,
+        h.owner_user_id,
+        CAST(h.created_by AS BIGINT)
+      ) AS gsd_created_by_user_id,
+
+      gsd_user.username AS gsd_created_by_username,
+      gsd_emp.full_name AS gsd_created_by_full_name,
+
+      COALESCE(
+        gsd_oue.unit_code,
+        gsd_emp.unit_code,
+        gsd_emp.department_code,
+        h.owner_department_code
+      ) AS gsd_created_by_unit_code,
+
+      gsd_dept.department_name AS gsd_created_by_unit_name
+
+    FROM dbo.gsd_analysis_headers h
+
+    LEFT JOIN dbo.gsd_analysis_details d
+      ON d.analysis_id = h.id
+
+    LEFT JOIN dbo.machine_equipments_test m
+      ON m.id = h.machine_id
+
+    LEFT JOIN dbo.skill_grade sg
+      ON TRY_CAST(h.skill_grade AS INT) = sg.level
+
+    OUTER APPLY (
+      SELECT TOP 1
+        sc2.level_id,
+        sc2.coefficient
+      FROM dbo.salary_coefficients sc2
+      WHERE sc2.level_id = sg.level
+        AND sc2.status_id = 0
+      ORDER BY sc2.id DESC
+    ) sc
+
+    OUTER APPLY (
+      SELECT
+        COALESCE(
+          h.created_by_user_id,
+          h.owner_user_id,
+          CAST(h.created_by AS BIGINT)
+        ) AS user_id
+    ) gsd_creator
+
+    LEFT JOIN auth.users gsd_user
+      ON gsd_user.id = gsd_creator.user_id
+
+    LEFT JOIN hr.employees gsd_emp
+      ON gsd_emp.id = gsd_user.employee_id
+
+    OUTER APPLY (
+      SELECT TOP 1
+        oue.unit_code
+      FROM dbo.organization_unit_employee oue
+      WHERE oue.employee_code = gsd_emp.employee_code
+      ORDER BY oue.id DESC
+    ) gsd_oue
+
+    LEFT JOIN dbo.departments_test gsd_dept
+      ON gsd_dept.department_code = COALESCE(
+        gsd_oue.unit_code,
+        gsd_emp.unit_code,
+        gsd_emp.department_code,
+        h.owner_department_code
+      )
+
+    WHERE h.is_deleted = 0
+
+    GROUP BY
+      h.id,
+      h.analysis_no,
+      h.operation_name,
+      h.skill_grade,
+      h.machine_id,
+      m.machine_code,
+      m.machine_name,
+      m.code_mmtb,
+      h.final_smv,
+      h.total_tmu,
+      sg.level,
+      sc.level_id,
+      sc.coefficient,
+
+      h.created_by_user_id,
+      h.owner_user_id,
+      h.created_by,
+      h.owner_department_code,
+      gsd_user.username,
+      gsd_emp.full_name,
+      gsd_emp.unit_code,
+      gsd_emp.department_code,
+      gsd_oue.unit_code,
+      gsd_dept.department_name
+
+    ORDER BY h.id DESC
   `);
 
   return result.recordset;
@@ -329,9 +405,9 @@ const getOperationClusterById = async (id) => {
     `);
 
   const operationsResult = await pool.request()
-    .input('header_id', sql.Int, id)
-    .query(`
-             SELECT
+  .input('header_id', sql.Int, id)
+  .query(`
+    SELECT
       o.id,
       o.header_id,
       o.group_id,
@@ -373,12 +449,25 @@ const getOperationClusterById = async (id) => {
       o.total_action_seconds,
       o.total_actions,
 
+      /*
+       * Người copy công đoạn vào kho cụm
+       * Lấy từ operation_cluster_operations.created_by_user_id
+       */
       o.created_by_user_id,
-      au.username AS created_by_username,
-      emp.full_name AS created_by_full_name,
+      copy_user.username AS created_by_username,
+      copy_emp.full_name AS created_by_full_name,
+      copy_unit.unit_code AS created_by_unit_code,
+      copy_unit.department_name AS created_by_unit_name,
 
-      creator_unit.unit_code AS created_by_unit_code,
-      creator_unit.department_name AS created_by_unit_name,
+      /*
+       * Người tạo công đoạn GSD gốc
+       * Lấy từ gsd_analysis_headers.created_by_user_id
+       */
+      gah.created_by_user_id AS gsd_created_by_user_id,
+      gsd_user.username AS gsd_created_by_username,
+      gsd_emp.full_name AS gsd_created_by_full_name,
+      gsd_unit.unit_code AS gsd_created_by_unit_code,
+      gsd_unit.department_name AS gsd_created_by_unit_name,
 
       -- Hình ảnh của công đoạn GSD
       img.image_file_name AS image_file_name,
@@ -407,11 +496,14 @@ const getOperationClusterById = async (id) => {
     LEFT JOIN master_status ms
       ON ms.id = o.status_id
 
-    LEFT JOIN auth.users au
-      ON au.id = o.created_by_user_id
+    /*
+     * User copy công đoạn vào kho cụm
+     */
+    LEFT JOIN auth.users copy_user
+      ON copy_user.id = o.created_by_user_id
 
-    LEFT JOIN hr.employees emp
-      ON emp.id = au.employee_id
+    LEFT JOIN hr.employees copy_emp
+      ON copy_emp.id = copy_user.employee_id
 
     OUTER APPLY (
       SELECT TOP 1
@@ -420,9 +512,29 @@ const getOperationClusterById = async (id) => {
       FROM dbo.organization_unit_employee oue
       LEFT JOIN dbo.departments_test dt
         ON dt.department_code = oue.unit_code
-      WHERE oue.employee_code = emp.employee_code
+      WHERE oue.employee_code = copy_emp.employee_code
       ORDER BY oue.id DESC
-    ) creator_unit
+    ) copy_unit
+
+    /*
+     * User tạo công đoạn GSD gốc
+     */
+    LEFT JOIN auth.users gsd_user
+      ON gsd_user.id = gah.created_by_user_id
+
+    LEFT JOIN hr.employees gsd_emp
+      ON gsd_emp.id = gsd_user.employee_id
+
+    OUTER APPLY (
+      SELECT TOP 1
+        oue.unit_code,
+        dt.department_name
+      FROM dbo.organization_unit_employee oue
+      LEFT JOIN dbo.departments_test dt
+        ON dt.department_code = oue.unit_code
+      WHERE oue.employee_code = gsd_emp.employee_code
+      ORDER BY oue.id DESC
+    ) gsd_unit
 
     OUTER APPLY (
       SELECT TOP 1
@@ -431,8 +543,7 @@ const getOperationClusterById = async (id) => {
       FROM gsd_analysis_image_links image_link
       INNER JOIN media_files mf
         ON mf.id = image_link.media_file_id
-      WHERE image_link.gsd_analysis_id =
-        o.gsd_analysis_id
+      WHERE image_link.gsd_analysis_id = o.gsd_analysis_id
       ORDER BY
         image_link.sort_order ASC,
         image_link.media_file_id ASC
@@ -443,7 +554,7 @@ const getOperationClusterById = async (id) => {
     ORDER BY
       o.group_line_no,
       o.line_no;
-    `);
+  `);
 
   const dashboardResult = await pool.request()
     .input('header_id', sql.Int, id)

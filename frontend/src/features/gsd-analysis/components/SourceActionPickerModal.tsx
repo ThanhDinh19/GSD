@@ -1,4 +1,5 @@
 import {
+    useEffect,
     useMemo,
     useRef,
     useState,
@@ -93,6 +94,51 @@ function getSourceLabel(
     );
 }
 
+type SelectedFilterValues =
+    Set<string> | null;
+
+function toFilterValue(
+    value: unknown
+) {
+    const text =
+        String(value ?? '').trim();
+
+    return text || '-';
+}
+
+function uniqueOptions(
+    values: unknown[]
+) {
+    return Array.from(
+        new Set(
+            values.map(toFilterValue)
+        )
+    ).sort((a, b) =>
+        a.localeCompare(b, 'vi')
+    );
+}
+
+function isFilterMatch(
+    value: unknown,
+    selectedValues: SelectedFilterValues
+) {
+    if (selectedValues === null) {
+        return true;
+    }
+
+    return selectedValues.has(
+        toFilterValue(value)
+    );
+}
+
+function getRowCheckedText(
+    row: GsdAnalysisRow
+) {
+    return isSelectedActionRow(row)
+        ? 'Đã chọn'
+        : 'Chưa chọn';
+}
+
 export default function SourceActionPickerModal({
     sources,
     popupSourceId,
@@ -113,6 +159,41 @@ export default function SourceActionPickerModal({
         keyword,
         setKeyword,
     ] = useState('');
+
+    const [
+        selectedCheckedValues,
+        setSelectedCheckedValues,
+    ] = useState<SelectedFilterValues>(null);
+
+    const [
+        selectedActionNameValues,
+        setSelectedActionNameValues,
+    ] = useState<SelectedFilterValues>(null);
+
+    const [
+        selectedCodeValues,
+        setSelectedCodeValues,
+    ] = useState<SelectedFilterValues>(null);
+
+    const [
+        selectedStepValues,
+        setSelectedStepValues,
+    ] = useState<SelectedFilterValues>(null);
+
+    const [
+        selectedFrequencyValues,
+        setSelectedFrequencyValues,
+    ] = useState<SelectedFilterValues>(null);
+
+    const [
+        selectedTmuValues,
+        setSelectedTmuValues,
+    ] = useState<SelectedFilterValues>(null);
+
+    const [
+        selectedNoteValues,
+        setSelectedNoteValues,
+    ] = useState<SelectedFilterValues>(null);
 
     const [
         viewAllOpen,
@@ -164,6 +245,144 @@ export default function SourceActionPickerModal({
                 }
             )
             : sources;
+
+    const checkedOptions =
+        useMemo(
+            () =>
+                uniqueOptions(
+                    popupRows.map(
+                        getRowCheckedText
+                    )
+                ),
+            [popupRows]
+        );
+
+    const actionNameOptions =
+        useMemo(
+            () =>
+                uniqueOptions(
+                    popupRows.map(
+                        (row) =>
+                            row.actionName || '-'
+                    )
+                ),
+            [popupRows]
+        );
+
+    const codeOptions =
+        useMemo(
+            () =>
+                uniqueOptions(
+                    popupRows.map(
+                        (row) =>
+                            row.gsdCode || '-'
+                    )
+                ),
+            [popupRows]
+        );
+
+    const stepOptions =
+        useMemo(
+            () =>
+                uniqueOptions(
+                    popupRows.map(
+                        (row) =>
+                            row.stepNo ?? '-'
+                    )
+                ),
+            [popupRows]
+        );
+
+    const frequencyOptions =
+        useMemo(
+            () =>
+                uniqueOptions(
+                    popupRows.map(
+                        (row) =>
+                            row.frequency ?? 1
+                    )
+                ),
+            [popupRows]
+        );
+
+    const tmuOptions =
+        useMemo(
+            () =>
+                uniqueOptions(
+                    popupRows.map(
+                        (row) =>
+                            row.tmu ?? 0
+                    )
+                ),
+            [popupRows]
+        );
+
+    const noteOptions =
+        useMemo(
+            () =>
+                uniqueOptions(
+                    popupRows.map(
+                        (row) =>
+                            row.note || '-'
+                    )
+                ),
+            [popupRows]
+        );
+
+    const filteredPopupRows =
+        useMemo(
+            () => {
+                return popupRows
+                    .map(
+                        (row, rowIndex) => ({
+                            row,
+                            rowIndex,
+                        })
+                    )
+                    .filter(({ row }) => {
+                        return (
+                            isFilterMatch(
+                                getRowCheckedText(row),
+                                selectedCheckedValues
+                            ) &&
+                            isFilterMatch(
+                                row.actionName || '-',
+                                selectedActionNameValues
+                            ) &&
+                            isFilterMatch(
+                                row.gsdCode || '-',
+                                selectedCodeValues
+                            ) &&
+                            isFilterMatch(
+                                row.stepNo ?? '-',
+                                selectedStepValues
+                            ) &&
+                            isFilterMatch(
+                                row.frequency ?? 1,
+                                selectedFrequencyValues
+                            ) &&
+                            isFilterMatch(
+                                row.tmu ?? 0,
+                                selectedTmuValues
+                            ) &&
+                            isFilterMatch(
+                                row.note || '-',
+                                selectedNoteValues
+                            )
+                        );
+                    });
+            },
+            [
+                popupRows,
+                selectedCheckedValues,
+                selectedActionNameValues,
+                selectedCodeValues,
+                selectedStepValues,
+                selectedFrequencyValues,
+                selectedTmuValues,
+                selectedNoteValues,
+            ]
+        );
 
     const selectedSourceSummaries =
         useMemo<
@@ -447,6 +666,19 @@ export default function SourceActionPickerModal({
             );
         };
 
+    useEffect(
+        () => {
+            setSelectedCheckedValues(null);
+            setSelectedActionNameValues(null);
+            setSelectedCodeValues(null);
+            setSelectedStepValues(null);
+            setSelectedFrequencyValues(null);
+            setSelectedTmuValues(null);
+            setSelectedNoteValues(null);
+        },
+        [popupSourceId]
+    );
+
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/30 p-4">
@@ -705,36 +937,73 @@ export default function SourceActionPickerModal({
                                 <table className="min-w-full text-sm">
                                     <thead className="sticky top-0 z-10 bg-slate-50 uppercase text-slate-600">
                                         <tr>
-                                            <th className="w-[80px] px-4 py-3 text-center">
-                                                Chọn
+                                            <th className="relative w-[80px] px-4 py-3 text-center">
+                                                <DropdownColumnFilter
+                                                    title="Chọn"
+                                                    options={checkedOptions}
+                                                    selectedValues={selectedCheckedValues}
+                                                    onChange={setSelectedCheckedValues}
+                                                    align="center"
+                                                />
                                             </th>
 
                                             <th className="w-[80px] px-4 py-3 text-left">
                                                 STT
                                             </th>
 
-                                            <th className="px-4 py-3 text-left">
-                                                Thao tác
+                                            <th className="relative px-4 py-3 text-left">
+                                                <DropdownColumnFilter
+                                                    title="Thao tác"
+                                                    options={actionNameOptions}
+                                                    selectedValues={selectedActionNameValues}
+                                                    onChange={setSelectedActionNameValues}
+                                                />
                                             </th>
 
-                                            <th className="w-[120px] px-4 py-3 text-left">
-                                                Code
+                                            <th className="relative w-[120px] px-4 py-3 text-left">
+                                                <DropdownColumnFilter
+                                                    title="Code"
+                                                    options={codeOptions}
+                                                    selectedValues={selectedCodeValues}
+                                                    onChange={setSelectedCodeValues}
+                                                />
                                             </th>
 
-                                            <th className="w-[120px] px-4 py-3 text-left">
-                                                Bước
+                                            <th className="relative w-[120px] px-4 py-3 text-left">
+                                                <DropdownColumnFilter
+                                                    title="Bước"
+                                                    options={stepOptions}
+                                                    selectedValues={selectedStepValues}
+                                                    onChange={setSelectedStepValues}
+                                                />
                                             </th>
 
-                                            <th className="w-[120px] px-4 py-3 text-left">
-                                                Tần suất
+                                            <th className="relative w-[120px] px-4 py-3 text-left">
+                                                <DropdownColumnFilter
+                                                    title="Tần suất"
+                                                    options={frequencyOptions}
+                                                    selectedValues={selectedFrequencyValues}
+                                                    onChange={setSelectedFrequencyValues}
+                                                />
                                             </th>
 
-                                            <th className="w-[100px] px-4 py-3 text-right">
-                                                TMU
+                                            <th className="relative w-[100px] px-4 py-3 text-right">
+                                                <DropdownColumnFilter
+                                                    title="TMU"
+                                                    options={tmuOptions}
+                                                    selectedValues={selectedTmuValues}
+                                                    onChange={setSelectedTmuValues}
+                                                    align="right"
+                                                />
                                             </th>
 
-                                            <th className="px-4 py-3 text-left">
-                                                Ghi chú
+                                            <th className="relative px-4 py-3 text-left">
+                                                <DropdownColumnFilter
+                                                    title="Ghi chú"
+                                                    options={noteOptions}
+                                                    selectedValues={selectedNoteValues}
+                                                    onChange={setSelectedNoteValues}
+                                                />
                                             </th>
                                         </tr>
                                     </thead>
@@ -777,22 +1046,35 @@ export default function SourceActionPickerModal({
                                             )}
 
                                         {!loadingSourceActions &&
-                                            popupRows.map(
+                                            popupSourceId &&
+                                            popupRows.length > 0 &&
+                                            filteredPopupRows.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={8}
+                                                        className="px-4 py-6 text-center text-slate-400"
+                                                    >
+                                                        Không có thao tác phù hợp với bộ lọc.
+                                                    </td>
+                                                </tr>
+                                            )}
+
+                                        {!loadingSourceActions &&
+                                            popupSourceId &&
+                                            filteredPopupRows.map(
                                                 (
-                                                    row,
-                                                    index
+                                                    {
+                                                        row,
+                                                        rowIndex,
+                                                    },
+                                                    visibleIndex
                                                 ) => {
                                                     const isChecked =
-                                                        row.stepNo !== null &&
-                                                        row.stepNo !== undefined &&
-                                                        String(
-                                                            row.stepNo
-                                                        ).trim() !== '' &&
-                                                        row.isSelected;
+                                                        isSelectedActionRow(row);
 
                                                     return (
                                                         <tr
-                                                            key={`${popupSourceId}-${row.sourceActionDetailId}-${index}`}
+                                                            key={`${popupSourceId}-${row.sourceActionDetailId}-${rowIndex}`}
                                                             className={
                                                                 isChecked
                                                                     ? 'bg-blue-50/50'
@@ -812,7 +1094,7 @@ export default function SourceActionPickerModal({
 
                                                                         onToggleRowSelection(
                                                                             popupSourceId,
-                                                                            index,
+                                                                            rowIndex,
                                                                             event.target.checked
                                                                         );
                                                                     }}
@@ -821,7 +1103,7 @@ export default function SourceActionPickerModal({
                                                             </td>
 
                                                             <td className="px-4 py-3 text-slate-500">
-                                                                {index + 1}
+                                                                {visibleIndex + 1}
                                                             </td>
 
                                                             <td className="px-4 py-3 text-slate-700">
@@ -858,7 +1140,7 @@ export default function SourceActionPickerModal({
 
                                                                         onFrequencyChange(
                                                                             popupSourceId,
-                                                                            index,
+                                                                            rowIndex,
                                                                             event.target.value
                                                                         );
                                                                     }}
@@ -1247,6 +1529,331 @@ function SourceActionViewAllModal({
                     </button>
                 </div>
             </div>
+        </div>
+    );
+}
+
+
+function DropdownColumnFilter({
+    title,
+    options,
+    selectedValues,
+    onChange,
+    align = 'left',
+}: {
+    title: string;
+    options: string[];
+    selectedValues: SelectedFilterValues;
+    onChange: (values: SelectedFilterValues) => void;
+    align?: 'left' | 'center' | 'right';
+}) {
+    const [
+        open,
+        setOpen,
+    ] = useState(false);
+
+    const [
+        search,
+        setSearch,
+    ] = useState('');
+
+    const [
+        draftSelectedValues,
+        setDraftSelectedValues,
+    ] = useState<SelectedFilterValues>(null);
+
+    const rootRef =
+        useRef<HTMLDivElement | null>(
+            null
+        );
+
+    useEffect(
+        () => {
+            if (!open) {
+                return;
+            }
+
+            setDraftSelectedValues(
+                selectedValues === null
+                    ? null
+                    : new Set(selectedValues)
+            );
+        },
+        [
+            open,
+            selectedValues,
+        ]
+    );
+
+    const filteredOptions =
+        useMemo(
+            () => {
+                const keyword =
+                    search
+                        .trim()
+                        .toLowerCase();
+
+                if (!keyword) {
+                    return options;
+                }
+
+                return options.filter(
+                    (option) =>
+                        option
+                            .toLowerCase()
+                            .includes(keyword)
+                );
+            },
+            [
+                options,
+                search,
+            ]
+        );
+
+    const allSelected =
+        draftSelectedValues === null ||
+        draftSelectedValues.size === options.length;
+
+    const isOptionChecked =
+        (option: string) => {
+            if (draftSelectedValues === null) {
+                return true;
+            }
+
+            return draftSelectedValues.has(option);
+        };
+
+    const toggleSelectAll =
+        (checked: boolean) => {
+            if (checked) {
+                setDraftSelectedValues(null);
+                return;
+            }
+
+            setDraftSelectedValues(
+                new Set()
+            );
+        };
+
+    const toggleOption =
+        (
+            option: string,
+            checked: boolean
+        ) => {
+            setDraftSelectedValues(
+                (current) => {
+                    const next =
+                        current === null
+                            ? new Set(options)
+                            : new Set(current);
+
+                    if (checked) {
+                        next.add(option);
+                    } else {
+                        next.delete(option);
+                    }
+
+                    if (
+                        next.size ===
+                        options.length
+                    ) {
+                        return null;
+                    }
+
+                    return next;
+                }
+            );
+        };
+
+    const handleApply =
+        () => {
+            onChange(
+                draftSelectedValues
+            );
+
+            setOpen(false);
+        };
+
+    const handleClear =
+        () => {
+            setDraftSelectedValues(
+                null
+            );
+
+            setSearch('');
+
+            onChange(null);
+
+            setOpen(false);
+        };
+
+    const selectedCount =
+        selectedValues === null
+            ? options.length
+            : selectedValues.size;
+
+    useEffect(
+        () => {
+            if (!open) {
+                return;
+            }
+
+            const handleMouseDown =
+                (event: MouseEvent) => {
+                    if (
+                        rootRef.current &&
+                        !rootRef.current.contains(
+                            event.target as Node
+                        )
+                    ) {
+                        setOpen(false);
+                    }
+                };
+
+            document.addEventListener(
+                'mousedown',
+                handleMouseDown
+            );
+
+            return () => {
+                document.removeEventListener(
+                    'mousedown',
+                    handleMouseDown
+                );
+            };
+        },
+        [open]
+    );
+
+    return (
+        <div
+            ref={rootRef}
+            className={`relative ${align === 'center'
+                ? 'text-center'
+                : align === 'right'
+                    ? 'text-right'
+                    : 'text-left'
+                }`}
+        >
+            <button
+                type="button"
+                onClick={() =>
+                    setOpen(
+                        (previous) => !previous
+                    )
+                }
+                className={`inline-flex w-full items-center gap-1 text-xs font-bold uppercase text-slate-600 hover:text-slate-900 ${align === 'right'
+                    ? 'justify-end'
+                    : align === 'center'
+                        ? 'justify-center'
+                        : 'justify-start'
+                    }`}
+            >
+                <span>
+                    {title}
+                </span>
+
+                <span className="text-[10px]">
+                    ▼
+                </span>
+
+                {selectedValues !== null && (
+                    <span className="ml-1 rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">
+                        {selectedCount}
+                    </span>
+                )}
+            </button>
+
+            {open && (
+                <div
+                    className={`absolute top-full z-[120] mt-1 w-[320px] rounded border border-slate-200 bg-white text-left normal-case shadow-xl ${align === 'right'
+                        ? 'right-0'
+                        : 'left-0'
+                        }`}
+                >
+                    <div className="border-b border-slate-100 p-2">
+                        <input
+                            autoFocus
+                            value={search}
+                            onChange={(event) =>
+                                setSearch(
+                                    event.target.value
+                                )
+                            }
+                            placeholder="Search"
+                            className="h-8 w-full rounded border border-blue-400 px-2 text-xs outline-none"
+                        />
+                    </div>
+
+                    <div className="max-h-64 overflow-auto px-2 py-2">
+                        <label className="flex cursor-pointer items-center gap-2 px-1 py-1.5 text-xs text-slate-700 hover:bg-slate-50">
+                            <input
+                                type="checkbox"
+                                checked={allSelected}
+                                onChange={(event) =>
+                                    toggleSelectAll(
+                                        event.target.checked
+                                    )
+                                }
+                            />
+
+                            <span>
+                                (Select All)
+                            </span>
+                        </label>
+
+                        {filteredOptions.map(
+                            (option) => (
+                                <label
+                                    key={option}
+                                    className="flex cursor-pointer items-center gap-2 px-1 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                                >
+                                    <input
+                                        type="checkbox"
+                                        checked={isOptionChecked(
+                                            option
+                                        )}
+                                        onChange={(event) =>
+                                            toggleOption(
+                                                option,
+                                                event.target.checked
+                                            )
+                                        }
+                                    />
+
+                                    <span className="break-words">
+                                        {option}
+                                    </span>
+                                </label>
+                            )
+                        )}
+
+                        {filteredOptions.length === 0 && (
+                            <div className="px-2 py-4 text-center text-xs text-slate-400">
+                                Không có dữ liệu
+                            </div>
+                        )}
+                    </div>
+
+                    <div className="flex justify-end gap-2 border-t border-slate-100 bg-slate-50 px-2 py-2">
+                        <button
+                            type="button"
+                            onClick={handleClear}
+                            className="rounded border border-slate-300 bg-white px-3 py-1 text-xs font-medium text-slate-600 hover:bg-slate-100"
+                        >
+                            Clear
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={handleApply}
+                            className="rounded bg-slate-800 px-3 py-1 text-xs font-semibold text-white hover:bg-slate-900"
+                        >
+                            OK
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
