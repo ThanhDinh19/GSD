@@ -128,11 +128,35 @@ const getOperationClusterHeaders = async () => {
 };
 
 // lấy danh sách công đoạn
-// lấy danh sách công đoạn
 const getGsdOptions = async () => {
   const pool = await getPool();
 
   const result = await pool.request().query(`
+    WITH LatestSalaryCoefficient AS (
+      SELECT
+        sc.id,
+        sc.level_id,
+        sc.coefficient,
+        ROW_NUMBER() OVER (
+          PARTITION BY sc.level_id
+          ORDER BY sc.id DESC
+        ) AS rn
+      FROM dbo.salary_coefficients sc
+      WHERE sc.status_id = 0
+    ),
+    LatestEmployeeUnit AS (
+      SELECT
+        oue.employee_code,
+        oue.unit_code,
+        dt.department_name,
+        ROW_NUMBER() OVER (
+          PARTITION BY oue.employee_code
+          ORDER BY oue.id DESC
+        ) AS rn
+      FROM dbo.organization_unit_employee oue
+      LEFT JOIN dbo.departments_test dt
+        ON dt.department_code = oue.unit_code
+    )
     SELECT
       h.id AS gsd_analysis_id,
       h.analysis_no AS operation_code,
@@ -160,25 +184,21 @@ const getGsdOptions = async () => {
       COUNT(d.id) AS total_actions,
 
       /*
-       * Người tạo công đoạn GSD gốc
+       * Người tạo công đoạn GSD gốc.
+       * Chỉ lấy theo created_by_user_id.
+       * Không fallback owner_user_id / created_by.
        */
-      COALESCE(
-        h.created_by_user_id,
-        h.owner_user_id,
-        CAST(h.created_by AS BIGINT)
-      ) AS gsd_created_by_user_id,
-
+      h.created_by_user_id AS gsd_created_by_user_id,
       gsd_user.username AS gsd_created_by_username,
       gsd_emp.full_name AS gsd_created_by_full_name,
 
-      COALESCE(
-        gsd_oue.unit_code,
-        gsd_emp.unit_code,
-        gsd_emp.department_code,
-        h.owner_department_code
-      ) AS gsd_created_by_unit_code,
-
-      gsd_dept.department_name AS gsd_created_by_unit_name
+      /*
+       * Chi nhánh người tạo.
+       * Chỉ lấy từ organization_unit_employee.
+       * Employee không có trong bảng này thì trả NULL.
+       */
+      gsd_unit.unit_code AS gsd_created_by_unit_code,
+      gsd_unit.department_name AS gsd_created_by_unit_name
 
     FROM dbo.gsd_analysis_headers h
 
@@ -191,46 +211,19 @@ const getGsdOptions = async () => {
     LEFT JOIN dbo.skill_grade sg
       ON TRY_CAST(h.skill_grade AS INT) = sg.level
 
-    OUTER APPLY (
-      SELECT TOP 1
-        sc2.level_id,
-        sc2.coefficient
-      FROM dbo.salary_coefficients sc2
-      WHERE sc2.level_id = sg.level
-        AND sc2.status_id = 0
-      ORDER BY sc2.id DESC
-    ) sc
-
-    OUTER APPLY (
-      SELECT
-        COALESCE(
-          h.created_by_user_id,
-          h.owner_user_id,
-          CAST(h.created_by AS BIGINT)
-        ) AS user_id
-    ) gsd_creator
+    LEFT JOIN LatestSalaryCoefficient sc
+      ON sc.level_id = sg.level
+      AND sc.rn = 1
 
     LEFT JOIN auth.users gsd_user
-      ON gsd_user.id = gsd_creator.user_id
+      ON gsd_user.id = h.created_by_user_id
 
     LEFT JOIN hr.employees gsd_emp
       ON gsd_emp.id = gsd_user.employee_id
 
-    OUTER APPLY (
-      SELECT TOP 1
-        oue.unit_code
-      FROM dbo.organization_unit_employee oue
-      WHERE oue.employee_code = gsd_emp.employee_code
-      ORDER BY oue.id DESC
-    ) gsd_oue
-
-    LEFT JOIN dbo.departments_test gsd_dept
-      ON gsd_dept.department_code = COALESCE(
-        gsd_oue.unit_code,
-        gsd_emp.unit_code,
-        gsd_emp.department_code,
-        h.owner_department_code
-      )
+    LEFT JOIN LatestEmployeeUnit gsd_unit
+      ON gsd_unit.employee_code = gsd_emp.employee_code
+      AND gsd_unit.rn = 1
 
     WHERE h.is_deleted = 0
 
@@ -250,15 +243,10 @@ const getGsdOptions = async () => {
       sc.coefficient,
 
       h.created_by_user_id,
-      h.owner_user_id,
-      h.created_by,
-      h.owner_department_code,
       gsd_user.username,
       gsd_emp.full_name,
-      gsd_emp.unit_code,
-      gsd_emp.department_code,
-      gsd_oue.unit_code,
-      gsd_dept.department_name
+      gsd_unit.unit_code,
+      gsd_unit.department_name
 
     ORDER BY h.id DESC
   `);
