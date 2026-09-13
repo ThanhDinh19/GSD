@@ -625,7 +625,7 @@ export default function GsdProcessTable({
                                                             item.id
                                                         );
                                                     }}
-                                                    className="text-blue-700 hover:underline"
+                                                    className="text-blue-700 hover:underline text-left"
                                                 >
                                                     {item.operationName}
                                                 </button>
