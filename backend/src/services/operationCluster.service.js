@@ -393,8 +393,8 @@ const getOperationClusterById = async (id) => {
     `);
 
   const operationsResult = await pool.request()
-  .input('header_id', sql.Int, id)
-  .query(`
+    .input('header_id', sql.Int, id)
+    .query(`
     SELECT
       o.id,
       o.header_id,
@@ -771,104 +771,114 @@ const createOperationCluster = async (payload, context = {}) => {
 
         const operationRequest = new sql.Request(transaction);
 
-        await operationRequest
-          .input('header_id', sql.Int, header.id)
-          .input('group_id', sql.Int, savedGroup.id)
-          .input('line_no', sql.Int, operation.line_no || operationIndex + 1)
-          .input('group_line_no', sql.Int, groupLineNo)
-          .input('line_balance_no', sql.Int, operation.line_balance_no || null)
+        const operationResult =
+          await operationRequest
+            .input('header_id', sql.Int, header.id)
+            .input('group_id', sql.Int, savedGroup.id)
+            .input('line_no', sql.Int, operation.line_no || operationIndex + 1)
+            .input('group_line_no', sql.Int, groupLineNo)
+            .input('line_balance_no', sql.Int, operation.line_balance_no || null)
 
-          .input('gsd_analysis_id', sql.Int, operation.gsd_analysis_id || null)
-          .input('operation_code', sql.VarChar(32), operation.operation_code || null)
-          .input('operation_name', sql.NVarChar(200), operation.operation_name)
+            .input('gsd_analysis_id', sql.Int, operation.gsd_analysis_id || null)
+            .input('operation_code', sql.VarChar(32), operation.operation_code || null)
+            .input('operation_name', sql.NVarChar(200), operation.operation_name)
 
-          .input('skill_grade_id', sql.Int, operation.skill_grade_id || null)
-          .input('skill_level', sql.Int, operation.skill_level || null)
+            .input('skill_grade_id', sql.Int, operation.skill_grade_id || null)
+            .input('skill_level', sql.Int, operation.skill_level || null)
 
-          .input('machine_equipment_id', sql.Int, operation.machine_equipment_id || null)
-          .input('machine_name', sql.NVarChar(200), operation.machine_name || null)
-          .input('machine_code', sql.VarChar(32), operation.machine_code || null)
+            .input('machine_equipment_id', sql.Int, operation.machine_equipment_id || null)
+            .input('machine_name', sql.NVarChar(200), operation.machine_name || null)
+            .input('machine_code', sql.VarChar(32), operation.machine_code || null)
 
-          .input('sam_gsd', sql.Decimal(10, 2), toNumber(operation.sam_gsd, 0))
-          // .input('salary_coefficient', sql.Decimal(10, 2), toNumber(operation.salary_coefficient, 0))
-          .input('salary_coefficient', sql.Decimal(10, 2), salaryCoefficient)
-          .input('manpower', sql.Decimal(10, 2), operation.manpower ?? null)
+            .input('sam_gsd', sql.Decimal(10, 2), toNumber(operation.sam_gsd, 0))
+            .input('salary_coefficient', sql.Decimal(10, 2), salaryCoefficient)
+            .input('manpower', sql.Decimal(10, 2), operation.manpower ?? null)
 
-          .input('standard_price', sql.Decimal(18, 2), calculated.standardPrice)
-          .input('required_efficiency', sql.Decimal(10, 4), effectiveEfficiency)
-          .input('adjusted_sam', sql.Decimal(10, 2), calculated.adjustedSam)
-          .input('utilization_rate', sql.Decimal(10, 4), calculated.utilizationRate)
+            .input('standard_price', sql.Decimal(18, 2), calculated.standardPrice)
+            .input('required_efficiency', sql.Decimal(10, 4), effectiveEfficiency)
+            .input('adjusted_sam', sql.Decimal(10, 2), calculated.adjustedSam)
+            .input('utilization_rate', sql.Decimal(10, 4), calculated.utilizationRate)
 
-          .input('total_action_seconds', sql.Decimal(18, 2), toNumber(operation.total_action_seconds, 0))
-          .input('total_actions', sql.Int, toNumber(operation.total_actions, 0))
-          .input('status_id', sql.TinyInt, operation.status_id ?? 0)
-          .input('created_by_user_id', sql.BigInt, userId)
-          .query(`
-            INSERT INTO operation_cluster_operations (
-              header_id,
-              group_id,
-              line_no,
-              group_line_no,
-              line_balance_no,
+            .input('total_action_seconds', sql.Decimal(18, 2), toNumber(operation.total_action_seconds, 0))
+            .input('total_actions', sql.Int, toNumber(operation.total_actions, 0))
+            .input('status_id', sql.TinyInt, operation.status_id ?? 0)
+            .input('created_by_user_id', sql.BigInt, userId)
+            .query(`
+      INSERT INTO operation_cluster_operations (
+        header_id,
+        group_id,
+        line_no,
+        group_line_no,
+        line_balance_no,
 
-              gsd_analysis_id,
-              operation_code,
-              operation_name,
+        gsd_analysis_id,
+        operation_code,
+        operation_name,
 
-              skill_grade_id,
-              skill_level,
+        skill_grade_id,
+        skill_level,
 
-              machine_equipment_id,
-              machine_name,
-              machine_code,
+        machine_equipment_id,
+        machine_name,
+        machine_code,
 
-              sam_gsd,
-              salary_coefficient,
-              manpower,
+        sam_gsd,
+        salary_coefficient,
+        manpower,
 
-              standard_price,
-              required_efficiency,
-              adjusted_sam,
-              utilization_rate,
+        standard_price,
+        required_efficiency,
+        adjusted_sam,
+        utilization_rate,
 
-              total_action_seconds,
-              total_actions,
-              status_id,
-              created_by_user_id
-            )
-            VALUES (
-              @header_id,
-              @group_id,
-              @line_no,
-              @group_line_no,
-              @line_balance_no,
+        total_action_seconds,
+        total_actions,
+        status_id,
+        created_by_user_id
+      )
+      OUTPUT INSERTED.id
+      VALUES (
+        @header_id,
+        @group_id,
+        @line_no,
+        @group_line_no,
+        @line_balance_no,
 
-              @gsd_analysis_id,
-              @operation_code,
-              @operation_name,
+        @gsd_analysis_id,
+        @operation_code,
+        @operation_name,
 
-              @skill_grade_id,
-              @skill_level,
+        @skill_grade_id,
+        @skill_level,
 
-              @machine_equipment_id,
-              @machine_name,
-              @machine_code,
+        @machine_equipment_id,
+        @machine_name,
+        @machine_code,
 
-              @sam_gsd,
-              @salary_coefficient,
-              @manpower,
+        @sam_gsd,
+        @salary_coefficient,
+        @manpower,
 
-              @standard_price,
-              @required_efficiency,
-              @adjusted_sam,
-              @utilization_rate,
+        @standard_price,
+        @required_efficiency,
+        @adjusted_sam,
+        @utilization_rate,
 
-              @total_action_seconds,
-              @total_actions,
-              @status_id,
-              @created_by_user_id
-            )
-          `);
+        @total_action_seconds,
+        @total_actions,
+        @status_id,
+        @created_by_user_id
+      )
+    `);
+
+        const savedOperationId =
+          Number(operationResult.recordset[0]?.id || 0);
+
+        await snapshotGsdActionsForOperation(
+          transaction,
+          savedOperationId,
+          operation.gsd_analysis_id
+        );
       }
     }
 
@@ -948,34 +958,38 @@ const updateOperationCluster = async (id, payload, context = {}) => {
 
     const headerEfficiency =
       payload.required_efficiency !== undefined &&
-      payload.required_efficiency !== null &&
-      payload.required_efficiency !== ''
+        payload.required_efficiency !== null &&
+        payload.required_efficiency !== ''
         ? toNumber(
-            payload.required_efficiency,
-            0
-          )
+          payload.required_efficiency,
+          0
+        )
         : null;
 
-    // 1. Kiểm tra chứng từ có tồn tại không
-    const existingResult =
+    /*
+     * 1. Kiểm tra chứng từ tồn tại
+     */
+    const existingHeaderResult =
       await new sql.Request(transaction)
         .input('id', sql.Int, id)
         .query(`
           SELECT TOP 1
             id
-          FROM operation_cluster_headers
+          FROM dbo.operation_cluster_headers
           WHERE id = @id
         `);
 
     if (
-      existingResult.recordset.length === 0
+      existingHeaderResult.recordset.length === 0
     ) {
       throw new Error(
         'Không tìm thấy chứng từ cần cập nhật'
       );
     }
 
-    // 2. Kiểm tra trùng mã chứng từ, loại trừ chính chứng từ đang sửa
+    /*
+     * 2. Kiểm tra trùng mã chứng từ
+     */
     const duplicateResult =
       await new sql.Request(transaction)
         .input('id', sql.Int, id)
@@ -987,7 +1001,7 @@ const updateOperationCluster = async (id, payload, context = {}) => {
         .query(`
           SELECT TOP 1
             id
-          FROM operation_cluster_headers
+          FROM dbo.operation_cluster_headers
           WHERE document_code = @document_code
             AND id <> @id
         `);
@@ -1001,9 +1015,31 @@ const updateOperationCluster = async (id, payload, context = {}) => {
     }
 
     /*
-     * 3. Lưu lại user tạo công đoạn cũ.
-     * Frontend gửi operation.id cho dòng cũ.
-     * Dòng temp mới không có id.
+     * 3. Load group cũ
+     */
+    const existingGroupsResult =
+      await new sql.Request(transaction)
+        .input('header_id', sql.Int, id)
+        .query(`
+          SELECT
+            id
+          FROM dbo.operation_cluster_groups
+          WHERE header_id = @header_id
+        `);
+
+    const existingGroupMap =
+      new Map(
+        existingGroupsResult.recordset.map(
+          (row) => [
+            Number(row.id),
+            row,
+          ]
+        )
+      );
+
+    /*
+     * 4. Load operation cũ
+     * Dùng để biết operation.id nào đã tồn tại trong chứng từ.
      */
     const existingOperationsResult =
       await new sql.Request(transaction)
@@ -1011,24 +1047,32 @@ const updateOperationCluster = async (id, payload, context = {}) => {
         .query(`
           SELECT
             id,
+            header_id,
+            group_id,
             created_by_user_id
-          FROM operation_cluster_operations
+          FROM dbo.operation_cluster_operations
           WHERE header_id = @header_id
         `);
 
-    const existingOperationCreatedByUserMap =
+    const existingOperationMap =
       new Map(
         existingOperationsResult.recordset.map(
           (row) => [
             Number(row.id),
-            row.created_by_user_id
-              ? Number(row.created_by_user_id)
-              : null,
+            row,
           ]
         )
       );
 
-    // 4. Update header
+    const keptGroupIds =
+      new Set();
+
+    const keptOperationIds =
+      new Set();
+
+    /*
+     * 5. Update header
+     */
     await new sql.Request(transaction)
       .input('id', sql.Int, id)
       .input(
@@ -1072,7 +1116,7 @@ const updateOperationCluster = async (id, payload, context = {}) => {
         payload.status_id ?? 0
       )
       .query(`
-        UPDATE operation_cluster_headers
+        UPDATE dbo.operation_cluster_headers
         SET
           document_code = @document_code,
           work_id = @work_id,
@@ -1087,25 +1131,8 @@ const updateOperationCluster = async (id, payload, context = {}) => {
       `);
 
     /*
-     * 5. Xóa chi tiết cũ.
-     * Vẫn dùng cách delete + insert lại,
-     * nhưng giữ created_by_user_id theo operation.id cũ.
+     * 6. Update / insert groups + operations
      */
-    await new sql.Request(transaction)
-      .input('header_id', sql.Int, id)
-      .query(`
-        DELETE FROM operation_cluster_operations
-        WHERE header_id = @header_id
-      `);
-
-    await new sql.Request(transaction)
-      .input('header_id', sql.Int, id)
-      .query(`
-        DELETE FROM operation_cluster_groups
-        WHERE header_id = @header_id
-      `);
-
-    // 6. Insert lại groups + operations
     const groups =
       Array.isArray(payload.groups)
         ? payload.groups
@@ -1131,9 +1158,38 @@ const updateOperationCluster = async (id, payload, context = {}) => {
         );
       }
 
-      const groupResult =
+      const groupId =
+        Number(group.id || 0);
+
+      let savedGroupId;
+
+      /*
+       * Group cũ: có group.id thì UPDATE.
+       * Group mới: không có group.id thì INSERT.
+       */
+      if (
+        Number.isInteger(groupId) &&
+        groupId > 0
+      ) {
+        if (
+          !existingGroupMap.has(groupId)
+        ) {
+          throw new Error(
+            `Cụm id ${groupId} không thuộc chứng từ hiện tại hoặc không tồn tại.`
+          );
+        }
+
         await new sql.Request(transaction)
-          .input('header_id', sql.Int, id)
+          .input(
+            'group_id',
+            sql.Int,
+            groupId
+          )
+          .input(
+            'header_id',
+            sql.Int,
+            id
+          )
           .input(
             'line_no',
             sql.Int,
@@ -1145,21 +1201,58 @@ const updateOperationCluster = async (id, payload, context = {}) => {
             group.cluster_name.trim()
           )
           .query(`
-            INSERT INTO operation_cluster_groups (
-              header_id,
-              line_no,
-              cluster_name
-            )
-            OUTPUT INSERTED.*
-            VALUES (
-              @header_id,
-              @line_no,
-              @cluster_name
-            )
+            UPDATE dbo.operation_cluster_groups
+            SET
+              line_no = @line_no,
+              cluster_name = @cluster_name,
+              updated_at = SYSDATETIME()
+            WHERE id = @group_id
+              AND header_id = @header_id
           `);
 
-      const savedGroup =
-        groupResult.recordset[0];
+        savedGroupId =
+          groupId;
+      } else {
+        const groupResult =
+          await new sql.Request(transaction)
+            .input(
+              'header_id',
+              sql.Int,
+              id
+            )
+            .input(
+              'line_no',
+              sql.Int,
+              groupLineNo
+            )
+            .input(
+              'cluster_name',
+              sql.NVarChar(100),
+              group.cluster_name.trim()
+            )
+            .query(`
+              INSERT INTO dbo.operation_cluster_groups (
+                header_id,
+                line_no,
+                cluster_name
+              )
+              OUTPUT INSERTED.id
+              VALUES (
+                @header_id,
+                @line_no,
+                @cluster_name
+              )
+            `);
+
+        savedGroupId =
+          Number(
+            groupResult.recordset[0].id
+          );
+      }
+
+      keptGroupIds.add(
+        savedGroupId
+      );
 
       const operations =
         Array.isArray(group.operations)
@@ -1183,35 +1276,14 @@ const updateOperationCluster = async (id, payload, context = {}) => {
           );
         }
 
-        /*
-         * Dòng cũ: có operation.id từ frontend gửi lên
-         * => giữ created_by_user_id cũ.
-         *
-         * Dòng mới: không có operation.id
-         * => created_by_user_id = user đang lưu.
-         */
-        const operationId =
-          Number(operation.id || 0);
-
-        const originalCreatedByUserId =
-          operationId > 0
-            ? existingOperationCreatedByUserMap.get(
-                operationId
-              )
-            : null;
-
-        const operationCreatedByUserId =
-          originalCreatedByUserId ||
-          userId;
-
         const effectiveEfficiency =
           operation.required_efficiency !== undefined &&
-          operation.required_efficiency !== null &&
-          operation.required_efficiency !== ''
+            operation.required_efficiency !== null &&
+            operation.required_efficiency !== ''
             ? toNumber(
-                operation.required_efficiency,
-                0
-              )
+              operation.required_efficiency,
+              0
+            )
             : headerEfficiency;
 
         const salaryCoefficientFromPayload =
@@ -1244,213 +1316,526 @@ const updateOperationCluster = async (id, payload, context = {}) => {
             priceMethod,
           });
 
-        await new sql.Request(transaction)
-          .input('header_id', sql.Int, id)
-          .input(
-            'group_id',
-            sql.Int,
-            savedGroup.id
-          )
-          .input(
-            'line_no',
-            sql.Int,
-            operation.line_no ||
-              operationIndex + 1
-          )
-          .input(
-            'group_line_no',
-            sql.Int,
-            groupLineNo
-          )
-          .input(
-            'line_balance_no',
-            sql.Int,
-            operation.line_balance_no || null
-          )
+        const operationId =
+          Number(operation.id || 0);
 
-          .input(
-            'gsd_analysis_id',
-            sql.Int,
-            operation.gsd_analysis_id || null
-          )
-          .input(
-            'operation_code',
-            sql.VarChar(32),
-            operation.operation_code || null
-          )
-          .input(
-            'operation_name',
-            sql.NVarChar(200),
-            operation.operation_name.trim()
-          )
-
-          .input(
-            'skill_grade_id',
-            sql.Int,
-            operation.skill_grade_id || null
-          )
-          .input(
-            'skill_level',
-            sql.Int,
-            operation.skill_level || null
-          )
-
-          .input(
-            'machine_equipment_id',
-            sql.Int,
-            operation.machine_equipment_id || null
-          )
-          .input(
-            'machine_name',
-            sql.NVarChar(200),
-            operation.machine_name || null
-          )
-          .input(
-            'machine_code',
-            sql.VarChar(32),
-            operation.machine_code || null
-          )
-
-          .input(
-            'sam_gsd',
-            sql.Decimal(10, 2),
-            toNumber(
-              operation.sam_gsd,
-              0
+        const existingOperation =
+          Number.isInteger(operationId) &&
+            operationId > 0
+            ? existingOperationMap.get(
+              operationId
             )
-          )
-          .input(
-            'salary_coefficient',
-            sql.Decimal(10, 2),
-            salaryCoefficient
-          )
-          .input(
-            'manpower',
-            sql.Decimal(10, 2),
-            operation.manpower !== undefined &&
-            operation.manpower !== null &&
-            operation.manpower !== ''
-              ? toNumber(
+            : null;
+
+        /*
+         * Operation có id nhưng không thuộc chứng từ hiện tại
+         * thì báo lỗi, không cho ghi nhầm.
+         */
+        if (
+          Number.isInteger(operationId) &&
+          operationId > 0 &&
+          !existingOperation
+        ) {
+          throw new Error(
+            `Công đoạn id ${operationId} không thuộc chứng từ hiện tại hoặc không tồn tại.`
+          );
+        }
+
+        /*
+         * A. Công đoạn cũ:
+         * Có operation.id thật trong DB.
+         * Chỉ UPDATE dữ liệu nghiệp vụ.
+         * Tuyệt đối không update created_by_user_id.
+         */
+        if (existingOperation) {
+          keptOperationIds.add(
+            operationId
+          );
+
+          await new sql.Request(transaction)
+            .input(
+              'operation_id',
+              sql.Int,
+              operationId
+            )
+            .input(
+              'header_id',
+              sql.Int,
+              id
+            )
+            .input(
+              'group_id',
+              sql.Int,
+              savedGroupId
+            )
+            .input(
+              'line_no',
+              sql.Int,
+              operation.line_no ||
+              operationIndex + 1
+            )
+            .input(
+              'group_line_no',
+              sql.Int,
+              groupLineNo
+            )
+            .input(
+              'line_balance_no',
+              sql.Int,
+              operation.line_balance_no || null
+            )
+
+            .input(
+              'gsd_analysis_id',
+              sql.Int,
+              operation.gsd_analysis_id || null
+            )
+            .input(
+              'operation_code',
+              sql.VarChar(32),
+              operation.operation_code || null
+            )
+            .input(
+              'operation_name',
+              sql.NVarChar(200),
+              operation.operation_name.trim()
+            )
+
+            .input(
+              'skill_grade_id',
+              sql.Int,
+              operation.skill_grade_id || null
+            )
+            .input(
+              'skill_level',
+              sql.Int,
+              operation.skill_level || null
+            )
+
+            .input(
+              'machine_equipment_id',
+              sql.Int,
+              operation.machine_equipment_id || null
+            )
+            .input(
+              'machine_name',
+              sql.NVarChar(200),
+              operation.machine_name || null
+            )
+            .input(
+              'machine_code',
+              sql.VarChar(32),
+              operation.machine_code || null
+            )
+
+            .input(
+              'sam_gsd',
+              sql.Decimal(10, 2),
+              toNumber(
+                operation.sam_gsd,
+                0
+              )
+            )
+            .input(
+              'salary_coefficient',
+              sql.Decimal(10, 2),
+              salaryCoefficient
+            )
+            .input(
+              'manpower',
+              sql.Decimal(10, 2),
+              operation.manpower !== undefined &&
+                operation.manpower !== null &&
+                operation.manpower !== ''
+                ? toNumber(
                   operation.manpower,
                   0
                 )
-              : null
-          )
-
-          .input(
-            'standard_price',
-            sql.Decimal(18, 2),
-            calculated.standardPrice
-          )
-          .input(
-            'required_efficiency',
-            sql.Decimal(10, 4),
-            effectiveEfficiency
-          )
-          .input(
-            'adjusted_sam',
-            sql.Decimal(10, 2),
-            calculated.adjustedSam
-          )
-          .input(
-            'utilization_rate',
-            sql.Decimal(10, 4),
-            calculated.utilizationRate
-          )
-
-          .input(
-            'total_action_seconds',
-            sql.Decimal(18, 2),
-            toNumber(
-              operation.total_action_seconds,
-              0
+                : null
             )
-          )
-          .input(
-            'total_actions',
-            sql.Int,
-            toNumber(
-              operation.total_actions,
-              0
+
+            .input(
+              'standard_price',
+              sql.Decimal(18, 2),
+              calculated.standardPrice
             )
-          )
-          .input(
-            'status_id',
-            sql.TinyInt,
-            operation.status_id ?? 0
-          )
-          .input(
-            'created_by_user_id',
-            sql.BigInt,
-            operationCreatedByUserId
-          )
-          .query(`
-            INSERT INTO operation_cluster_operations (
-              header_id,
-              group_id,
-              line_no,
-              group_line_no,
-              line_balance_no,
-
-              gsd_analysis_id,
-              operation_code,
-              operation_name,
-
-              skill_grade_id,
-              skill_level,
-
-              machine_equipment_id,
-              machine_name,
-              machine_code,
-
-              sam_gsd,
-              salary_coefficient,
-              manpower,
-
-              standard_price,
-              required_efficiency,
-              adjusted_sam,
-              utilization_rate,
-
-              total_action_seconds,
-              total_actions,
-              status_id,
-              created_by_user_id
+            .input(
+              'required_efficiency',
+              sql.Decimal(10, 4),
+              effectiveEfficiency
             )
-            VALUES (
-              @header_id,
-              @group_id,
-              @line_no,
-              @group_line_no,
-              @line_balance_no,
-
-              @gsd_analysis_id,
-              @operation_code,
-              @operation_name,
-
-              @skill_grade_id,
-              @skill_level,
-
-              @machine_equipment_id,
-              @machine_name,
-              @machine_code,
-
-              @sam_gsd,
-              @salary_coefficient,
-              @manpower,
-
-              @standard_price,
-              @required_efficiency,
-              @adjusted_sam,
-              @utilization_rate,
-
-              @total_action_seconds,
-              @total_actions,
-              @status_id,
-              @created_by_user_id
+            .input(
+              'adjusted_sam',
+              sql.Decimal(10, 2),
+              calculated.adjustedSam
             )
-          `);
+            .input(
+              'utilization_rate',
+              sql.Decimal(10, 4),
+              calculated.utilizationRate
+            )
+
+            .input(
+              'total_action_seconds',
+              sql.Decimal(18, 2),
+              toNumber(
+                operation.total_action_seconds,
+                0
+              )
+            )
+            .input(
+              'total_actions',
+              sql.Int,
+              toNumber(
+                operation.total_actions,
+                0
+              )
+            )
+            .input(
+              'status_id',
+              sql.TinyInt,
+              operation.status_id ?? 0
+            )
+            .query(`
+              UPDATE dbo.operation_cluster_operations
+              SET
+                group_id = @group_id,
+                line_no = @line_no,
+                group_line_no = @group_line_no,
+                line_balance_no = @line_balance_no,
+
+                gsd_analysis_id = @gsd_analysis_id,
+                operation_code = @operation_code,
+                operation_name = @operation_name,
+
+                skill_grade_id = @skill_grade_id,
+                skill_level = @skill_level,
+
+                machine_equipment_id = @machine_equipment_id,
+                machine_name = @machine_name,
+                machine_code = @machine_code,
+
+                sam_gsd = @sam_gsd,
+                salary_coefficient = @salary_coefficient,
+                manpower = @manpower,
+
+                standard_price = @standard_price,
+                required_efficiency = @required_efficiency,
+                adjusted_sam = @adjusted_sam,
+                utilization_rate = @utilization_rate,
+
+                total_action_seconds = @total_action_seconds,
+                total_actions = @total_actions,
+                status_id = @status_id,
+                updated_at = SYSDATETIME()
+              WHERE id = @operation_id
+                AND header_id = @header_id
+            `);
+
+          continue;
+        }
+
+        /*
+         * B. Công đoạn mới:
+         * Không có operation.id.
+         * INSERT mới và set created_by_user_id = user đang đăng nhập.
+         */
+        const insertedOperationResult =
+          await new sql.Request(transaction)
+            .input(
+              'header_id',
+              sql.Int,
+              id
+            )
+            .input(
+              'group_id',
+              sql.Int,
+              savedGroupId
+            )
+            .input(
+              'line_no',
+              sql.Int,
+              operation.line_no ||
+              operationIndex + 1
+            )
+            .input(
+              'group_line_no',
+              sql.Int,
+              groupLineNo
+            )
+            .input(
+              'line_balance_no',
+              sql.Int,
+              operation.line_balance_no || null
+            )
+
+            .input(
+              'gsd_analysis_id',
+              sql.Int,
+              operation.gsd_analysis_id || null
+            )
+            .input(
+              'operation_code',
+              sql.VarChar(32),
+              operation.operation_code || null
+            )
+            .input(
+              'operation_name',
+              sql.NVarChar(200),
+              operation.operation_name.trim()
+            )
+
+            .input(
+              'skill_grade_id',
+              sql.Int,
+              operation.skill_grade_id || null
+            )
+            .input(
+              'skill_level',
+              sql.Int,
+              operation.skill_level || null
+            )
+
+            .input(
+              'machine_equipment_id',
+              sql.Int,
+              operation.machine_equipment_id || null
+            )
+            .input(
+              'machine_name',
+              sql.NVarChar(200),
+              operation.machine_name || null
+            )
+            .input(
+              'machine_code',
+              sql.VarChar(32),
+              operation.machine_code || null
+            )
+
+            .input(
+              'sam_gsd',
+              sql.Decimal(10, 2),
+              toNumber(
+                operation.sam_gsd,
+                0
+              )
+            )
+            .input(
+              'salary_coefficient',
+              sql.Decimal(10, 2),
+              salaryCoefficient
+            )
+            .input(
+              'manpower',
+              sql.Decimal(10, 2),
+              operation.manpower !== undefined &&
+                operation.manpower !== null &&
+                operation.manpower !== ''
+                ? toNumber(
+                  operation.manpower,
+                  0
+                )
+                : null
+            )
+
+            .input(
+              'standard_price',
+              sql.Decimal(18, 2),
+              calculated.standardPrice
+            )
+            .input(
+              'required_efficiency',
+              sql.Decimal(10, 4),
+              effectiveEfficiency
+            )
+            .input(
+              'adjusted_sam',
+              sql.Decimal(10, 2),
+              calculated.adjustedSam
+            )
+            .input(
+              'utilization_rate',
+              sql.Decimal(10, 4),
+              calculated.utilizationRate
+            )
+
+            .input(
+              'total_action_seconds',
+              sql.Decimal(18, 2),
+              toNumber(
+                operation.total_action_seconds,
+                0
+              )
+            )
+            .input(
+              'total_actions',
+              sql.Int,
+              toNumber(
+                operation.total_actions,
+                0
+              )
+            )
+            .input(
+              'status_id',
+              sql.TinyInt,
+              operation.status_id ?? 0
+            )
+            .input(
+              'created_by_user_id',
+              sql.BigInt,
+              userId
+            )
+            .query(`
+              INSERT INTO dbo.operation_cluster_operations (
+                header_id,
+                group_id,
+                line_no,
+                group_line_no,
+                line_balance_no,
+
+                gsd_analysis_id,
+                operation_code,
+                operation_name,
+
+                skill_grade_id,
+                skill_level,
+
+                machine_equipment_id,
+                machine_name,
+                machine_code,
+
+                sam_gsd,
+                salary_coefficient,
+                manpower,
+
+                standard_price,
+                required_efficiency,
+                adjusted_sam,
+                utilization_rate,
+
+                total_action_seconds,
+                total_actions,
+                status_id,
+                created_by_user_id
+              )
+              OUTPUT INSERTED.id
+              VALUES (
+                @header_id,
+                @group_id,
+                @line_no,
+                @group_line_no,
+                @line_balance_no,
+
+                @gsd_analysis_id,
+                @operation_code,
+                @operation_name,
+
+                @skill_grade_id,
+                @skill_level,
+
+                @machine_equipment_id,
+                @machine_name,
+                @machine_code,
+
+                @sam_gsd,
+                @salary_coefficient,
+                @manpower,
+
+                @standard_price,
+                @required_efficiency,
+                @adjusted_sam,
+                @utilization_rate,
+
+                @total_action_seconds,
+                @total_actions,
+                @status_id,
+                @created_by_user_id
+              )
+            `);
+
+        const insertedOperationId =
+          Number(
+            insertedOperationResult.recordset[0].id
+          );
+
+        keptOperationIds.add(
+          insertedOperationId
+        );
+
+        await snapshotGsdActionsForOperation(
+          transaction,
+          insertedOperationId,
+          operation.gsd_analysis_id
+        );
       }
+    }
+
+    /*
+     * 7. Xóa operation cũ không còn trong payload
+     */
+    const operationIdsToDelete =
+      Array.from(
+        existingOperationMap.keys()
+      ).filter(
+        (operationId) =>
+          !keptOperationIds.has(
+            operationId
+          )
+      );
+
+    for (
+      const operationId of operationIdsToDelete
+    ) {
+      await new sql.Request(transaction)
+        .input(
+          'operation_id',
+          sql.Int,
+          operationId
+        )
+        .input(
+          'header_id',
+          sql.Int,
+          id
+        )
+        .query(`
+          DELETE FROM dbo.operation_cluster_operations
+          WHERE id = @operation_id
+            AND header_id = @header_id
+        `);
+    }
+
+    /*
+     * 8. Xóa group cũ không còn trong payload
+     */
+    const groupIdsToDelete =
+      Array.from(
+        existingGroupMap.keys()
+      ).filter(
+        (groupId) =>
+          !keptGroupIds.has(
+            groupId
+          )
+      );
+
+    for (
+      const groupId of groupIdsToDelete
+    ) {
+      await new sql.Request(transaction)
+        .input(
+          'group_id',
+          sql.Int,
+          groupId
+        )
+        .input(
+          'header_id',
+          sql.Int,
+          id
+        )
+        .query(`
+          DELETE FROM dbo.operation_cluster_groups
+          WHERE id = @group_id
+            AND header_id = @header_id
+        `);
     }
 
     await transaction.commit();
@@ -1474,20 +1859,37 @@ const updateOperationCluster = async (id, payload, context = {}) => {
   }
 };
 
+const copyOperationActionSnapshot = async (transaction, sourceOperationId, targetOperationId) => {
+  if (!sourceOperationId || !targetOperationId) return 0;
+
+  const result = await new sql.Request(transaction)
+    .input('source_operation_id', sql.Int, sourceOperationId)
+    .input('target_operation_id', sql.Int, targetOperationId)
+    .query(`
+      INSERT INTO dbo.operation_cluster_operation_actions (
+        operation_cluster_operation_id, gsd_analysis_id, gsd_analysis_detail_id,
+        line_no, step_no, gsd_code_id, gsd_code, action_name,
+        tmu, frequency, seconds, note, is_selected
+      )
+      SELECT
+        @target_operation_id, a.gsd_analysis_id, a.gsd_analysis_detail_id,
+        a.line_no, a.step_no, a.gsd_code_id, a.gsd_code, a.action_name,
+        a.tmu, a.frequency, a.seconds, a.note, a.is_selected
+      FROM dbo.operation_cluster_operation_actions a
+      WHERE a.operation_cluster_operation_id = @source_operation_id
+      ORDER BY a.line_no, a.id;
+    `);
+
+  return result.rowsAffected?.[0] || 0;
+};
+
 // copy chứng từ 
 // sao chép chứng từ kho cụm công đoạn thành một chứng từ mới
 const copyOperationCluster = async (payload, context = {}) => {
-
   const userId = Number(context.userId);
 
-  if (
-    !Number.isInteger(userId) ||
-    userId <= 0
-  ) {
-    const err = new Error(
-      'Bạn chưa đăng nhập.'
-    );
-
+  if (!Number.isInteger(userId) || userId <= 0) {
+    const err = new Error('Bạn chưa đăng nhập.');
     err.statusCode = 401;
     throw err;
   }
@@ -1498,59 +1900,35 @@ const copyOperationCluster = async (payload, context = {}) => {
   await transaction.begin();
 
   try {
-    if (!payload.document_code || !payload.document_code.trim()) {
-      throw new Error('Vui lòng nhập mã chứng từ mới');
-    }
-
-    if (!payload.work_id) {
-      throw new Error('Vui lòng chọn công việc');
-    }
-
-    if (!payload.product_category_id) {
-      throw new Error('Vui lòng chọn chủng loại hàng');
-    }
-
-    if (!payload.product_category_group_id) {
-      throw new Error('Vui lòng chọn nhóm chủng loại hàng');
-    }
+    if (!payload.document_code || !payload.document_code.trim()) throw new Error('Vui lòng nhập mã chứng từ mới');
+    if (!payload.work_id) throw new Error('Vui lòng chọn công việc');
+    if (!payload.product_category_id) throw new Error('Vui lòng chọn chủng loại hàng');
+    if (!payload.product_category_group_id) throw new Error('Vui lòng chọn nhóm chủng loại hàng');
 
     const documentCode = payload.document_code.trim();
 
     if (documentCode.length > 16) {
-      const err = new Error(
-        `Mã chứng từ tối đa 16 ký tự. Mã hiện tại có ${documentCode.length} ký tự.`
-      );
+      const err = new Error(`Mã chứng từ tối đa 16 ký tự. Mã hiện tại có ${documentCode.length} ký tự.`);
       err.statusCode = 400;
       throw err;
     }
 
     const priceMethod = payload.price_method || 'GSD';
+    const headerEfficiency = payload.required_efficiency !== undefined && payload.required_efficiency !== null && payload.required_efficiency !== '' ? toNumber(payload.required_efficiency, 0) : null;
 
-    const headerEfficiency =
-      payload.required_efficiency !== undefined &&
-        payload.required_efficiency !== null &&
-        payload.required_efficiency !== ''
-        ? toNumber(payload.required_efficiency, 0)
-        : null;
-
-    // 1. Copy là tạo chứng từ mới, nên mã chứng từ bắt buộc không được trùng
     const duplicateResult = await new sql.Request(transaction)
       .input('document_code', sql.VarChar(16), documentCode)
       .query(`
         SELECT TOP 1 id
-        FROM operation_cluster_headers
+        FROM dbo.operation_cluster_headers
         WHERE document_code = @document_code
       `);
 
     if (duplicateResult.recordset.length > 0) {
       const duplicateId = duplicateResult.recordset[0].id;
-
-      throw new Error(
-        `Mã chứng từ "${documentCode}" đã tồn tại ở chứng từ ID ${duplicateId}`
-      );
+      throw new Error(`Mã chứng từ "${documentCode}" đã tồn tại ở chứng từ ID ${duplicateId}`);
     }
 
-    // 2. Insert header mới
     const headerResult = await new sql.Request(transaction)
       .input('document_code', sql.VarChar(16), documentCode)
       .input('work_id', sql.Int, payload.work_id)
@@ -1562,34 +1940,18 @@ const copyOperationCluster = async (payload, context = {}) => {
       .input('status_id', sql.TinyInt, payload.status_id ?? 0)
       .input('created_by_user_id', sql.BigInt, userId)
       .query(`
-        INSERT INTO operation_cluster_headers (
-          document_code,
-          work_id,
-          product_category_id,
-          product_category_group_id,
-          required_efficiency,
-          price_method,
-          note,
-          status_id,
-          created_by_user_id
+        INSERT INTO dbo.operation_cluster_headers (
+          document_code, work_id, product_category_id, product_category_group_id,
+          required_efficiency, price_method, note, status_id, created_by_user_id
         )
         OUTPUT INSERTED.*
         VALUES (
-          @document_code,
-          @work_id,
-          @product_category_id,
-          @product_category_group_id,
-          @required_efficiency,
-          @price_method,
-          @note,
-          @status_id,
-          @created_by_user_id
+          @document_code, @work_id, @product_category_id, @product_category_group_id,
+          @required_efficiency, @price_method, @note, @status_id, @created_by_user_id
         )
       `);
 
     const header = headerResult.recordset[0];
-
-    // 3. Insert lại groups + operations vào header mới
     const groups = Array.isArray(payload.groups) ? payload.groups : [];
 
     for (let groupIndex = 0; groupIndex < groups.length; groupIndex += 1) {
@@ -1605,17 +1967,9 @@ const copyOperationCluster = async (payload, context = {}) => {
         .input('line_no', sql.Int, groupLineNo)
         .input('cluster_name', sql.NVarChar(100), group.cluster_name.trim())
         .query(`
-          INSERT INTO operation_cluster_groups (
-            header_id,
-            line_no,
-            cluster_name
-          )
+          INSERT INTO dbo.operation_cluster_groups (header_id, line_no, cluster_name)
           OUTPUT INSERTED.*
-          VALUES (
-            @header_id,
-            @line_no,
-            @cluster_name
-          )
+          VALUES (@header_id, @line_no, @cluster_name)
         `);
 
       const savedGroup = groupResult.recordset[0];
@@ -1625,29 +1979,13 @@ const copyOperationCluster = async (payload, context = {}) => {
         const operation = operations[operationIndex];
 
         if (!operation.operation_name || !operation.operation_name.trim()) {
-          throw new Error(
-            `Vui lòng nhập tên công đoạn ở cụm ${groupLineNo}, dòng ${operationIndex + 1}`
-          );
+          throw new Error(`Vui lòng nhập tên công đoạn ở cụm ${groupLineNo}, dòng ${operationIndex + 1}`);
         }
 
-        const effectiveEfficiency =
-          operation.required_efficiency !== undefined &&
-            operation.required_efficiency !== null &&
-            operation.required_efficiency !== ''
-            ? toNumber(operation.required_efficiency, 0)
-            : headerEfficiency;
-
+        const effectiveEfficiency = operation.required_efficiency !== undefined && operation.required_efficiency !== null && operation.required_efficiency !== '' ? toNumber(operation.required_efficiency, 0) : headerEfficiency;
         const salaryCoefficientFromPayload = toNumber(operation.salary_coefficient, 0);
-
-        const salaryCoefficientFromDb = await getSalaryCoefficient(
-          transaction,
-          operation.skill_grade_id
-        );
-
-        const salaryCoefficient =
-          salaryCoefficientFromPayload > 0
-            ? salaryCoefficientFromPayload
-            : salaryCoefficientFromDb;
+        const salaryCoefficientFromDb = await getSalaryCoefficient(transaction, operation.skill_grade_id);
+        const salaryCoefficient = salaryCoefficientFromPayload > 0 ? salaryCoefficientFromPayload : salaryCoefficientFromDb;
 
         const calculated = calculateOperationValues({
           samGsd: operation.sam_gsd,
@@ -1656,121 +1994,187 @@ const copyOperationCluster = async (payload, context = {}) => {
           priceMethod,
         });
 
-        await new sql.Request(transaction)
+        const operationResult = await new sql.Request(transaction)
           .input('header_id', sql.Int, header.id)
           .input('group_id', sql.Int, savedGroup.id)
           .input('line_no', sql.Int, operation.line_no || operationIndex + 1)
           .input('group_line_no', sql.Int, groupLineNo)
           .input('line_balance_no', sql.Int, operation.line_balance_no || null)
-
           .input('gsd_analysis_id', sql.Int, operation.gsd_analysis_id || null)
           .input('operation_code', sql.VarChar(32), operation.operation_code || null)
           .input('operation_name', sql.NVarChar(200), operation.operation_name.trim())
-
           .input('skill_grade_id', sql.Int, operation.skill_grade_id || null)
           .input('skill_level', sql.Int, operation.skill_level || null)
-
           .input('machine_equipment_id', sql.Int, operation.machine_equipment_id || null)
           .input('machine_name', sql.NVarChar(200), operation.machine_name || null)
           .input('machine_code', sql.VarChar(32), operation.machine_code || null)
-
           .input('sam_gsd', sql.Decimal(10, 2), toNumber(operation.sam_gsd, 0))
           .input('salary_coefficient', sql.Decimal(10, 2), salaryCoefficient)
-          .input(
-            'manpower',
-            sql.Decimal(10, 2),
-            operation.manpower !== undefined &&
-              operation.manpower !== null &&
-              operation.manpower !== ''
-              ? toNumber(operation.manpower, 0)
-              : null
-          )
-
+          .input('manpower', sql.Decimal(10, 2), operation.manpower !== undefined && operation.manpower !== null && operation.manpower !== '' ? toNumber(operation.manpower, 0) : null)
           .input('standard_price', sql.Decimal(18, 2), calculated.standardPrice)
           .input('required_efficiency', sql.Decimal(10, 4), effectiveEfficiency)
           .input('adjusted_sam', sql.Decimal(10, 2), calculated.adjustedSam)
           .input('utilization_rate', sql.Decimal(10, 4), calculated.utilizationRate)
-
           .input('total_action_seconds', sql.Decimal(18, 2), toNumber(operation.total_action_seconds, 0))
           .input('total_actions', sql.Int, toNumber(operation.total_actions, 0))
           .input('status_id', sql.TinyInt, operation.status_id ?? 0)
           .input('created_by_user_id', sql.BigInt, userId)
           .query(`
-            INSERT INTO operation_cluster_operations (
-              header_id,
-              group_id,
-              line_no,
-              group_line_no,
-              line_balance_no,
-
-              gsd_analysis_id,
-              operation_code,
-              operation_name,
-
-              skill_grade_id,
-              skill_level,
-
-              machine_equipment_id,
-              machine_name,
-              machine_code,
-
-              sam_gsd,
-              salary_coefficient,
-              manpower,
-
-              standard_price,
-              required_efficiency,
-              adjusted_sam,
-              utilization_rate,
-
-              total_action_seconds,
-              total_actions,
-              status_id,
-              created_by_user_id
+            INSERT INTO dbo.operation_cluster_operations (
+              header_id, group_id, line_no, group_line_no, line_balance_no,
+              gsd_analysis_id, operation_code, operation_name,
+              skill_grade_id, skill_level,
+              machine_equipment_id, machine_name, machine_code,
+              sam_gsd, salary_coefficient, manpower,
+              standard_price, required_efficiency, adjusted_sam, utilization_rate,
+              total_action_seconds, total_actions, status_id, created_by_user_id
             )
+            OUTPUT INSERTED.id
             VALUES (
-              @header_id,
-              @group_id,
-              @line_no,
-              @group_line_no,
-              @line_balance_no,
-
-              @gsd_analysis_id,
-              @operation_code,
-              @operation_name,
-
-              @skill_grade_id,
-              @skill_level,
-
-              @machine_equipment_id,
-              @machine_name,
-              @machine_code,
-
-              @sam_gsd,
-              @salary_coefficient,
-              @manpower,
-
-              @standard_price,
-              @required_efficiency,
-              @adjusted_sam,
-              @utilization_rate,
-
-              @total_action_seconds,
-              @total_actions,
-              @status_id,
-              @created_by_user_id
+              @header_id, @group_id, @line_no, @group_line_no, @line_balance_no,
+              @gsd_analysis_id, @operation_code, @operation_name,
+              @skill_grade_id, @skill_level,
+              @machine_equipment_id, @machine_name, @machine_code,
+              @sam_gsd, @salary_coefficient, @manpower,
+              @standard_price, @required_efficiency, @adjusted_sam, @utilization_rate,
+              @total_action_seconds, @total_actions, @status_id, @created_by_user_id
             )
           `);
+
+        const savedOperationId = Number(operationResult.recordset[0]?.id || 0);
+        const sourceOperationId = Number(operation.id || 0);
+
+        if (sourceOperationId > 0) {
+          const copiedActionCount = await copyOperationActionSnapshot(transaction, sourceOperationId, savedOperationId);
+
+          if (copiedActionCount === 0) {
+            await snapshotGsdActionsForOperation(transaction, savedOperationId, operation.gsd_analysis_id);
+          }
+        } else {
+          await snapshotGsdActionsForOperation(transaction, savedOperationId, operation.gsd_analysis_id);
+        }
       }
     }
 
     await transaction.commit();
-
     return getOperationClusterById(header.id);
   } catch (error) {
-    await transaction.rollback();
+    try {
+      await transaction.rollback();
+    } catch (rollbackError) {
+      if (rollbackError.code !== 'EABORT') console.error('Rollback operation cluster copy error:', rollbackError);
+    }
+
     throw error;
   }
+};
+
+// Hàm copy snapshot thao tác từ GSD
+const snapshotGsdActionsForOperation = async (
+  transaction,
+  operationClusterOperationId,
+  gsdAnalysisId
+) => {
+  if (
+    !operationClusterOperationId ||
+    !gsdAnalysisId
+  ) {
+    return;
+  }
+
+  await new sql.Request(transaction)
+    .input(
+      'operation_cluster_operation_id',
+      sql.Int,
+      operationClusterOperationId
+    )
+    .input(
+      'gsd_analysis_id',
+      sql.Int,
+      gsdAnalysisId
+    )
+    .query(`
+      INSERT INTO dbo.operation_cluster_operation_actions (
+        operation_cluster_operation_id,
+        gsd_analysis_id,
+        gsd_analysis_detail_id,
+        line_no,
+        step_no,
+        gsd_code_id,
+        gsd_code,
+        action_name,
+        tmu,
+        frequency,
+        seconds,
+        note,
+        is_selected
+      )
+      SELECT
+        @operation_cluster_operation_id,
+        d.analysis_id,
+        d.id,
+        d.line_no,
+        d.step_no,
+        d.gsd_code_id,
+        d.gsd_code,
+        d.action_name,
+        d.tmu,
+        d.frequency,
+        CAST(
+          (ISNULL(d.tmu, 0) * ISNULL(d.frequency, 1)) / 27.8
+          AS DECIMAL(18, 6)
+        ) AS seconds,
+        d.note,
+        d.is_selected
+      FROM dbo.gsd_analysis_details d
+      WHERE d.analysis_id = @gsd_analysis_id
+        AND (
+          ISNULL(d.is_selected, 0) = 1
+          OR d.step_no IS NOT NULL
+        )
+      ORDER BY
+        d.line_no,
+        d.id;
+    `);
+};
+
+// Hàm lấy thao tác snapshot theo operation id
+const getOperationClusterOperationActions = async (
+  operationId
+) => {
+  const pool = await getPool();
+
+  const result = await pool.request()
+    .input(
+      'operation_id',
+      sql.Int,
+      operationId
+    )
+    .query(`
+      SELECT
+        a.id,
+        a.operation_cluster_operation_id,
+        a.gsd_analysis_id,
+        a.gsd_analysis_detail_id,
+        a.line_no,
+        a.step_no,
+        a.gsd_code_id,
+        a.gsd_code,
+        a.action_name,
+        a.tmu,
+        a.frequency,
+        a.seconds,
+        a.note,
+        a.is_selected,
+        a.created_at
+      FROM dbo.operation_cluster_operation_actions a
+      WHERE a.operation_cluster_operation_id = @operation_id
+      ORDER BY
+        a.line_no,
+        a.id;
+    `);
+
+  return result.recordset;
 };
 
 module.exports = {
@@ -1781,4 +2185,5 @@ module.exports = {
   createOperationCluster,
   updateOperationCluster,
   copyOperationCluster,
+  getOperationClusterOperationActions,
 };

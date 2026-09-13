@@ -50,6 +50,14 @@ export const operationClusterService = {
         return response.data;
     },
 
+    async getOperationActions(operationId: number): Promise<GsdActionDetail[]> {
+        const response = await request<ApiResponse<GsdActionDetail[]>>(
+            `/api/operation-clusters/operations/${operationId}/actions`
+        );
+
+        return response.data;
+    },
+
     async getGsdOptions():
         Promise<GsdOption[]> {
         const response =

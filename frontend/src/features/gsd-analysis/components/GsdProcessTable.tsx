@@ -68,38 +68,19 @@ function formatDateTime(value?: string) {
 type SelectedFilterValues =
     Set<string> | null;
 
-function toFilterValue(
-    value: unknown
-) {
-    const text =
-        String(value ?? '').trim();
-
+function toFilterValue(value: unknown) {
+    const text = String(value ?? '').replace(/\s+/g, ' ').trim();
     return text || '-';
 }
 
-function uniqueOptions(
-    values: string[]
-) {
-    return Array.from(
-        new Set(
-            values.map(toFilterValue)
-        )
-    ).sort((a, b) =>
-        a.localeCompare(b, 'vi')
-    );
+function uniqueOptions(values: unknown[]) {
+    return Array.from(new Set(values.map(toFilterValue)))
+        .sort((a, b) => a.localeCompare(b, 'vi'));
 }
 
-function isFilterMatch(
-    value: unknown,
-    selectedValues: SelectedFilterValues
-) {
-    if (selectedValues === null) {
-        return true;
-    }
-
-    return selectedValues.has(
-        toFilterValue(value)
-    );
+function isFilterMatch(value: unknown, selectedValues: SelectedFilterValues) {
+    if (selectedValues === null) return true;
+    return selectedValues.has(toFilterValue(value));
 }
 
 
@@ -127,7 +108,7 @@ export default function GsdProcessTable({
     } = useGsdAnalysis();
 
     const permissions = usePermissions(SCREEN.GSD_ANALYSIS);
-    const columnCount = onDetailClick ? 8 : 7;
+    const columnCount = onDetailClick ? 10 : 9;
     const [previewImageUrl, setPreviewImageUrl] = useState('');
 
     const [
@@ -163,6 +144,16 @@ export default function GsdProcessTable({
     const [
         selectedCreatedAtValues,
         setSelectedCreatedAtValues,
+    ] = useState<SelectedFilterValues>(null);
+
+    const [
+        selectedEmployeeValues,
+        setSelectedEmployeeValues,
+    ] = useState<SelectedFilterValues>(null);
+
+    const [
+        selectedDepartmentValues,
+        setSelectedDepartmentValues,
     ] = useState<SelectedFilterValues>(null);
 
     const operationOptions =
@@ -255,6 +246,29 @@ export default function GsdProcessTable({
             [analyses]
         );
 
+    const employeeOptions =
+        useMemo(
+            () =>
+                uniqueOptions(
+                    analyses.map(
+                        (item) => item.employeeName || '-'
+                    )
+                ),
+            [analyses]
+        );
+
+    const departmentOptions =
+        useMemo(
+            () =>
+                uniqueOptions(
+                    analyses.map(
+                        (item) => item.department || '-'
+                    )
+                ),
+            [analyses]
+        );
+
+
     const filteredAnalyses =
         useMemo(
             () => {
@@ -309,6 +323,16 @@ export default function GsdProcessTable({
                             createdAtText,
                             selectedCreatedAtValues
                         )
+                        &&
+                        isFilterMatch(
+                            item.employeeName || '-',
+                            selectedEmployeeValues
+                        )
+                        &&
+                        isFilterMatch(
+                            item.department || '-',
+                            selectedDepartmentValues
+                        )
                     );
                 });
             },
@@ -321,6 +345,8 @@ export default function GsdProcessTable({
                 selectedCodeMmtbValues,
                 selectedFinalSmvValues,
                 selectedCreatedAtValues,
+                selectedEmployeeValues,
+                selectedDepartmentValues
             ]
         );
 
@@ -493,6 +519,25 @@ export default function GsdProcessTable({
                                 />
                             </th>
 
+
+                            <th className="relative px-4 py-1.5 border border-slate-200 text-left whitespace-nowrap">
+                                <DropdownColumnFilter
+                                    title="Người tạo"
+                                    options={employeeOptions}
+                                    selectedValues={selectedEmployeeValues}
+                                    onChange={setSelectedEmployeeValues}
+                                />
+                            </th>
+
+                            <th className="relative px-4 py-1.5 border border-slate-200 text-left whitespace-nowrap">
+                                <DropdownColumnFilter
+                                    title="Chi nhánh"
+                                    options={departmentOptions}
+                                    selectedValues={selectedDepartmentValues}
+                                    onChange={setSelectedDepartmentValues}
+                                />
+                            </th>
+
                             <th className="relative px-4 py-1.5 border border-slate-200 text-left whitespace-nowrap">
                                 <DropdownColumnFilter
                                     title="Ngày tạo"
@@ -627,6 +672,16 @@ export default function GsdProcessTable({
                                             ).toFixed(0)}
                                         </td>
 
+
+                                        <td className="px-4 py-3 border border-slate-200 text-slate-700 text-sm">
+                                            {item.employeeName || '-'}
+                                        </td>
+
+
+                                        <td className="px-4 py-3 border border-slate-200 text-slate-700 text-sm">
+                                            {item.department || '-'}
+                                        </td>
+
                                         <td className="px-4 py-1.5 border border-slate-200 text-slate-500 text-sm whitespace-nowrap">
                                             {formatDateTime(item.createdAt || item.analysisDate)}
                                         </td>
@@ -687,6 +742,7 @@ function ImagePreviewModal({
         </div>
     );
 }
+
 function DropdownColumnFilter({
     title,
     options,
@@ -700,202 +756,126 @@ function DropdownColumnFilter({
     onChange: (values: SelectedFilterValues) => void;
     align?: 'left' | 'center' | 'right';
 }) {
-    const [
-        open,
-        setOpen,
-    ] = useState(false);
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState('');
+    const [draftSelectedValues, setDraftSelectedValues] = useState<SelectedFilterValues>(null);
+    const draftRef = useRef<SelectedFilterValues>(null);
+    const rootRef = useRef<HTMLDivElement | null>(null);
 
-    const [
-        search,
-        setSearch,
-    ] = useState('');
+    const normalizedOptions = useMemo(() => uniqueOptions(options), [options]);
 
-    const [
-        draftSelectedValues,
-        setDraftSelectedValues,
-    ] = useState<SelectedFilterValues>(null);
+    const setDraft = (values: SelectedFilterValues) => {
+        draftRef.current = values === null ? null : new Set(values);
+        setDraftSelectedValues(values === null ? null : new Set(values));
+    };
 
-    const rootRef =
-        useRef<HTMLDivElement | null>(
-            null
+    useEffect(() => {
+        if (!open) return;
+
+        const nextDraft = selectedValues === null ? null : new Set(selectedValues);
+        draftRef.current = nextDraft;
+        setDraftSelectedValues(nextDraft);
+        setSearch('');
+    }, [open, selectedValues]);
+
+    const filteredOptions = useMemo(() => {
+        const keyword = search.trim().toLowerCase();
+        if (!keyword) return normalizedOptions;
+
+        return normalizedOptions.filter((option) =>
+            option.toLowerCase().includes(keyword)
         );
-
-    useEffect(
-        () => {
-            if (!open) {
-                return;
-            }
-
-            setDraftSelectedValues(
-                selectedValues === null
-                    ? null
-                    : new Set(selectedValues)
-            );
-        },
-        [
-            open,
-            selectedValues,
-        ]
-    );
-
-    const filteredOptions =
-        useMemo(
-            () => {
-                const keyword =
-                    search
-                        .trim()
-                        .toLowerCase();
-
-                if (!keyword) {
-                    return options;
-                }
-
-                return options.filter(
-                    (option) =>
-                        option
-                            .toLowerCase()
-                            .includes(keyword)
-                );
-            },
-            [
-                options,
-                search,
-            ]
-        );
+    }, [normalizedOptions, search]);
 
     const allSelected =
         draftSelectedValues === null ||
-        draftSelectedValues.size === options.length;
+        draftSelectedValues.size === normalizedOptions.length;
 
-    const isOptionChecked =
-        (option: string) => {
-            if (draftSelectedValues === null) {
-                return true;
-            }
+    const isOptionChecked = (option: string) => {
+        if (draftSelectedValues === null) return true;
+        return draftSelectedValues.has(option);
+    };
 
-            return draftSelectedValues.has(option);
-        };
+    const toggleSelectAll = (checked: boolean) => {
+        if (checked) {
+            setDraft(null);
+            return;
+        }
 
-    const toggleSelectAll =
-        (checked: boolean) => {
-            if (checked) {
-                setDraftSelectedValues(null);
-                return;
-            }
+        setDraft(new Set());
+    };
 
-            setDraftSelectedValues(new Set());
-        };
+    const toggleOption = (option: string, checked: boolean) => {
+        const current = draftRef.current;
+        const next = current === null ? new Set(normalizedOptions) : new Set(current);
 
-    const toggleOption =
-        (
-            option: string,
-            checked: boolean
-        ) => {
-            setDraftSelectedValues(
-                (current) => {
-                    const next =
-                        current === null
-                            ? new Set(options)
-                            : new Set(current);
+        if (checked) {
+            next.add(option);
+        } else {
+            next.delete(option);
+        }
 
-                    if (checked) {
-                        next.add(option);
-                    } else {
-                        next.delete(option);
-                    }
+        setDraft(next.size === normalizedOptions.length ? null : next);
+    };
 
-                    if (next.size === options.length) {
-                        return null;
-                    }
+    const handleApply = () => {
+        const current = draftRef.current;
+        onChange(current === null ? null : new Set(current));
+        setOpen(false);
+    };
 
-                    return next;
-                }
-            );
-        };
-
-    const handleApply =
-        () => {
-            onChange(draftSelectedValues);
-            setOpen(false);
-        };
-
-    const handleClear =
-        () => {
-            setDraftSelectedValues(null);
-            setSearch('');
-            onChange(null);
-            setOpen(false);
-        };
+    const handleClear = () => {
+        setDraft(null);
+        setSearch('');
+        onChange(null);
+        setOpen(false);
+    };
 
     const selectedCount =
         selectedValues === null
-            ? options.length
+            ? normalizedOptions.length
             : selectedValues.size;
 
-    useEffect(
-        () => {
-            if (!open) {
-                return;
+    useEffect(() => {
+        if (!open) return;
+
+        const handleMouseDown = (event: MouseEvent) => {
+            if (rootRef.current && !rootRef.current.contains(event.target as Node)) {
+                setOpen(false);
             }
+        };
 
-            const handleMouseDown =
-                (event: MouseEvent) => {
-                    if (
-                        rootRef.current &&
-                        !rootRef.current.contains(
-                            event.target as Node
-                        )
-                    ) {
-                        setOpen(false);
-                    }
-                };
+        document.addEventListener('mousedown', handleMouseDown);
 
-            document.addEventListener(
-                'mousedown',
-                handleMouseDown
-            );
-
-            return () => {
-                document.removeEventListener(
-                    'mousedown',
-                    handleMouseDown
-                );
-            };
-        },
-        [open]
-    );
+        return () => {
+            document.removeEventListener('mousedown', handleMouseDown);
+        };
+    }, [open]);
 
     return (
         <div
             ref={rootRef}
-            className={`relative ${align === 'center'
+            className={`relative ${
+                align === 'center'
                     ? 'text-center'
                     : align === 'right'
                         ? 'text-right'
                         : 'text-left'
-                }`}
+            }`}
         >
             <button
                 type="button"
-                onClick={() =>
-                    setOpen(
-                        (previous) => !previous
-                    )
-                }
-                className={`inline-flex w-full items-center gap-1 text-[11px] font-bold uppercase text-slate-500 hover:text-slate-800 ${align === 'right'
+                onClick={() => setOpen((previous) => !previous)}
+                className={`inline-flex w-full items-center gap-1 text-[11px] font-bold uppercase text-slate-500 hover:text-slate-800 ${
+                    align === 'right'
                         ? 'justify-end'
                         : align === 'center'
                             ? 'justify-center'
                             : 'justify-start'
-                    }`}
+                }`}
             >
-                <span>
-                    {title}
-                </span>
-
-                <span className="text-[10px]">
-                    ▼
-                </span>
+                <span>{title}</span>
+                <span className="text-[10px]">▼</span>
 
                 {selectedValues !== null && (
                     <span className="ml-1 rounded bg-blue-100 px-1.5 py-0.5 text-[10px] text-blue-700">
@@ -906,20 +886,15 @@ function DropdownColumnFilter({
 
             {open && (
                 <div
-                    className={`absolute top-full z-[80] mt-1 w-[320px] rounded border border-slate-200 bg-white text-left normal-case shadow-xl ${align === 'right'
-                            ? 'right-0'
-                            : 'left-0'
-                        }`}
+                    className={`absolute top-full z-[80] mt-1 w-[320px] rounded border border-slate-200 bg-white text-left normal-case shadow-xl ${
+                        align === 'right' ? 'right-0' : 'left-0'
+                    }`}
                 >
                     <div className="border-b border-slate-100 p-2">
                         <input
                             autoFocus
                             value={search}
-                            onChange={(event) =>
-                                setSearch(
-                                    event.target.value
-                                )
-                            }
+                            onChange={(event) => setSearch(event.target.value)}
                             placeholder="Search"
                             className="h-8 w-full rounded border border-blue-400 px-2 text-xs outline-none"
                         />
@@ -930,43 +905,26 @@ function DropdownColumnFilter({
                             <input
                                 type="checkbox"
                                 checked={allSelected}
-                                onChange={(event) =>
-                                    toggleSelectAll(
-                                        event.target.checked
-                                    )
-                                }
+                                onChange={(event) => toggleSelectAll(event.target.checked)}
                             />
 
-                            <span>
-                                (Select All)
-                            </span>
+                            <span>(Select All)</span>
                         </label>
 
-                        {filteredOptions.map(
-                            (option) => (
-                                <label
-                                    key={option}
-                                    className="flex cursor-pointer items-center gap-2 px-1 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={isOptionChecked(
-                                            option
-                                        )}
-                                        onChange={(event) =>
-                                            toggleOption(
-                                                option,
-                                                event.target.checked
-                                            )
-                                        }
-                                    />
+                        {filteredOptions.map((option) => (
+                            <label
+                                key={option}
+                                className="flex cursor-pointer items-center gap-2 px-1 py-1.5 text-xs text-slate-700 hover:bg-slate-50"
+                            >
+                                <input
+                                    type="checkbox"
+                                    checked={isOptionChecked(option)}
+                                    onChange={(event) => toggleOption(option, event.target.checked)}
+                                />
 
-                                    <span className="break-words">
-                                        {option}
-                                    </span>
-                                </label>
-                            )
-                        )}
+                                <span className="break-words">{option}</span>
+                            </label>
+                        ))}
 
                         {filteredOptions.length === 0 && (
                             <div className="px-2 py-4 text-center text-xs text-slate-400">

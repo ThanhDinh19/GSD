@@ -28,325 +28,296 @@ export interface SourceActionForAnalysis {
 
 
 export interface GsdAnalysisDetailPayload {
-    sourceActionDetailId?:
-        number | null;
+    id?: number | null;
 
-    gsdCodeId?:
-        number | null;
-
-    gsdCode?:
-        string | null;
-
-    actionName:
-        string;
-
-    tmu:
-        number;
-
-    frequency:
-        number;
-
-    stepNo?:
-        number | null;
-
-    note?:
-        string | null;
-
-    isSelected?:
-        boolean;
+    sourceActionDetailId?: number | null;
+    gsdCodeId?: number | null;
+    gsdCode?: string | null;
+    actionName: string;
+    tmu: number;
+    frequency: number;
+    stepNo?: number | null;
+    note?: string | null;
+    isSelected?: boolean;
 }
 
 
 export interface GsdAnalysisPayload {
     sourceId?:
-        number | null;
+    number | null;
 
     machineId?:
-        number | null;
+    number | null;
 
     operationName:
-        string;
+    string;
 
     seamLength?:
-        number | null;
+    number | null;
 
     attachedActionTime?:
-        number | null;
+    number | null;
 
     stitchCount?:
-        number | null;
+    number | null;
 
     allowance?:
-        number | null;
+    number | null;
 
     machineSpeed?:
-        number | null;
+    number | null;
 
     difficultyPercent?:
-        number | null;
+    number | null;
 
     productMultiplier?:
-        number | null;
+    number | null;
 
     note?:
-        string | null;
+    string | null;
 
     details:
-        GsdAnalysisDetailPayload[];
+    GsdAnalysisDetailPayload[];
 
     images:
-        GsdAnalysisImage[];
+    GsdAnalysisImage[];
 }
 
 
 export interface GsdAnalysisCalculateResult {
     totalTmu:
-        number;
+    number;
 
     totalManualSeconds:
-        number;
+    number;
 
     machineSeconds:
-        number;
+    number;
 
     totalSmvBeforeDifficulty:
-        number;
+    number;
 
     difficultySeconds:
-        number;
+    number;
 
     finalSmv:
-        number;
+    number;
 
     skillGrade:
-        number;
+    number;
 
     stitchCount?:
-        number;
+    number;
 
     machineSpeed?:
-        number;
+    number;
 
     machineVelocity?:
-        number;
+    number;
 
     allowance?:
-        number;
+    number;
 
     details:
-        Array<
-            GsdAnalysisDetailPayload & {
-                lineNo:
-                    number;
+    Array<
+        GsdAnalysisDetailPayload & {
+            lineNo:
+            number;
 
-                seconds:
-                    number;
-            }
-        >;
+            seconds:
+            number;
+        }
+    >;
 
     machine?: {
         id:
-            number;
+        number;
 
         machineCode:
-            string;
+        string;
 
         machineName:
-            string;
+        string;
 
         codeMMTB:
-            string;
+        string;
 
         stitchCount?:
-            number | null;
+        number | null;
 
         machineSpeed?:
-            number | null;
+        number | null;
 
         allowance?:
-            number | null;
+        number | null;
 
         skillGrade?:
-            string | null;
+        string | null;
     } | null;
 }
 
 
 export interface GsdAnalysisRow
-    extends Omit<
-        SourceActionForAnalysis,
-        | 'sourceActionDetailId'
-        | 'frequency'
-    > {
-    sourceActionDetailId?:
-        number | null;
+    extends Omit<SourceActionForAnalysis, 'sourceActionDetailId' | 'frequency'> {
+    id?: number | null;
 
-    sourceId?:
-        number | null;
-
-    sourceCode?:
-        string;
-
-    sourceName?:
-        string | null;
-
-    stepNo?:
-        number |
-        string |
-        null;
-
-    frequency:
-        number;
-
-    isSelected:
-        boolean;
+    sourceActionDetailId?: number | null;
+    sourceId?: number | null;
+    sourceCode?: string;
+    sourceName?: string | null;
+    stepNo?: number | string | null;
+    frequency: number;
+    isSelected: boolean;
 }
 
 
 export interface GsdAnalysisSummary {
     id:
-        number;
+    number;
 
     analysisNo:
-        string;
+    string;
 
     analysisDate?:
-        string;
+    string;
 
     operationName:
-        string;
+    string;
 
     sourceCode?:
-        string | null;
+    string | null;
 
     machineCode?:
-        string | null;
+    string | null;
 
     machineName?:
-        string | null;
+    string | null;
 
     codeMMTB?:
-        string | null;
+    string | null;
 
     totalTmu:
-        number;
+    number;
 
     totalManualSeconds:
-        number;
+    number;
 
     machineSeconds:
-        number;
+    number;
 
     totalSmvBeforeDifficulty:
-        number;
+    number;
 
     difficultySeconds:
-        number;
+    number;
 
     finalSmv:
-        number;
+    number;
 
     skillGrade?:
-        number | null;
+    number | null;
 
     imageUrl?:
-        string | null;
+    string | null;
 
     imageFileName?:
-        string | null;
+    string | null;
 
     createdAt?:
-        string;
+    string;
+
+    employeeName?: string | null;
+    department?: string | null;
 }
 
 
 export interface GsdAnalysisDetailRow {
     id:
-        number;
+    number;
 
     analysisId:
-        number;
+    number;
 
     lineNo:
-        number;
+    number;
 
     stepNo?:
-        number | null;
+    number | null;
 
     sourceActionDetailId?:
-        number | null;
+    number | null;
 
     gsdCodeId?:
-        number | null;
+    number | null;
 
     gsdCode?:
-        string | null;
+    string | null;
 
     actionName:
-        string;
+    string;
 
     tmu:
-        number;
+    number;
 
     frequency:
-        number;
+    number;
 
     seconds:
-        number;
+    number;
 
     note?:
-        string | null;
+    string | null;
 
     isSelected?:
-        boolean;
+    boolean;
 }
 
 
 export interface GsdAnalysisDetail
     extends GsdAnalysisSummary {
     sourceId?:
-        number | null;
+    number | null;
 
     sourceName?:
-        string | null;
+    string | null;
 
     machineId?:
-        number | null;
+    number | null;
 
     seamLength?:
-        number | null;
+    number | null;
 
     attachedActionTime?:
-        number | null;
+    number | null;
 
     difficultyPercent?:
-        number | null;
+    number | null;
 
     productMultiplier?:
-        number | null;
+    number | null;
 
     stitchCount?:
-        number | null;
+    number | null;
 
     machineSpeed?:
-        number | null;
+    number | null;
 
     machineVelocity?:
-        number | null;
+    number | null;
 
     allowance?:
-        number | null;
+    number | null;
 
     note?:
-        string | null;
+    string | null;
 
     updatedAt?:
-        string | null;
+    string | null;
 
     details:
-        GsdAnalysisDetailRow[];
+    GsdAnalysisDetailRow[];
 }
 
 export interface DeactivateResponse {
-  message?: string;
+    message?: string;
 }

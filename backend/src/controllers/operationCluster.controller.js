@@ -170,6 +170,33 @@ const copyOperationCluster = async (req, res) => {
   }
 };
 
+const getOperationClusterOperationActions = async (req, res) => {
+  try {
+    const operationId = Number(req.params.operationId);
+
+    if (!Number.isInteger(operationId) || operationId <= 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'Thiếu id công đoạn trong kho cụm',
+      });
+    }
+
+    const data = await operationClusterService.getOperationClusterOperationActions(operationId);
+
+    return res.status(200).json({
+      success: true,
+      data,
+    });
+  } catch (error) {
+    console.error('getOperationClusterOperationActions error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Không lấy được thao tác snapshot của công đoạn',
+    });
+  }
+};
+
 module.exports = {
   getOperationClusterHeaders,
   getGsdOptions,
@@ -177,5 +204,6 @@ module.exports = {
   createOperationCluster,
   getGsdActions,
   updateOperationCluster,
-  copyOperationCluster
+  copyOperationCluster,
+  getOperationClusterOperationActions,
 };

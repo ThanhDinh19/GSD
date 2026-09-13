@@ -118,6 +118,7 @@ export interface OperationClusterOperationPayload {
 }
 
 export interface OperationClusterGroupPayload {
+    id?: number | string | null;
     line_no: number;
     cluster_name: string;
     operations: OperationClusterOperationPayload[];

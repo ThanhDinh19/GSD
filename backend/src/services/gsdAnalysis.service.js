@@ -164,11 +164,11 @@ async function calculateAnalysis(payload) {
     const normalizedDetails = selectedInputDetails.map((item, index) => {
         const tmu = toNumber(item.tmu, 0);
         const frequency = toNumber(item.frequency, 1);
-
-        // giây = (tmu * frequency) / 27.8
         const seconds = (tmu * frequency) / 27.8;
+        const detailId = Number(item.id || item.detailId || item.gsdAnalysisDetailId || 0);
 
         return {
+            id: Number.isInteger(detailId) && detailId > 0 ? detailId : null,
             lineNo: index + 1,
             stepNo: Number(item.stepNo),
             sourceActionDetailId: item.sourceActionDetailId || null,
@@ -618,7 +618,7 @@ async function getAnalyses() {
     const pool = getPool();
 
     const result = await pool.request().query(`
-           SELECT
+               SELECT
             a.is_deleted,
             a.id AS [id],
             a.analysis_no AS [analysisNo],
@@ -639,13 +639,22 @@ async function getAnalyses() {
             a.skill_grade AS [skillGrade],
             a.created_at AS [createdAt],
             files.image_url as [imageUrl],
-            files.image_file_name as [imageFileName]
+            files.image_file_name as [imageFileName],
+
+            -- thêm người tạo, chi nhánh
+            emp.full_name AS [employeeName], -- Người tạo
+            d.department_name AS [department] -- Chi nhánh 
+
 
         FROM gsd_analysis_headers a
         LEFT JOIN sources s ON a.source_id = s.id
         LEFT JOIN machine_equipments_test m ON a.machine_id = m.id
         LEFT JOIN gsd_analysis_image_links links ON links.gsd_analysis_id = a.id
         LEFT JOIN media_files files ON links.media_file_id = files.id
+        LEFT JOIN auth.users u ON u.id = a.created_by_user_id
+        LEFT JOIN hr.employees emp ON emp.id = u.employee_id
+        LEFT JOIN organization_unit_employee orn ON orn.employee_code = emp.employee_code
+        LEFT JOIN departments_test d ON d.department_code = orn.unit_code
         WHERE a.is_deleted = 0
         ORDER BY a.id DESC
     `);
@@ -850,27 +859,18 @@ async function getAnalysisCopyDraft(id) {
 }
 
 async function updateAnalysis(id, payload, context = {}) {
+    const userId = Number(context.userId);
 
-    const userId = Number(context.userId)
-
-    if (
-        !Number.isInteger(userId) ||
-        userId <= 0
-    ) {
-        const err = new Error(
-            'Bạn chưa đăng nhập.'
-        );
-
+    if (!Number.isInteger(userId) || userId <= 0) {
+        const err = new Error('Bạn chưa đăng nhập.');
         err.statusCode = 401;
         throw err;
     }
 
     const pool = getPool();
-
     const analysisId = Number(id);
     const operationName = String(payload.operationName || '').trim();
-
-    const images = normalizeImages(payload)
+    const images = normalizeImages(payload);
 
     if (!Number.isInteger(analysisId) || analysisId <= 0) {
         const err = new Error('Mã phân tích công đoạn không hợp lệ.');
@@ -890,14 +890,11 @@ async function updateAnalysis(id, payload, context = {}) {
         throw err;
     }
 
-    // Kiểm tra chứng từ tồn tại trước khi tính và mở transaction
     const currentResult = await pool.request()
         .input('id', sql.Int, analysisId)
         .query(`
-            SELECT TOP 1
-                id,
-                analysis_no AS [analysisNo]
-            FROM gsd_analysis_headers
+            SELECT TOP 1 id, analysis_no AS [analysisNo]
+            FROM dbo.gsd_analysis_headers
             WHERE id = @id
         `);
 
@@ -909,28 +906,18 @@ async function updateAnalysis(id, payload, context = {}) {
         throw err;
     }
 
-    // Tính lại toàn bộ dữ liệu header và detail
     const calculated = await calculateAnalysis(payload);
 
     if (!calculated.details.length) {
-        const err = new Error(
-            'Vui lòng chọn thao tác có số lần lặp lại lớn hơn 0.'
-        );
+        const err = new Error('Vui lòng chọn thao tác có số lần lặp lại lớn hơn 0.');
         err.statusCode = 400;
         throw err;
     }
 
-    const sourceId = payload.sourceId
-        ? Number(payload.sourceId)
-        : null;
-
-    const machineId = payload.machineId
-        ? Number(payload.machineId)
-        : null;
-
+    const sourceId = payload.sourceId ? Number(payload.sourceId) : null;
+    const machineId = payload.machineId ? Number(payload.machineId) : null;
 
     const transaction = new sql.Transaction(pool);
-
     await transaction.begin();
 
     try {
@@ -939,93 +926,26 @@ async function updateAnalysis(id, payload, context = {}) {
             .input('source_id', sql.Int, sourceId)
             .input('machine_id', sql.Int, machineId)
             .input('operation_name', sql.NVarChar(255), operationName)
-            .input(
-                'seam_length',
-                sql.Decimal(18, 4),
-                toNumber(payload.seamLength, 0)
-            )
-            .input(
-                'attached_action_time',
-                sql.Decimal(18, 4),
-                toNumber(payload.attachedActionTime, 0)
-            )
-            .input(
-                'difficulty_percent',
-                sql.Decimal(18, 4),
-                toNumber(payload.difficultyPercent, 0)
-            )
-            .input(
-                'product_multiplier',
-                sql.Decimal(18, 4),
-                toNumber(payload.productMultiplier, 1)
-            )
-            .input(
-                'stitch_count',
-                sql.Decimal(18, 4),
-                calculated.stitchCount
-            )
-            .input(
-                'machine_speed',
-                sql.Decimal(18, 4),
-                calculated.machineSpeed
-            )
-            .input(
-                'machine_velocity',
-                sql.Decimal(18, 4),
-                calculated.machineVelocity
-            )
-            .input(
-                'allowance',
-                sql.Decimal(18, 4),
-                calculated.allowance
-            )
-            .input(
-                'total_tmu',
-                sql.Decimal(18, 4),
-                calculated.totalTmu
-            )
-            .input(
-                'total_manual_seconds',
-                sql.Decimal(18, 4),
-                calculated.totalManualSeconds
-            )
-            .input(
-                'machine_seconds',
-                sql.Decimal(18, 4),
-                calculated.machineSeconds
-            )
-            .input(
-                'total_smv_before_difficulty',
-                sql.Decimal(18, 4),
-                calculated.totalSmvBeforeDifficulty
-            )
-            .input(
-                'difficulty_seconds',
-                sql.Decimal(18, 4),
-                calculated.difficultySeconds
-            )
-            .input(
-                'final_smv',
-                sql.Decimal(18, 4),
-                calculated.finalSmv
-            )
-            .input(
-                'skill_grade',
-                sql.TinyInt,
-                calculated.skillGrade
-            )
-            .input(
-                'note',
-                sql.NVarChar(500),
-                payload.note
-                    ? String(payload.note).trim()
-                    : null
-            )
+            .input('seam_length', sql.Decimal(18, 4), toNumber(payload.seamLength, 0))
+            .input('attached_action_time', sql.Decimal(18, 4), toNumber(payload.attachedActionTime, 0))
+            .input('difficulty_percent', sql.Decimal(18, 4), toNumber(payload.difficultyPercent, 0))
+            .input('product_multiplier', sql.Decimal(18, 4), toNumber(payload.productMultiplier, 1))
+            .input('stitch_count', sql.Decimal(18, 4), calculated.stitchCount)
+            .input('machine_speed', sql.Decimal(18, 4), calculated.machineSpeed)
+            .input('machine_velocity', sql.Decimal(18, 4), calculated.machineVelocity)
+            .input('allowance', sql.Decimal(18, 4), calculated.allowance)
+            .input('total_tmu', sql.Decimal(18, 4), calculated.totalTmu)
+            .input('total_manual_seconds', sql.Decimal(18, 4), calculated.totalManualSeconds)
+            .input('machine_seconds', sql.Decimal(18, 4), calculated.machineSeconds)
+            .input('total_smv_before_difficulty', sql.Decimal(18, 4), calculated.totalSmvBeforeDifficulty)
+            .input('difficulty_seconds', sql.Decimal(18, 4), calculated.difficultySeconds)
+            .input('final_smv', sql.Decimal(18, 4), calculated.finalSmv)
+            .input('skill_grade', sql.TinyInt, calculated.skillGrade)
+            .input('note', sql.NVarChar(500), payload.note ? String(payload.note).trim() : null)
             .input('updated_by_user_id', sql.BigInt, userId)
             .query(`
-                UPDATE gsd_analysis_headers
-                SET
-                    source_id = @source_id,
+                UPDATE dbo.gsd_analysis_headers
+                SET source_id = @source_id,
                     machine_id = @machine_id,
                     operation_name = @operation_name,
                     seam_length = @seam_length,
@@ -1050,98 +970,104 @@ async function updateAnalysis(id, payload, context = {}) {
             `);
 
         if (!updateHeaderResult.rowsAffected[0]) {
-            const err = new Error(
-                'Không tìm thấy phân tích công đoạn cần cập nhật.'
-            );
+            const err = new Error('Không tìm thấy phân tích công đoạn cần cập nhật.');
             err.statusCode = 404;
             throw err;
         }
 
-        // Xóa detail cũ
-        await new sql.Request(transaction)
+        const existingDetailsResult = await new sql.Request(transaction)
             .input('analysis_id', sql.Int, analysisId)
             .query(`
-                DELETE FROM gsd_analysis_details
+                SELECT id
+                FROM dbo.gsd_analysis_details
                 WHERE analysis_id = @analysis_id
             `);
 
-        // Insert lại detail mới
+        const existingDetailMap = new Map(existingDetailsResult.recordset.map(row => [Number(row.id), row]));
+        const keptDetailIds = new Set();
+
         for (const item of calculated.details) {
-            await new sql.Request(transaction)
+            const detailId = Number(item.id || 0);
+            const existingDetail = Number.isInteger(detailId) && detailId > 0 ? existingDetailMap.get(detailId) : null;
+
+            if (detailId > 0 && !existingDetail) {
+                throw new Error(`Thao tác GSD id ${detailId} không thuộc phân tích hiện tại hoặc không tồn tại.`);
+            }
+
+            if (existingDetail) {
+                keptDetailIds.add(detailId);
+
+                await new sql.Request(transaction)
+                    .input('detail_id', sql.Int, detailId)
+                    .input('analysis_id', sql.Int, analysisId)
+                    .input('line_no', sql.Int, item.lineNo)
+                    .input('step_no', sql.Decimal(18, 4), item.stepNo)
+                    .input('source_action_detail_id', sql.Int, item.sourceActionDetailId)
+                    .input('gsd_code_id', sql.Int, item.gsdCodeId)
+                    .input('gsd_code', sql.NVarChar(50), item.gsdCode)
+                    .input('action_name', sql.NVarChar(500), item.actionName)
+                    .input('tmu', sql.Decimal(18, 4), item.tmu)
+                    .input('frequency', sql.Decimal(18, 4), item.frequency)
+                    .input('note', sql.NVarChar(500), item.note)
+                    .input('is_selected', sql.Bit, item.isSelected ? 1 : 0)
+                    .query(`
+                        UPDATE dbo.gsd_analysis_details
+                        SET line_no = @line_no,
+                            step_no = @step_no,
+                            source_action_detail_id = @source_action_detail_id,
+                            gsd_code_id = @gsd_code_id,
+                            gsd_code = @gsd_code,
+                            action_name = @action_name,
+                            tmu = @tmu,
+                            frequency = @frequency,
+                            note = @note,
+                            is_selected = @is_selected
+                        WHERE id = @detail_id
+                          AND analysis_id = @analysis_id
+                    `);
+
+                continue;
+            }
+
+            const insertDetailResult = await new sql.Request(transaction)
                 .input('analysis_id', sql.Int, analysisId)
                 .input('line_no', sql.Int, item.lineNo)
-                .input(
-                    'step_no',
-                    sql.Decimal(18, 4),
-                    item.stepNo
-                )
-                .input(
-                    'source_action_detail_id',
-                    sql.Int,
-                    item.sourceActionDetailId
-                )
-                .input(
-                    'gsd_code_id',
-                    sql.Int,
-                    item.gsdCodeId
-                )
-                .input(
-                    'gsd_code',
-                    sql.NVarChar(50),
-                    item.gsdCode
-                )
-                .input(
-                    'action_name',
-                    sql.NVarChar(500),
-                    item.actionName
-                )
-                .input(
-                    'tmu',
-                    sql.Decimal(18, 4),
-                    item.tmu
-                )
-                .input(
-                    'frequency',
-                    sql.Decimal(18, 4),
-                    item.frequency
-                )
-                .input(
-                    'note',
-                    sql.NVarChar(500),
-                    item.note
-                )
-                .input(
-                    'is_selected',
-                    sql.Bit,
-                    item.isSelected ? 1 : 0
-                )
+                .input('step_no', sql.Decimal(18, 4), item.stepNo)
+                .input('source_action_detail_id', sql.Int, item.sourceActionDetailId)
+                .input('gsd_code_id', sql.Int, item.gsdCodeId)
+                .input('gsd_code', sql.NVarChar(50), item.gsdCode)
+                .input('action_name', sql.NVarChar(500), item.actionName)
+                .input('tmu', sql.Decimal(18, 4), item.tmu)
+                .input('frequency', sql.Decimal(18, 4), item.frequency)
+                .input('note', sql.NVarChar(500), item.note)
+                .input('is_selected', sql.Bit, item.isSelected ? 1 : 0)
                 .query(`
-                    INSERT INTO gsd_analysis_details (
-                        analysis_id,
-                        line_no,
-                        step_no,
-                        source_action_detail_id,
-                        gsd_code_id,
-                        gsd_code,
-                        action_name,
-                        tmu,
-                        frequency,
-                        note,
-                        is_selected
+                    INSERT INTO dbo.gsd_analysis_details (
+                        analysis_id, line_no, step_no, source_action_detail_id,
+                        gsd_code_id, gsd_code, action_name, tmu,
+                        frequency, note, is_selected
                     )
+                    OUTPUT INSERTED.id
                     VALUES (
-                        @analysis_id,
-                        @line_no,
-                        @step_no,
-                        @source_action_detail_id,
-                        @gsd_code_id,
-                        @gsd_code,
-                        @action_name,
-                        @tmu,
-                        @frequency,
-                        @note,
-                        @is_selected
+                        @analysis_id, @line_no, @step_no, @source_action_detail_id,
+                        @gsd_code_id, @gsd_code, @action_name, @tmu,
+                        @frequency, @note, @is_selected
                     )
+                `);
+
+            keptDetailIds.add(Number(insertDetailResult.recordset[0]?.id || 0));
+        }
+
+        const detailIdsToDelete = Array.from(existingDetailMap.keys()).filter(detailId => !keptDetailIds.has(detailId));
+
+        for (const detailId of detailIdsToDelete) {
+            await new sql.Request(transaction)
+                .input('detail_id', sql.Int, detailId)
+                .input('analysis_id', sql.Int, analysisId)
+                .query(`
+                    DELETE FROM dbo.gsd_analysis_details
+                    WHERE id = @detail_id
+                      AND analysis_id = @analysis_id
                 `);
         }
 
@@ -1152,10 +1078,14 @@ async function updateAnalysis(id, payload, context = {}) {
 
         await transaction.commit();
 
-        // Trả lại đầy đủ header + details sau cập nhật
         return await getAnalysisById(analysisId);
     } catch (err) {
-        await transaction.rollback();
+        try {
+            await transaction.rollback();
+        } catch (rollbackError) {
+            if (rollbackError.code !== 'EABORT') console.error('Rollback GSD update error:', rollbackError);
+        }
+
         throw err;
     }
 }
@@ -1295,11 +1225,11 @@ async function deleteImages(
     }
 }
 
-async function deactivate(id, context = {}){
+async function deactivate(id, context = {}) {
     const pool = getPool()
     const userId = Number(context.userId)
 
-    if(!Number.isInteger(userId) || userId <= 0){
+    if (!Number.isInteger(userId) || userId <= 0) {
         const err = new Error('Bạn chưa đăng nhập')
 
         err.statusCode = 401;

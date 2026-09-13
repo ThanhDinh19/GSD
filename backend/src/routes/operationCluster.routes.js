@@ -25,6 +25,7 @@ const PERMISSIONS = {
 
 router.use(authenticate);
 
+router.get('/operations/:operationId/actions', operationClusterController.getOperationClusterOperationActions);
 router.get('/', requireAnyPermission(PERMISSIONS.MAIN_VIEW, PERMISSIONS.NEW_VIEW), operationClusterController.getOperationClusterHeaders);
 router.get('/gsd-options', requireAnyPermission(PERMISSIONS.MAIN_VIEW, PERMISSIONS.NEW_VIEW), operationClusterController.getGsdOptions);
 router.get('/gsd-options/:id/actions', requireAnyPermission(PERMISSIONS.MAIN_VIEW, PERMISSIONS.NEW_VIEW), operationClusterController.getGsdActions);

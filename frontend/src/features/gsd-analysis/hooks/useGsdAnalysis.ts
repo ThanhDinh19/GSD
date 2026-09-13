@@ -3,11 +3,16 @@ import {
     GsdAnalysisCalculateResult,
     GsdAnalysisPayload,
     GsdAnalysisRow,
+    GsdAnalysisSummary,
+} from '../types/gsdAnalysis.types';
+
+
+import {
+    MachineEquipment_test,
     MachineEquipment,
     SourceMaster,
-    GsdAnalysisSummary,
-    MachineEquipment_test,
 } from '../../../types';
+
 import { sourceService } from '../../../services/source.service';
 import { machineEquipmentService } from '../../../services/machineEquipment.service';
 import { gsdAnalysisService } from '../services/gsdAnalysis.service';
@@ -26,30 +31,17 @@ function isPickedActionRow(
     );
 }
 
-function getActionMergeKey(
-    row: Partial<GsdAnalysisRow> & {
-        id?: number | string | null;
-    }
-) {
-    const sourceActionDetailId =
-        Number(
-            row.sourceActionDetailId ??
-            row.id ??
-            0
-        );
+function getActionMergeKey(row: Partial<GsdAnalysisRow>) {
+    const sourceActionDetailId = Number(row.sourceActionDetailId ?? 0);
 
-    if (
-        Number.isFinite(sourceActionDetailId) &&
-        sourceActionDetailId > 0
-    ) {
-        return `id:${sourceActionDetailId}`;
+    if (Number.isFinite(sourceActionDetailId) && sourceActionDetailId > 0) {
+        return `source:${sourceActionDetailId}`;
     }
 
     return `text:${String(row.gsdCode ?? '').trim().toLowerCase()}::${String(row.actionName ?? '').trim().toLowerCase()}`;
 }
 
 export function useGsdAnalysis() {
-    const [form, setForm] = useState<GsdAnalysisPayload>();
     const [sources, setSources] = useState<SourceMaster[]>([]);
     const [machines, setMachines] = useState<MachineEquipment[]>([]);
     const [machines_test, setMachines_test] = useState<MachineEquipment_test[]>([]);
@@ -212,23 +204,6 @@ export function useGsdAnalysis() {
         }
     }
 
-    const isStepNoUsed = (
-        stepNo: number,
-        currentSourceId: number,
-        currentRowIndex: number
-    ) => {
-        return Object.entries(sourceActionMap).some(([sourceIdText, rows]) => {
-            const sourceId = Number(sourceIdText);
-
-            return rows.some((row, rowIndex) => {
-                if (sourceId === currentSourceId && rowIndex === currentRowIndex) {
-                    return false;
-                }
-
-                return Number(row.stepNo) === Number(stepNo);
-            });
-        });
-    };
 
     const selectPopupSource = async (
         sourceId: number
@@ -307,65 +282,27 @@ export function useGsdAnalysis() {
                         }
                     );
 
-                    const nextRows:
-                        GsdAnalysisRow[] =
-                        data.map(
-                            (
-                                item: any,
-                                index: number
-                            ) => {
-                                const selectedRow =
-                                    selectedRowMap.get(
-                                        getActionMergeKey(
-                                            item
-                                        )
-                                    );
+                    const nextRows: GsdAnalysisRow[] = data.map((item: any, index: number) => {
+                        const selectedRow = selectedRowMap.get(getActionMergeKey(item));
 
-                                return {
-                                    ...item,
+                        return {
+                            ...item,
 
-                                    sourceId:
-                                        normalizedSourceId,
+                            id: selectedRow?.id ?? null,
 
-                                    sourceCode:
-                                        source?.sourceCode ||
-                                        selectedRow?.sourceCode ||
-                                        '',
+                            sourceId: normalizedSourceId,
+                            sourceCode: source?.sourceCode || selectedRow?.sourceCode || '',
+                            sourceName: source?.sourceName || selectedRow?.sourceName || '',
 
-                                    sourceName:
-                                        source?.sourceName ||
-                                        selectedRow?.sourceName ||
-                                        '',
+                            lineNo: Number(item.lineNo ?? index + 1),
 
-                                    lineNo:
-                                        Number(
-                                            item.lineNo ??
-                                            index + 1
-                                        ),
+                            stepNo: selectedRow ? selectedRow.stepNo : null,
 
-                                    stepNo:
-                                        selectedRow
-                                            ? selectedRow.stepNo
-                                            : null,
+                            frequency: selectedRow ? Number(selectedRow.frequency ?? 1) : Number(item.frequency ?? 1),
 
-                                    frequency:
-                                        selectedRow
-                                            ? Number(
-                                                selectedRow.frequency ??
-                                                1
-                                            )
-                                            : Number(
-                                                item.frequency ??
-                                                1
-                                            ),
-
-                                    isSelected:
-                                        Boolean(
-                                            selectedRow
-                                        ),
-                                };
-                            }
-                        );
+                            isSelected: Boolean(selectedRow),
+                        };
+                    });
 
                     /*
                      * Phòng trường hợp source_action_detail_id cũ không còn
@@ -499,6 +436,7 @@ export function useGsdAnalysis() {
             ...form,
             sourceId: sourceIds.length === 1 ? sourceIds[0] : null,
             details: analysisRows.map((row) => ({
+                id: row.id ?? null,
                 sourceActionDetailId: row.sourceActionDetailId,
                 gsdCodeId: row.gsdCodeId,
                 gsdCode: row.gsdCode,
@@ -734,67 +672,28 @@ export function useGsdAnalysis() {
     const applyAnalysisDetailToState = (
         detail: any
     ) => {
-        const rows: GsdAnalysisRow[] = (
-            detail.details || []
-        ).map((item: any, index: number) => ({
-            lineNo: Number(
-                item.lineNo ?? index + 1
-            ),
+        const rows: GsdAnalysisRow[] = (detail.details || []).map((item: any, index: number) => ({
+            id: item.id ?? null,
 
-            sourceId:
-                item.sourceId ??
-                detail.sourceId ??
-                null,
+            lineNo: Number(item.lineNo ?? index + 1),
 
-            sourceCode:
-                item.sourceCode ??
-                detail.sourceCode ??
-                '',
+            sourceId: item.sourceId ?? detail.sourceId ?? null,
+            sourceCode: item.sourceCode ?? detail.sourceCode ?? '',
+            sourceName: item.sourceName ?? detail.sourceName ?? '',
 
-            sourceName:
-                item.sourceName ??
-                detail.sourceName ??
-                '',
+            sourceActionDetailId: item.sourceActionDetailId ?? null,
+            gsdCodeId: item.gsdCodeId ?? null,
+            gsdCode: item.gsdCode ?? '',
+            codeNew: item.codeNew ?? null,
+            actionName: item.actionName ?? '',
 
-            sourceActionDetailId:
-                item.sourceActionDetailId ??
-                null,
+            tmu: Number(item.tmu || 0),
+            frequency: Number(item.frequency ?? 1),
 
-            gsdCodeId:
-                item.gsdCodeId ??
-                null,
+            stepNo: item.stepNo === null || item.stepNo === undefined ? null : Number(item.stepNo),
 
-            gsdCode:
-                item.gsdCode ??
-                '',
-
-            codeNew:
-                item.codeNew ??
-                null,
-
-            actionName:
-                item.actionName ??
-                '',
-
-            tmu: Number(
-                item.tmu || 0
-            ),
-
-            frequency: Number(
-                item.frequency ?? 1
-            ),
-
-            stepNo:
-                item.stepNo === null ||
-                    item.stepNo === undefined
-                    ? null
-                    : Number(item.stepNo),
-
-            note:
-                item.note ?? '',
-
-            isSelected:
-                item.isSelected !== false,
+            note: item.note ?? '',
+            isSelected: item.isSelected !== false,
         }));
 
         setAnalysisRows(rows);
@@ -838,43 +737,18 @@ export function useGsdAnalysis() {
                 );
 
                 return {
-                    lineNo: Number(
-                        row.lineNo ?? index + 1
-                    ),
-
-                    sourceActionDetailId:
-                        row.sourceActionDetailId ??
-                        null,
-
-                    gsdCodeId:
-                        row.gsdCodeId ??
-                        null,
-
-                    gsdCode:
-                        row.gsdCode ??
-                        null,
-
-                    actionName:
-                        row.actionName || '',
-
+                    id: row.id ?? null,
+                    lineNo: Number(row.lineNo ?? index + 1),
+                    sourceActionDetailId: row.sourceActionDetailId ?? null,
+                    gsdCodeId: row.gsdCodeId ?? null,
+                    gsdCode: row.gsdCode ?? null,
+                    actionName: row.actionName || '',
                     tmu,
                     frequency,
-
-                    stepNo:
-                        row.stepNo === null ||
-                            row.stepNo === undefined ||
-                            row.stepNo === ''
-                            ? null
-                            : Number(row.stepNo),
-
-                    note:
-                        row.note ?? null,
-
-                    isSelected:
-                        row.isSelected,
-
-                    seconds:
-                        (tmu * frequency) / 27.8,
+                    stepNo: row.stepNo === null || row.stepNo === undefined || row.stepNo === '' ? null : Number(row.stepNo),
+                    note: row.note ?? null,
+                    isSelected: row.isSelected,
+                    seconds: (tmu * frequency) / 27.8,
                 };
             });
 

@@ -208,6 +208,31 @@ function getPersistedOperationId(
     : null;
 }
 
+function getPersistedGroupId(
+  cluster: TreeCluster
+): number | null {
+  const key =
+    String(
+      cluster.key ?? ''
+    );
+
+  if (
+    key.startsWith('temp:')
+  ) {
+    return null;
+  }
+
+  const id =
+    Number(
+      cluster.id ?? 0
+    );
+
+  return Number.isInteger(id) &&
+    id > 0
+    ? id
+    : null;
+}
+
 type SelectedFilterValues =
   Set<string> | null;
 
@@ -952,176 +977,190 @@ function buildUpdatePayload(
       .map(
         (
           cluster
-        ) => ({
-          line_no:
-            cluster.lineNo,
+        ) => {
+          const persistedGroupId =
+            getPersistedGroupId(
+              cluster
+            );
 
-          cluster_name:
-            cluster.name.trim(),
-
-          operations:
-            cluster.operations.map(
-              (
-                operation,
-                operationIndex
-              ) => {
-                const raw =
-                  operation.raw ||
-                  {};
-
-                const persistedOperationId =
-                  getPersistedOperationId(
-                    operation
-                  );
-
-                const requiredEfficiency =
-                  toNumber(
-                    raw.required_efficiency,
-                    document.requiredEfficiency
-                  ) ||
-                  null;
-
-                const skillLevel =
-                  raw.skill_level !==
-                    null &&
-                    raw.skill_level !==
-                    undefined
-                    ? toNumber(
-                      raw.skill_level,
-                      0
-                    )
-                    : operation.skillLevel !==
-                      '-'
-                      ? toNumber(
-                        operation.skillLevel,
-                        0
-                      )
-                      : null;
-
-
-                return {
-                  ...(persistedOperationId
-                    ? {
-                      id:
-                        persistedOperationId,
-                    }
-                    : {}),
-
-                  line_no:
-                    operationIndex + 1,
-
-                  line_balance_no:
-                    raw.line_balance_no ??
-                    null,
-
-                  gsd_analysis_id:
-                    operation.gsdAnalysisId ??
-                    raw.gsd_analysis_id ??
-                    null,
-
-                  operation_code:
-                    operation.code ||
-                    null,
-
-                  operation_name:
-                    operation.name,
-
-                  skill_grade_id:
-                    raw.skill_grade_id ??
-                    null,
-
-                  skill_level:
-                    skillLevel,
-
-                  machine_equipment_id:
-                    raw.machine_equipment_id ??
-                    null,
-
-                  machine_name:
-                    operation.machineName ===
-                      '-'
-                      ? null
-                      : operation.machineName,
-
-                  machine_code:
-                    raw.machine_code ??
-                    raw.machine_code_master ??
-                    null,
-
-                  code_mmtb:
-                    operation.codeMmtb ===
-                      '-'
-                      ? null
-                      : operation.codeMmtb,
-
-                  sam_gsd:
-                    toNumber(
-                      operation.samGsd,
-                      0
-                    ),
-
-                  salary_coefficient:
-                    toNumber(
-                      raw.salary_coefficient,
-                      0
-                    ),
-
-                  manpower:
-                    toNumber(
-                      operation.manpower,
-                      1
-                    ),
-
-                  required_efficiency:
-                    requiredEfficiency,
-
-                  standard_price:
-                    raw.standard_price !==
-                      null &&
-                      raw.standard_price !==
-                      undefined
-                      ? toNumber(
-                        raw.standard_price,
-                        0
-                      )
-                      : undefined,
-
-                  adjusted_sam:
-                    toNumber(
-                      operation.adjustedSam,
-                      0
-                    ),
-
-                  utilization_rate:
-                    raw.utilization_rate !==
-                      null &&
-                      raw.utilization_rate !==
-                      undefined
-                      ? toNumber(
-                        raw.utilization_rate,
-                        0
-                      )
-                      : null,
-
-                  total_action_seconds:
-                    toNumber(
-                      operation.totalActionSeconds,
-                      0
-                    ),
-
-                  total_actions:
-                    toNumber(
-                      operation.totalActions,
-                      0
-                    ),
-
-                  status_id:
-                    raw.status_id ??
-                    0,
-                };
+          return {
+            ...(persistedGroupId
+              ? {
+                id:
+                  persistedGroupId,
               }
-            ),
-        })
+              : {}),
+
+            line_no:
+              cluster.lineNo,
+
+            cluster_name:
+              cluster.name.trim(),
+
+            operations:
+              cluster.operations.map(
+                (
+                  operation,
+                  operationIndex
+                ) => {
+                  const raw =
+                    operation.raw ||
+                    {};
+
+                  const persistedOperationId =
+                    getPersistedOperationId(
+                      operation
+                    );
+
+                  const requiredEfficiency =
+                    toNumber(
+                      raw.required_efficiency,
+                      document.requiredEfficiency
+                    ) ||
+                    null;
+
+                  const skillLevel =
+                    raw.skill_level !==
+                      null &&
+                      raw.skill_level !==
+                      undefined
+                      ? toNumber(
+                        raw.skill_level,
+                        0
+                      )
+                      : operation.skillLevel !==
+                        '-'
+                        ? toNumber(
+                          operation.skillLevel,
+                          0
+                        )
+                        : null;
+
+
+                  return {
+                    ...(persistedOperationId
+                      ? {
+                        id:
+                          persistedOperationId,
+                      }
+                      : {}),
+
+                    line_no:
+                      operationIndex + 1,
+
+                    line_balance_no:
+                      raw.line_balance_no ??
+                      null,
+
+                    gsd_analysis_id:
+                      operation.gsdAnalysisId ??
+                      raw.gsd_analysis_id ??
+                      null,
+
+                    operation_code:
+                      operation.code ||
+                      null,
+
+                    operation_name:
+                      operation.name,
+
+                    skill_grade_id:
+                      raw.skill_grade_id ??
+                      null,
+
+                    skill_level:
+                      skillLevel,
+
+                    machine_equipment_id:
+                      raw.machine_equipment_id ??
+                      null,
+
+                    machine_name:
+                      operation.machineName ===
+                        '-'
+                        ? null
+                        : operation.machineName,
+
+                    machine_code:
+                      raw.machine_code ??
+                      raw.machine_code_master ??
+                      null,
+
+                    code_mmtb:
+                      operation.codeMmtb ===
+                        '-'
+                        ? null
+                        : operation.codeMmtb,
+
+                    sam_gsd:
+                      toNumber(
+                        operation.samGsd,
+                        0
+                      ),
+
+                    salary_coefficient:
+                      toNumber(
+                        raw.salary_coefficient,
+                        0
+                      ),
+
+                    manpower:
+                      toNumber(
+                        operation.manpower,
+                        1
+                      ),
+
+                    required_efficiency:
+                      requiredEfficiency,
+
+                    standard_price:
+                      raw.standard_price !==
+                        null &&
+                        raw.standard_price !==
+                        undefined
+                        ? toNumber(
+                          raw.standard_price,
+                          0
+                        )
+                        : undefined,
+
+                    adjusted_sam:
+                      toNumber(
+                        operation.adjustedSam,
+                        0
+                      ),
+
+                    utilization_rate:
+                      raw.utilization_rate !==
+                        null &&
+                        raw.utilization_rate !==
+                        undefined
+                        ? toNumber(
+                          raw.utilization_rate,
+                          0
+                        )
+                        : null,
+
+                    total_action_seconds:
+                      toNumber(
+                        operation.totalActionSeconds,
+                        0
+                      ),
+
+                    total_actions:
+                      toNumber(
+                        operation.totalActions,
+                        0
+                      ),
+
+                    status_id:
+                      raw.status_id ??
+                      0,
+                  };
+                }
+              ),
+          };
+        }
       );
 
   return {
@@ -2392,51 +2431,37 @@ export default function OperationClusterTreeOrderedByLineNo() {
       }
     };
 
-  const handleOpenOperationActions =
-    async (
-      operation: TreeOperation
-    ) => {
-      setSelectedOperationKey(
-        operation.key
-      );
+  const handleOpenOperationActions = async (operation: TreeOperation) => {
+    setSelectedOperationKey(operation.key);
+    setActionModalTitle(operation.code ? `${operation.name}` : operation.name);
+    setActionRows([]);
+    setActionModalOpen(true);
 
-      setActionModalTitle(
-        operation.code
-          ? `${operation.name}`
-          : operation.name
-      );
+    const operationId = getPersistedOperationId(operation);
 
-      setActionRows([]);
-      setActionModalOpen(true);
+    setLoadingActionRows(true);
 
-      const gsdAnalysisId =
-        operation.gsdAnalysisId;
-
-      if (!gsdAnalysisId) {
+    try {
+      if (operationId) {
+        const rows = await operationClusterService.getOperationActions(operationId);
+        setActionRows(rows);
         return;
       }
 
-      setLoadingActionRows(true);
-
-      try {
-        const rows =
-          await operationClusterService
-            .getGsdActions(
-              gsdAnalysisId
-            );
-
+      if (operation.gsdAnalysisId) {
+        const rows = await operationClusterService.getGsdActions(operation.gsdAnalysisId);
         setActionRows(rows);
-      } catch (loadError) {
-        console.error(
-          'Load thao tác công đoạn lỗi:',
-          loadError
-        );
-
-        setActionRows([]);
-      } finally {
-        setLoadingActionRows(false);
+        return;
       }
-    };
+
+      setActionRows([]);
+    } catch (loadError) {
+      console.error('Load thao tác công đoạn lỗi:', loadError);
+      setActionRows([]);
+    } finally {
+      setLoadingActionRows(false);
+    }
+  };
 
   const handleCloseOperationActions =
     () => {
