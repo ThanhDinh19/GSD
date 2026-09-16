@@ -2042,7 +2042,7 @@ const copyOperationCluster = async (payload, context = {}) => {
           `);
 
         const savedOperationId = Number(operationResult.recordset[0]?.id || 0);
-        const sourceOperationId = Number(operation.id || 0);
+        const sourceOperationId = Number(operation.source_operation_id || operation.id || 0);
 
         if (sourceOperationId > 0) {
           const copiedActionCount = await copyOperationActionSnapshot(transaction, sourceOperationId, savedOperationId);

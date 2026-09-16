@@ -605,7 +605,6 @@ export default function GsdProcessTable({
                                         title="Chọn công đoạn"
                                     >
 
-
                                         <td className="px-4 py-3 border border-slate-200 font-mono text-slate-500 text-sm">
                                             {index + 1}
                                         </td>

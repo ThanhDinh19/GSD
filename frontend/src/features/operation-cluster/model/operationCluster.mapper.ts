@@ -107,7 +107,7 @@ export function mapOperationClusterDetailToEditor(
                         .sort(
                             (
                                 a: any,
-                                b: any
+                                b: any,  
                             ) =>
                                 Number(
                                     a.line_no ||

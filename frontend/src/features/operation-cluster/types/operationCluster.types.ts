@@ -88,6 +88,9 @@ export interface GsdOption {
 
 export interface OperationClusterOperationPayload {
     id?: number | string | null;
+
+    source_operation_id?: number | string | null;
+
     line_no: number;
     line_balance_no?: number | null;
 

@@ -74,7 +74,7 @@ export function useOperationClusterEditor({
     const [form, setForm] =
         useState<OperationClusterFormState>(
             initialDraft?.form ||
-                DEFAULT_OPERATION_CLUSTER_FORM
+            DEFAULT_OPERATION_CLUSTER_FORM
         );
 
     const [groups, setGroups] =
@@ -326,19 +326,56 @@ export function useOperationClusterEditor({
     const openCopyFromDetail = (
         detail: OperationClusterDetail
     ) => {
-        fillEditFormFromDetail(detail);
+        const mapped =
+            mapOperationClusterDetailToEditor(
+                detail
+            );
 
         const oldDocumentCode =
             detail.header.document_code || '';
 
-        setForm((prev) => ({
-            ...prev,
+        setForm({
+            ...mapped.form,
             document_code:
                 `${oldDocumentCode}_COPY`,
             note:
-                prev.note ||
+                mapped.form.note ||
                 `Sao chép từ ${oldDocumentCode}`,
-        }));
+        });
+
+        setGroups(
+            mapped.groups.map((group) => ({
+                ...group,
+
+                // copy chứng từ thì group phải là group mới
+                id: null,
+
+                operations:
+                    group.operations.map((operation) => ({
+                        ...operation,
+
+                        source_operation_id:
+                            (operation as any).id ?? null,
+
+                        // nhưng id chính phải bỏ, tránh backend hiểu là update dòng cũ
+                        id: null,
+                    })),
+            }))
+        );
+
+        setActiveGroupIndex(0);
+        setViewAllGroups(false);
+
+        setCheckedGsdIds([]);
+        setGsdActionsMap({});
+        setLoadingActionIds([]);
+        setGsdSearch('');
+        setIsGsdPopupOpen(false);
+
+        setCoefficientPopup(null);
+        setCoefficientSearch('');
+        setGroupContextMenu(null);
+        setIsGroupOverviewOpen(false);
 
         setEditingId(null);
         setFormMode('copy');
@@ -591,10 +628,10 @@ export function useOperationClusterEditor({
                 (group, index) =>
                     index === groupIndex
                         ? {
-                              ...group,
-                              cluster_name:
-                                  value,
-                          }
+                            ...group,
+                            cluster_name:
+                                value,
+                        }
                         : group
             )
         );
@@ -909,14 +946,14 @@ export function useOperationClusterEditor({
                                     operationIndex
                                 ) =>
                                     operationIndex ===
-                                    coefficientPopup.operationIndex
+                                        coefficientPopup.operationIndex
                                         ? {
-                                              ...operation,
-                                              salary_coefficient:
-                                                  coefficient,
-                                              skill_grade_id:
-                                                  skillGradeId,
-                                          }
+                                            ...operation,
+                                            salary_coefficient:
+                                                coefficient,
+                                            skill_grade_id:
+                                                skillGradeId,
+                                        }
                                         : operation
                             ),
                     };
@@ -1013,16 +1050,16 @@ export function useOperationClusterEditor({
                                     index
                                 ) =>
                                     index ===
-                                    operationIndex
+                                        operationIndex
                                         ? {
-                                              ...operation,
-                                              line_balance_no:
-                                                  value
-                                                      ? Number(
-                                                            value
-                                                        )
-                                                      : null,
-                                          }
+                                            ...operation,
+                                            line_balance_no:
+                                                value
+                                                    ? Number(
+                                                        value
+                                                    )
+                                                    : null,
+                                        }
                                         : operation
                             ),
                     };
@@ -1061,16 +1098,16 @@ export function useOperationClusterEditor({
                                     index
                                 ) =>
                                     index ===
-                                    operationIndex
+                                        operationIndex
                                         ? {
-                                              ...operation,
-                                              manpower:
-                                                  value
-                                                      ? Number(
-                                                            value
-                                                        )
-                                                      : null,
-                                          }
+                                            ...operation,
+                                            manpower:
+                                                value
+                                                    ? Number(
+                                                        value
+                                                    )
+                                                    : null,
+                                        }
                                         : operation
                             ),
                     };
@@ -1118,12 +1155,12 @@ export function useOperationClusterEditor({
                                     index
                                 ) =>
                                     index ===
-                                    operationIndex
+                                        operationIndex
                                         ? {
-                                              ...operation,
-                                              required_efficiency:
-                                                  nextValue,
-                                          }
+                                            ...operation,
+                                            required_efficiency:
+                                                nextValue,
+                                        }
                                         : operation
                             ),
                     };

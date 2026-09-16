@@ -1182,7 +1182,6 @@ export default function GsdAnalysisEditor({
     );
 }
 
-
 function SearchableMachineSelect({
     machines,
     value,
