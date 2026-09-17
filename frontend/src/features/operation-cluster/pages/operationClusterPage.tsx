@@ -70,6 +70,9 @@ export default function OperationClusterPage() {
         requiredEfficiency,
         enrichedGroups,
 
+        deletedOperationIds,
+        deletedGroupIds,
+
         isGroupOverviewOpen,
 
         isGsdPopupOpen,
@@ -128,6 +131,9 @@ export default function OperationClusterPage() {
             requiredEfficiency,
             formMode,
             editingId,
+
+            deletedOperationIds,
+            deletedGroupIds,
 
             loadItems,
             loadDetail,

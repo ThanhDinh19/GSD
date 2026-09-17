@@ -45,6 +45,9 @@ interface GsdProcessTableProps {
     onCopy?: () => void;
     onRefresh?: () => void;
 
+    // Báo ra danh sách sau khi lọc theo cột (dùng cho dashboard thống kê)
+    onFilteredChange?: (filtered: GsdAnalysisSummary[]) => void;
+
     showActionButtons?: boolean;
 }
 
@@ -98,6 +101,7 @@ export default function GsdProcessTable({
     onEdit,
     onCopy,
     onRefresh,
+    onFilteredChange,
 
     showActionButtons = true,
 }: GsdProcessTableProps) {
@@ -349,6 +353,10 @@ export default function GsdProcessTable({
                 selectedDepartmentValues
             ]
         );
+
+    useEffect(() => {
+        onFilteredChange?.(filteredAnalyses);
+    }, [filteredAnalyses, onFilteredChange]);
 
 
 

@@ -659,6 +659,8 @@ export interface CreateOperationClusterPayload {
   note?: string | null;
   status_id: number;
   groups: OperationClusterGroupPayload[];
+  deleted_operation_ids?: number[];
+  deleted_group_ids?: number[];
 }
 
 

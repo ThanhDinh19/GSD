@@ -119,6 +119,27 @@ export function useOperationClusterEditor({
     const [coefficientSearch, setCoefficientSearch] =
         useState('');
 
+    /*
+     * Id công đoạn / cụm đã lưu trong DB mà người dùng
+     * cố ý xóa trên màn hình. Gửi kèm khi Lưu để backend xóa.
+     * Backend không còn xóa theo kiểu "không có trong payload".
+     */
+    const [deletedOperationIds, setDeletedOperationIds] =
+        useState<number[]>([]);
+
+    const [deletedGroupIds, setDeletedGroupIds] =
+        useState<number[]>([]);
+
+    const toPersistedId = (
+        value: unknown
+    ): number | null => {
+        const id = Number(value ?? 0);
+
+        return Number.isInteger(id) && id > 0
+            ? id
+            : null;
+    };
+
     useEffect(() => {
         const draft: OperationClusterDraft = {
             form,
@@ -260,6 +281,9 @@ export function useOperationClusterEditor({
 
         setIsGroupOverviewOpen(false);
 
+        setDeletedOperationIds([]);
+        setDeletedGroupIds([]);
+
         setEditingId(null);
     };
 
@@ -311,6 +335,9 @@ export function useOperationClusterEditor({
         setCoefficientSearch('');
         setGroupContextMenu(null);
         setIsGroupOverviewOpen(false);
+
+        setDeletedOperationIds([]);
+        setDeletedGroupIds([]);
     };
 
     const openEditFromDetail = (
@@ -376,6 +403,9 @@ export function useOperationClusterEditor({
         setCoefficientSearch('');
         setGroupContextMenu(null);
         setIsGroupOverviewOpen(false);
+
+        setDeletedOperationIds([]);
+        setDeletedGroupIds([]);
 
         setEditingId(null);
         setFormMode('copy');
@@ -580,6 +610,41 @@ export function useOperationClusterEditor({
             if (!ok) {
                 return;
             }
+        }
+
+        /*
+         * Ghi nhận id cụm + id các công đoạn đã lưu trong cụm
+         * để backend xóa tường minh.
+         */
+        const removedGroupId =
+            toPersistedId(group.id);
+
+        const removedOperationIds =
+            group.operations
+                .map((operation) =>
+                    toPersistedId(
+                        (operation as { id?: unknown }).id
+                    )
+                )
+                .filter(
+                    (id): id is number => id !== null
+                );
+
+        if (removedGroupId !== null) {
+            setDeletedGroupIds((prev) =>
+                prev.includes(removedGroupId)
+                    ? prev
+                    : [...prev, removedGroupId]
+            );
+        }
+
+        if (removedOperationIds.length > 0) {
+            setDeletedOperationIds((prev) => [
+                ...prev,
+                ...removedOperationIds.filter(
+                    (id) => !prev.includes(id)
+                ),
+            ]);
         }
 
         const next = renumberGroups(
@@ -978,6 +1043,24 @@ export function useOperationClusterEditor({
             return;
         }
 
+        const removedOperationId =
+            toPersistedId(
+                (
+                    groups[activeGroupIndex]
+                        ?.operations[operationIndex] as
+                        | { id?: unknown }
+                        | undefined
+                )?.id
+            );
+
+        if (removedOperationId !== null) {
+            setDeletedOperationIds((prev) =>
+                prev.includes(removedOperationId)
+                    ? prev
+                    : [...prev, removedOperationId]
+            );
+        }
+
         setGroups((prev) =>
             prev.map(
                 (
@@ -1178,6 +1261,9 @@ export function useOperationClusterEditor({
         groups,
         activeGroupIndex,
         viewAllGroups,
+
+        deletedOperationIds,
+        deletedGroupIds,
 
         requiredEfficiency,
         enrichedGroups,

@@ -2,6 +2,40 @@ import { useEffect, useMemo, useState } from 'react';
 import { GsdAnalysisSummary } from '../types/gsdAnalysis.types';
 import { gsdAnalysisService } from '../services/gsdAnalysis.service';
 
+export interface GsdStats {
+  totalAnalysis: number;
+  totalTmu: number;
+  averageSmv: number;
+  machineCount: number;
+}
+
+export function computeGsdStats(analyses: GsdAnalysisSummary[]): GsdStats {
+  const totalAnalysis = analyses.length;
+
+  const totalTmu = analyses.reduce((sum, item) => {
+    return sum + Number(item.totalTmu || 0);
+  }, 0);
+
+  const totalSmv = analyses.reduce((sum, item) => {
+    return sum + Number(item.finalSmv || 0);
+  }, 0);
+
+  const averageSmv = totalAnalysis > 0 ? totalSmv / totalAnalysis : 0;
+
+  const machineCount = new Set(
+    analyses
+      .map((item) => item.machineCode)
+      .filter(Boolean)
+  ).size;
+
+  return {
+    totalAnalysis,
+    totalTmu,
+    averageSmv,
+    machineCount,
+  };
+}
+
 export function useGsdOverview() {
   const [analyses, setAnalyses] = useState<GsdAnalysisSummary[]>([]);
   const [loading, setLoading] = useState(false);
@@ -17,32 +51,7 @@ export function useGsdOverview() {
     }
   };
 
-  const stats = useMemo(() => {
-    const totalAnalysis = analyses.length;
-
-    const totalTmu = analyses.reduce((sum, item) => {
-      return sum + Number(item.totalTmu || 0);
-    }, 0);
-
-    const totalSmv = analyses.reduce((sum, item) => {
-      return sum + Number(item.finalSmv || 0);
-    }, 0);
-
-    const averageSmv = totalAnalysis > 0 ? totalSmv / totalAnalysis : 0;
-
-    const machineCount = new Set(
-      analyses
-        .map((item) => item.machineCode)
-        .filter(Boolean)
-    ).size;
-
-    return {
-      totalAnalysis,
-      totalTmu,
-      averageSmv,
-      machineCount,
-    };
-  }, [analyses]);
+  const stats = useMemo(() => computeGsdStats(analyses), [analyses]);
 
   useEffect(() => {
     loadAnalyses();

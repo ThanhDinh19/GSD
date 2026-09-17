@@ -137,6 +137,14 @@ export interface CreateOperationClusterPayload {
     note?: string | null;
     status_id: number;
     groups: OperationClusterGroupPayload[];
+
+    /*
+     * Id công đoạn / cụm người dùng đã cố ý xóa trên màn hình.
+     * Backend chỉ xóa những id này; dòng không có trong payload
+     * nhưng còn trong DB (do người khác thêm) sẽ được giữ lại.
+     */
+    deleted_operation_ids?: number[];
+    deleted_group_ids?: number[];
 }
 
 export interface GsdActionDetail {

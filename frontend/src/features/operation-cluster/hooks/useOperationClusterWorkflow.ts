@@ -32,6 +32,9 @@ type UseOperationClusterWorkflowParams = {
     formMode: FormMode;
     editingId: number | null;
 
+    deletedOperationIds?: number[];
+    deletedGroupIds?: number[];
+
     loadItems: () => Promise<unknown>;
     loadDetail: (
         id: number
@@ -71,6 +74,9 @@ export function useOperationClusterWorkflow({
     requiredEfficiency,
     formMode,
     editingId,
+
+    deletedOperationIds = [],
+    deletedGroupIds = [],
 
     loadItems,
     loadDetail,
@@ -397,9 +403,20 @@ export function useOperationClusterWorkflow({
                     return;
                 }
 
+                /*
+                 * Chỉ khi sửa mới cần gửi id đã xóa.
+                 * Backend giữ lại dòng không có trong payload,
+                 * nên phải nói rõ dòng nào người dùng đã xóa.
+                 */
                 await updateItem(
                     editingId,
-                    payload
+                    {
+                        ...payload,
+                        deleted_operation_ids:
+                            deletedOperationIds,
+                        deleted_group_ids:
+                            deletedGroupIds,
+                    }
                 );
             } else if (
                 formMode === 'copy'

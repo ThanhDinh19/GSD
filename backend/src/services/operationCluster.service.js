@@ -1771,20 +1771,54 @@ const updateOperationCluster = async (id, payload, context = {}) => {
     }
 
     /*
-     * 7. Xóa operation cũ không còn trong payload
+     * 7. Xóa operation theo yêu cầu tường minh của client.
+     *
+     * KHÔNG xóa operation chỉ vì nó không có trong payload.
+     * Lý do: nhiều người có thể cùng mở một chứng từ; tab lưu sau
+     * thường không thấy dòng tab khác vừa thêm, nếu xóa theo "vắng mặt"
+     * thì sẽ mất dữ liệu của người khác.
+     * Chỉ xóa những id nằm trong payload.deleted_operation_ids,
+     * và id đó phải thuộc chứng từ hiện tại.
      */
-    const operationIdsToDelete =
-      Array.from(
-        existingOperationMap.keys()
+    const deletedOperationIds =
+      normalizeIdList(
+        payload.deleted_operation_ids
       ).filter(
         (operationId) =>
-          !keptOperationIds.has(
-            operationId
-          )
+          existingOperationMap.has(operationId) &&
+          !keptOperationIds.has(operationId)
+      );
+
+    /*
+     * 8. Xóa group theo yêu cầu tường minh của client.
+     * Xóa group thì xóa luôn operation còn lại trong group đó
+     * (trừ operation đã được payload chuyển sang group khác).
+     */
+    const deletedGroupIds =
+      normalizeIdList(
+        payload.deleted_group_ids
+      ).filter(
+        (groupId) =>
+          existingGroupMap.has(groupId) &&
+          !keptGroupIds.has(groupId)
       );
 
     for (
-      const operationId of operationIdsToDelete
+      const [operationId, existingOperation] of existingOperationMap
+    ) {
+      if (
+        !keptOperationIds.has(operationId) &&
+        deletedGroupIds.includes(
+          Number(existingOperation.group_id)
+        ) &&
+        !deletedOperationIds.includes(operationId)
+      ) {
+        deletedOperationIds.push(operationId);
+      }
+    }
+
+    for (
+      const operationId of deletedOperationIds
     ) {
       await new sql.Request(transaction)
         .input(
@@ -1804,21 +1838,8 @@ const updateOperationCluster = async (id, payload, context = {}) => {
         `);
     }
 
-    /*
-     * 8. Xóa group cũ không còn trong payload
-     */
-    const groupIdsToDelete =
-      Array.from(
-        existingGroupMap.keys()
-      ).filter(
-        (groupId) =>
-          !keptGroupIds.has(
-            groupId
-          )
-      );
-
     for (
-      const groupId of groupIdsToDelete
+      const groupId of deletedGroupIds
     ) {
       await new sql.Request(transaction)
         .input(
@@ -1838,6 +1859,22 @@ const updateOperationCluster = async (id, payload, context = {}) => {
         `);
     }
 
+    /*
+     * 9. Đánh lại line_no cho toàn bộ chứng từ.
+     *
+     * Vì operation không có trong payload vẫn được giữ lại,
+     * hai người cùng thêm vào một cụm có thể tạo ra line_no trùng nhau.
+     * Quy tắc: operation có trong payload giữ thứ tự payload,
+     * operation "mồ côi" (người khác thêm) xếp sau, theo id.
+     * Group cũng vậy: group trong payload trước, group mồ côi sau.
+     */
+    await renumberHeaderLines(
+      transaction,
+      id,
+      keptGroupIds,
+      keptOperationIds
+    );
+
     await transaction.commit();
 
     return getOperationClusterById(id);
@@ -1856,6 +1893,138 @@ const updateOperationCluster = async (id, payload, context = {}) => {
     }
 
     throw error;
+  }
+};
+
+/*
+ * Chuẩn hóa mảng id từ payload: chỉ giữ số nguyên dương, bỏ trùng.
+ */
+const normalizeIdList = (value) => {
+  if (!Array.isArray(value)) return [];
+
+  const result = [];
+
+  for (const item of value) {
+    const numberValue = Number(item);
+
+    if (
+      Number.isInteger(numberValue) &&
+      numberValue > 0 &&
+      !result.includes(numberValue)
+    ) {
+      result.push(numberValue);
+    }
+  }
+
+  return result;
+};
+
+/*
+ * Đánh lại line_no của group và operation trong một chứng từ.
+ * Dòng có trong payload (kept) giữ line_no hiện tại làm thứ tự,
+ * dòng không có trong payload xếp sau cùng, theo id.
+ */
+const renumberHeaderLines = async (
+  transaction,
+  headerId,
+  keptGroupIds,
+  keptOperationIds
+) => {
+  const groupsResult =
+    await new sql.Request(transaction)
+      .input('header_id', sql.Int, headerId)
+      .query(`
+        SELECT id, line_no
+        FROM dbo.operation_cluster_groups
+        WHERE header_id = @header_id
+      `);
+
+  const sortByKeptThenLine = (keptSet) => (a, b) => {
+    const aKept = keptSet.has(Number(a.id)) ? 0 : 1;
+    const bKept = keptSet.has(Number(b.id)) ? 0 : 1;
+
+    if (aKept !== bKept) return aKept - bKept;
+
+    const lineDiff = Number(a.line_no || 0) - Number(b.line_no || 0);
+
+    if (lineDiff !== 0) return lineDiff;
+
+    return Number(a.id) - Number(b.id);
+  };
+
+  const groups =
+    [...groupsResult.recordset].sort(
+      sortByKeptThenLine(keptGroupIds)
+    );
+
+  const groupLineNoMap = new Map();
+
+  for (let index = 0; index < groups.length; index += 1) {
+    const group = groups[index];
+    const nextLineNo = index + 1;
+
+    groupLineNoMap.set(Number(group.id), nextLineNo);
+
+    if (Number(group.line_no) !== nextLineNo) {
+      await new sql.Request(transaction)
+        .input('group_id', sql.Int, group.id)
+        .input('line_no', sql.Int, nextLineNo)
+        .query(`
+          UPDATE dbo.operation_cluster_groups
+          SET line_no = @line_no
+          WHERE id = @group_id
+        `);
+    }
+  }
+
+  const operationsResult =
+    await new sql.Request(transaction)
+      .input('header_id', sql.Int, headerId)
+      .query(`
+        SELECT id, group_id, line_no, group_line_no
+        FROM dbo.operation_cluster_operations
+        WHERE header_id = @header_id
+      `);
+
+  const operationsByGroup = new Map();
+
+  for (const operation of operationsResult.recordset) {
+    const groupId = Number(operation.group_id);
+
+    if (!operationsByGroup.has(groupId)) {
+      operationsByGroup.set(groupId, []);
+    }
+
+    operationsByGroup.get(groupId).push(operation);
+  }
+
+  for (const [groupId, operations] of operationsByGroup) {
+    const groupLineNo = groupLineNoMap.get(groupId) ?? null;
+
+    operations.sort(sortByKeptThenLine(keptOperationIds));
+
+    for (let index = 0; index < operations.length; index += 1) {
+      const operation = operations[index];
+      const nextLineNo = index + 1;
+
+      if (
+        Number(operation.line_no) === nextLineNo &&
+        Number(operation.group_line_no) === Number(groupLineNo)
+      ) {
+        continue;
+      }
+
+      await new sql.Request(transaction)
+        .input('operation_id', sql.Int, operation.id)
+        .input('line_no', sql.Int, nextLineNo)
+        .input('group_line_no', sql.Int, groupLineNo)
+        .query(`
+          UPDATE dbo.operation_cluster_operations
+          SET line_no = @line_no,
+              group_line_no = @group_line_no
+          WHERE id = @operation_id
+        `);
+    }
   }
 };
 

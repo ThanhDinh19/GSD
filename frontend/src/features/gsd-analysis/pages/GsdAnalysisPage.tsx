@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import GsdAnalysisEditor from '../components/GsdAnalysisEditor';
 import GsdProcessTable from '../components/GsdProcessTable';
-import { useGsdOverview } from '../hooks/useGsdOverview';
-import { GsdAnalysisDetail } from '../types/gsdAnalysis.types';
+import { computeGsdStats, useGsdOverview } from '../hooks/useGsdOverview';
+import { GsdAnalysisDetail, GsdAnalysisSummary } from '../types/gsdAnalysis.types';
 import { gsdAnalysisService } from '../services/gsdAnalysis.service';
 import GsdAnalysisDetailModal from '../components/GsdAnalysisDetailModal';
 import {Button} from '../../../shared/components';
@@ -20,9 +20,22 @@ export default function GsdOverviewPage() {
     const {
         analyses,
         loading,
-        stats,
+        stats: overallStats,
         loadAnalyses,
     } = useGsdOverview();
+
+    // Danh sách sau khi lọc theo cột trên bảng (null = chưa lọc)
+    const [filteredAnalyses, setFilteredAnalyses] =
+        useState<GsdAnalysisSummary[] | null>(null);
+
+    // Dashboard hiển thị theo dữ liệu đã lọc nếu có
+    const stats = useMemo(
+        () =>
+            filteredAnalyses
+                ? computeGsdStats(filteredAnalyses)
+                : overallStats,
+        [filteredAnalyses, overallStats]
+    );
 
     const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<WorkTab>('analysis');
@@ -199,6 +212,7 @@ export default function GsdOverviewPage() {
                     onEdit={handleEditSelected}
                     onCopy={handleCopySelected}
                     onRefresh={loadAnalyses}
+                    onFilteredChange={setFilteredAnalyses}
                     showActionButtons
                 />
             )}
@@ -289,6 +303,7 @@ export default function GsdOverviewPage() {
                                     analyses={analyses}
                                     loading={loading}
                                     onRefresh={loadAnalyses}
+                                    onFilteredChange={setFilteredAnalyses}
                                     selectedId={selectedAnalysisId}
                                     onRowClick={(analysisId) => setSelectedAnalysisId(analysisId)}
                                     onDetailClick={handleOpenAnalysisDetail}
