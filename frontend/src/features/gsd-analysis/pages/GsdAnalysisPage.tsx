@@ -37,6 +37,11 @@ export default function GsdOverviewPage() {
         [filteredAnalyses, overallStats]
     );
 
+    // Đang có bộ lọc thu hẹp danh sách hay không
+    const isFiltered =
+        filteredAnalyses !== null &&
+        filteredAnalyses.length !== analyses.length;
+
     const [isWorkspaceOpen, setIsWorkspaceOpen] = useState(false);
     const [activeTab, setActiveTab] = useState<WorkTab>('analysis');
 
@@ -155,7 +160,20 @@ export default function GsdOverviewPage() {
     return (
         <div className="h-full min-h-0 bg-slate-50 overflow-auto bg-white">
             <div className=" pl-5 pr-5 bg-white border-slate-100 p-3">
-                <div className="flex items-center justify-between gap-4 mb-1">
+                <div className="flex items-center justify-between gap-4 mb-2">
+                    <div className="text-sm font-semibold text-slate-700">
+                        Thông tin tổng quan
+                    </div>
+
+                    {isFiltered ? (
+                        <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700">
+                            Đang lọc: {stats.totalAnalysis} / {analyses.length} công đoạn
+                        </span>
+                    ) : (
+                        <span className="text-xs text-slate-400">
+                            Tất cả {analyses.length} công đoạn
+                        </span>
+                    )}
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
