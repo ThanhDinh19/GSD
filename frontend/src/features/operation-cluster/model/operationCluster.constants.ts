@@ -7,6 +7,14 @@ export type OperationClusterFormState = {
     price_method: 'GSD' | 'ADJUSTED';
     status_id: number;
     note: string;
+
+    /*
+     * updated_at của chứng từ tại thời điểm tải lên form sửa.
+     * Gửi lại khi Lưu (expected_updated_at) để backend phát hiện
+     * có người khác đã lưu chứng từ này trước mình chưa.
+     * null với chứng từ mới tạo / chưa từng lưu.
+     */
+    updated_at: string | null;
 };
 
 export const OPERATION_CLUSTER_DRAFT_KEY =
@@ -21,4 +29,5 @@ export const DEFAULT_OPERATION_CLUSTER_FORM: OperationClusterFormState = {
     price_method: 'GSD',
     status_id: 0,
     note: '',
+    updated_at: null,
 };

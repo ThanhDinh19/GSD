@@ -68,6 +68,10 @@ export function mapOperationClusterDetailToEditor(
 
         note:
             header.note || '',
+
+        updated_at:
+            header.updated_at ??
+            null,
     };
 
     const detailGroups =
@@ -131,6 +135,17 @@ export function mapOperationClusterDetailToEditor(
                                      */
                                     id:
                                         operation.id ??
+                                        null,
+
+                                    /*
+                                     * updated_at của công đoạn này tại thời
+                                     * điểm tải lên form sửa. Gửi lại khi Lưu
+                                     * để backend phát hiện công đoạn này có
+                                     * bị người khác cập nhật trước không (ví
+                                     * dụ vừa "Đồng bộ" ở màn Kho cụm mới).
+                                     */
+                                    expected_updated_at:
+                                        operation.updated_at ??
                                         null,
 
                                     line_no:

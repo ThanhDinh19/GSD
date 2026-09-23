@@ -386,6 +386,9 @@ export function useOperationClusterEditor({
 
                         // nhưng id chính phải bỏ, tránh backend hiểu là update dòng cũ
                         id: null,
+
+                        // dòng mới hoàn toàn, không có gì để so sánh updated_at
+                        expected_updated_at: null,
                     })),
             }))
         );

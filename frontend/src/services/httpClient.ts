@@ -7,6 +7,21 @@ import {
 } from '../features/auth/storage/auth.storage';
 // Chỉnh lại đường dẫn import nếu thư mục auth của bạn nằm ở vị trí khác.
 
+/**
+ * Lỗi từ API, giữ lại HTTP status để chỗ gọi có thể xử lý riêng
+ * một số mã lỗi cụ thể (ví dụ 409 - xung đột dữ liệu đồng thời)
+ * thay vì chỉ đọc được message chung.
+ */
+export class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+  }
+}
+
 type HttpMethod =
   | 'GET'
   | 'POST'
@@ -281,11 +296,12 @@ export async function request<T>(
   }
 
   if (!response.ok) {
-    throw new Error(
+    throw new ApiError(
       getErrorMessage(
         data,
         'Có lỗi xảy ra khi gọi API.'
-      )
+      ),
+      response.status
     );
   }
 

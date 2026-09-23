@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -42,8 +43,15 @@ import {
 } from '../../auth/constants/permission.constants';
 
 import {
-  Button
+  Button,
+  ConfirmDialog
 } from '../../../shared/components'
+import {
+  useToast,
+} from '../../../shared/notifications/ToastProvider';
+import {
+  ApiError,
+} from '../../../services/httpClient';
 import {
   Plus,
   Trash2,
@@ -456,20 +464,15 @@ function findDisplayBucketByDocument(
       (bucket) =>
         bucket.documents.some(
           (document) =>
-            document.id ===
-            documentId
+            document.id === documentId
         )
     ) ||
     null
   );
 }
 
-function isInactiveStatus(
-  statusName: unknown
-) {
-  const normalized = String(
-    statusName || ''
-  )
+function isInactiveStatus(statusName: unknown) {
+  const normalized = String(statusName || '')
     .trim()
     .toLowerCase();
 
@@ -537,16 +540,9 @@ function buildTreeFromDetails(
           return null;
         }
 
-        const headerStatusLabel =
-          resolveStatusLabel(
-            header.status_name,
-            header.status_id
-          );
+        const headerStatusLabel = resolveStatusLabel(header.status_name, header.status_id);
 
-        const detailGroups =
-          Array.isArray(
-            detail.groups
-          )
+        const detailGroups = Array.isArray(detail.groups)
             ? detail.groups
             : [];
 
@@ -960,7 +956,6 @@ function buildTreeFromDetails(
     ) as OperationClusterDocumentTree[];
 }
 
-
 function buildUpdatePayload(
   document:
     OperationClusterDocumentTree
@@ -1042,6 +1037,15 @@ function buildUpdatePayload(
                       ? {
                         id:
                           persistedOperationId,
+
+                        /*
+                         * Chỉ có ý nghĩa với công đoạn đã có id thật.
+                         * raw.updated_at luôn là bản mới nhất vì
+                         * treeData được refresh lại sau mỗi lần lưu.
+                         */
+                        expected_updated_at:
+                          raw.updated_at ??
+                          null,
                       }
                       : {}),
 
@@ -1213,6 +1217,16 @@ function buildUpdatePayload(
       ),
 
     groups,
+
+    /*
+     * updated_at của chứng từ tại thời điểm đang hiển thị trên màn
+     * hình (đã được refresh sau mỗi lần lưu thành công). Backend so
+     * với updated_at hiện tại trong DB để phát hiện có người khác
+     * đã lưu chứng từ này trước mình chưa.
+     */
+    expected_updated_at:
+      header.updated_at ??
+      null,
   };
 }
 
@@ -1277,9 +1291,127 @@ async function loadDetailsInBatches(
   };
 }
 
+type ConfirmDialogRequest = {
+  title: string;
+  message: string;
+  confirmLabel?: string;
+  cancelLabel?: string;
+  variant?: 'default' | 'danger';
+  resolve: (confirmed: boolean) => void;
+};
+
 export default function OperationClusterTreeOrderedByLineNo() {
   const permissions = usePermissions(SCREEN.OPERATION_CLUSTER_NEW);
   const permissionGSDChuyenMay = usePermissions(SCREEN.GSD_ANALYSIS);
+
+  const toast = useToast();
+
+  /*
+   * Khung ngoài của trang này phải cao đúng bằng phần còn lại giữa
+   * header và footer của layout chung (App.tsx), không hơn không kém,
+   * để cả trang không bị cuộn - chỉ cây cụm/bảng công đoạn tự cuộn
+   * bên trong.
+   *
+   * Không dùng flex-1 để "tự lấy phần còn lại": khung cha (Main
+   * Content Arena trong App.tsx) dùng min-h-screen, không phải
+   * h-screen - với min-height, flex-grow không có kích thước xác
+   * định để chia, nên khi nội dung bảng dài, khung này vẫn phình to
+   * theo nội dung thay vì bị giữ cố định. Phải tự đo header/footer
+   * thật rồi gán chiều cao chính xác bằng JS.
+   */
+  const [
+    contentHeight,
+    setContentHeight,
+  ] = useState<number | null>(
+    null
+  );
+
+  useLayoutEffect(() => {
+    const recomputeHeight = () => {
+      const header =
+        document.querySelector('header');
+
+      const footer =
+        document.querySelector('footer');
+
+      const headerHeight =
+        header?.getBoundingClientRect()
+          .height ||
+        0;
+
+      const footerHeight =
+        footer?.getBoundingClientRect()
+          .height ||
+        0;
+
+      setContentHeight(
+        window.innerHeight -
+        headerHeight -
+        footerHeight
+      );
+    };
+
+    recomputeHeight();
+
+    window.addEventListener(
+      'resize',
+      recomputeHeight
+    );
+
+    /*
+     * Footer là 1 dòng chữ nhỏ, có thể xuống 2 dòng ở màn hẹp, làm
+     * chiều cao footer đổi - theo dõi luôn để tính lại cho đúng.
+     */
+    const footerEl =
+      document.querySelector('footer');
+
+    const resizeObserver =
+      footerEl && 'ResizeObserver' in window
+        ? new ResizeObserver(
+          recomputeHeight
+        )
+        : null;
+
+    if (resizeObserver && footerEl) {
+      resizeObserver.observe(
+        footerEl
+      );
+    }
+
+    return () => {
+      window.removeEventListener(
+        'resize',
+        recomputeHeight
+      );
+
+      resizeObserver?.disconnect();
+    };
+  }, []);
+
+  /*
+   * Popup xác nhận gọn thay cho window.confirm().
+   * confirmAction() trả về Promise<boolean> để giữ nguyên cách viết
+   * "if (!confirmed) return;" ở những chỗ đang dùng window.confirm.
+   */
+  const [
+    confirmDialogRequest,
+    setConfirmDialogRequest,
+  ] = useState<ConfirmDialogRequest | null>(
+    null
+  );
+
+  const confirmAction = (
+    options: Omit<ConfirmDialogRequest, 'resolve'>
+  ): Promise<boolean> => {
+    return new Promise<boolean>(
+      (resolve) => {
+        setConfirmDialogRequest({
+          ...options,
+          resolve,
+        });
+      }
+    );
+  };
 
   const [
     gsdAnalysisOpen,
@@ -1491,6 +1623,21 @@ export default function OperationClusterTreeOrderedByLineNo() {
     number | null
   >(null);
 
+  /*
+   * Id các công đoạn ĐÃ LƯU (persisted) vừa được bấm "Đồng bộ",
+   * chờ lần Lưu kế tiếp gửi kèm để backend làm mới snapshot
+   * operation_cluster_operation_actions cho đúng các id này.
+   */
+  const [
+    pendingActionResyncIds,
+    setPendingActionResyncIds,
+  ] = useState<
+    Set<number>
+  >(
+    () =>
+      new Set()
+  );
+
   const [
     expanded,
     setExpanded,
@@ -1548,27 +1695,10 @@ export default function OperationClusterTreeOrderedByLineNo() {
 
       // Dùng cùng cấu trúc hiển thị với cây bên trái để
       // mở đúng Chủng loại/Nhóm ngay từ lần tải đầu tiên.
-      const initialVisibleTree =
-        filterTree(
-          nextTree,
-          '',
-          false
-        );
-
-      const initialDisplayTree =
-        buildDisplayTree(
-          initialVisibleTree
-        );
-
-      const firstContext =
-        findFirstCluster(
-          initialVisibleTree,
-          false
-        );
-
-      if (
-        firstContext
-      ) {
+      const initialVisibleTree = filterTree(nextTree, '', false);
+      const initialDisplayTree = buildDisplayTree(initialVisibleTree);
+      const firstContext = findFirstCluster(initialVisibleTree, false);
+      if (firstContext) {
         setSelectedClusterKey(
           firstContext.cluster.key
         );
@@ -1838,83 +1968,45 @@ export default function OperationClusterTreeOrderedByLineNo() {
       ]
     );
 
-  const forcedOpen =
-    normalizedKeyword.length >
-    0;
+  const forcedOpen = normalizedKeyword.length > 0;
 
-  const toggleNode = (
-    key: string
-  ) => {
+  const toggleNode = (key: string) => {
     setExpanded(
       (current) => {
-        const next =
-          new Set(
-            current
-          );
-
-        if (
-          next.has(key)
-        ) {
-          next.delete(
-            key
-          );
+        const next = new Set(current);
+        if (next.has(key)) {
+          next.delete(key);
         } else {
-          next.add(
-            key
-          );
+          next.add(key);
         }
-
         return next;
       }
     );
   };
 
   const selectCluster = (
-    document:
-      OperationClusterDocumentTree,
-    cluster:
-      TreeCluster
+    document: OperationClusterDocumentTree,
+    cluster: TreeCluster
   ) => {
-    setSelectedClusterKey(
-      cluster.key
-    );
-
+    setSelectedClusterKey(cluster.key);
     setSelectedOperationKey(
       cluster.operations[0]
         ?.key ||
       null
     );
 
-    const displayBucket =
-      findDisplayBucketByDocument(
-        displayTree,
-        document.id
-      );
+    const displayBucket = findDisplayBucketByDocument(displayTree,document.id);
 
     setExpanded(
       (current) => {
-        const next =
-          new Set(
-            current
-          );
-
-        next.add(
-          getNodeKey(
-            'root',
-            0
-          )
-        );
+        const next = new Set(current);
+        next.add(getNodeKey('root', 0));
 
         if (displayBucket) {
-          next.add(
-            displayBucket.key
-          );
+          next.add(displayBucket.key);
 
           next.add(
-            getDisplayGroupKey(
-              displayBucket.key,
-              document
-            )
+            getDisplayGroupKey(displayBucket.key, document)
           );
         }
 
@@ -1923,19 +2015,8 @@ export default function OperationClusterTreeOrderedByLineNo() {
     );
   };
 
-  const cluster =
-    selectedContext
-      ?.cluster;
-
-  const currentOperations =
-    useMemo(
-      () =>
-        cluster?.operations || [],
-      [
-        cluster?.operations,
-      ]
-    );
-
+  const cluster = selectedContext ?.cluster;
+  const currentOperations = useMemo(() => cluster?.operations || [], [cluster?.operations,]);
   const operationNameOptions =
     useMemo(
       () =>
@@ -2263,12 +2344,311 @@ export default function OperationClusterTreeOrderedByLineNo() {
       );
     };
 
+  /*
+   * Lưu 1 chứng từ cụ thể lên server.
+   *
+   * Nhận thẳng object chứng từ cần lưu (không đọc từ treeData state),
+   * để chỗ gọi có thể lưu ngay dữ liệu vừa tính ra (ví dụ vừa Đồng bộ)
+   * mà không phải đợi React render lại rồi mới đọc state - tránh lưu
+   * nhầm dữ liệu cũ do setState chưa kịp áp dụng.
+   *
+   * extraResyncOperationIds: id operation cần làm mới snapshot thao tác
+   * NGOÀI những id đã có sẵn trong pendingActionResyncIds.
+   *
+   * Trả về true nếu lưu thành công, false nếu có lỗi (đã tự alert lỗi).
+   */
+  const saveDocument = async (
+    documentToSave: OperationClusterDocumentTree,
+    extraResyncOperationIds: number[] = []
+  ): Promise<boolean> => {
+    const payload =
+      buildUpdatePayload(
+        documentToSave
+      );
+
+    if (
+      !payload.groups.some(
+        (group) =>
+          group.operations.length >
+          0
+      )
+    ) {
+      toast.warning(
+        'Chứng từ phải có ít nhất một công đoạn.'
+      );
+
+      return false;
+    }
+
+    setSavingDocumentId(
+      documentToSave.id
+    );
+
+    try {
+      const selectedClusterName =
+        cluster?.name ||
+        '';
+
+      const selectedClusterIndex =
+        documentToSave.clusters.findIndex(
+          (item) =>
+            item.key ===
+            selectedClusterKey
+        );
+
+      /*
+       * Chỉ gửi các id thuộc CHÍNH chứng từ đang lưu, và đã có id
+       * thật trong DB (persisted). Id thuộc chứng từ khác (chưa lưu
+       * tới lượt) vẫn giữ lại trong pendingActionResyncIds để lần
+       * sau lưu chứng từ đó mới gửi.
+       */
+      const documentPersistedOperationIds =
+        new Set(
+          documentToSave.clusters.flatMap(
+            (documentCluster) =>
+              documentCluster.operations
+                .map(getPersistedOperationId)
+                .filter(
+                  (opId): opId is number =>
+                    opId !== null
+                )
+          )
+        );
+
+      const resyncActionsOperationIds =
+        Array.from(
+          new Set([
+            ...pendingActionResyncIds,
+            ...extraResyncOperationIds,
+          ])
+        ).filter(
+          (opId) =>
+            documentPersistedOperationIds.has(opId)
+        );
+
+      const updateResult =
+        await operationClusterService
+          .update(
+            documentToSave.id,
+            {
+              ...payload,
+              resync_actions_operation_ids:
+                resyncActionsOperationIds,
+            }
+          ) as {
+            skipped_operations?: Array<{
+              id: number;
+              operation_name: string | null;
+            }>;
+          };
+
+      /*
+       * Có công đoạn nào bị "bỏ qua" vì người khác vừa cập nhật nó
+       * trước mình - không hiện cảnh báo cho người dùng (mỗi lần lưu
+       * đều đóng dấu updated_at lại cho MỌI công đoạn trong chứng từ,
+       * dù nội dung không đổi, nên số bị "bỏ qua" thường rất nhiều và
+       * không có ý nghĩa cảnh báo thật). Chỉ log ra console để debug
+       * khi cần, người dùng vẫn thấy thông báo lưu/đồng bộ thành công
+       * như bình thường.
+       */
+      const skippedOperations =
+        updateResult?.skipped_operations || [];
+
+      if (skippedOperations.length > 0) {
+        console.log(
+          'Các công đoạn giữ bản mới hơn của người khác (không ghi đè):',
+          skippedOperations
+        );
+      }
+
+      if (resyncActionsOperationIds.length > 0) {
+        setPendingActionResyncIds(
+          (current) => {
+            const next =
+              new Set(current);
+
+            resyncActionsOperationIds.forEach(
+              (opId) => next.delete(opId)
+            );
+
+            return next;
+          }
+        );
+      }
+
+      const refreshedDetail =
+        await operationClusterService
+          .getById(
+            documentToSave.id
+          );
+
+      const refreshedDocument =
+        buildTreeFromDetails(
+          [
+            refreshedDetail,
+          ]
+        )[0];
+
+      if (
+        refreshedDocument
+      ) {
+        setTreeData(
+          (currentTree) =>
+            currentTree.map(
+              (item) =>
+                item.id ===
+                  refreshedDocument.id
+                  ? refreshedDocument
+                  : item
+            )
+        );
+
+        const refreshedCluster =
+          (
+            selectedClusterIndex >=
+              0
+              ? refreshedDocument
+                .clusters[
+              selectedClusterIndex
+              ]
+              : null
+          ) ||
+          refreshedDocument.clusters.find(
+            (item) =>
+              item.name ===
+              selectedClusterName
+          ) ||
+          refreshedDocument
+            .clusters[0];
+
+        setSelectedClusterKey(
+          refreshedCluster
+            ?.key ||
+          null
+        );
+
+        setSelectedOperationKey(
+          refreshedCluster
+            ?.operations[0]
+            ?.key ||
+          null
+        );
+      }
+
+      setDirtyDocumentIds(
+        (current) => {
+          const next =
+            new Set(
+              current
+            );
+
+          next.delete(
+            documentToSave.id
+          );
+
+          return next;
+        }
+      );
+
+      return true;
+    } catch (
+    saveError
+    ) {
+      console.error(
+        'Lưu công đoạn vào chứng từ lỗi:',
+        saveError
+      );
+
+      /*
+       * 409 = có người khác (hoặc chính mình ở tab khác) đã lưu
+       * chứng từ này trước, backend từ chối để không ghi đè mất
+       * thay đổi của họ. Tự tải lại bản mới nhất luôn, người dùng
+       * không cần bấm "Làm mới" tay - chỉ cần làm lại thao tác vừa
+       * mất trên bản mới.
+       */
+      if (
+        saveError instanceof ApiError &&
+        saveError.status === 409
+      ) {
+        toast.warning(
+          saveError.message
+        );
+
+        try {
+          const refreshedDetail =
+            await operationClusterService
+              .getById(
+                documentToSave.id
+              );
+
+          const refreshedDocument =
+            buildTreeFromDetails(
+              [
+                refreshedDetail,
+              ]
+            )[0];
+
+          if (refreshedDocument) {
+            setTreeData(
+              (currentTree) =>
+                currentTree.map(
+                  (item) =>
+                    item.id ===
+                      refreshedDocument.id
+                      ? refreshedDocument
+                      : item
+                )
+            );
+
+            /*
+             * Màn hình giờ đã khớp với bản mới nhất trên server,
+             * không còn "thay đổi chưa lưu" nữa (thao tác vừa làm
+             * đã bị hủy do xung đột, cần làm lại trên bản mới).
+             */
+            setDirtyDocumentIds(
+              (current) => {
+                const next =
+                  new Set(current);
+
+                next.delete(
+                  refreshedDocument.id
+                );
+
+                return next;
+              }
+            );
+          }
+        } catch (reloadError) {
+          console.error(
+            'Tải lại chứng từ sau xung đột lỗi:',
+            reloadError
+          );
+        }
+
+        return false;
+      }
+
+      toast.error(
+        saveError instanceof
+          Error
+          ? saveError.message
+          : 'Không lưu được công đoạn vào chứng từ.'
+      );
+
+      return false;
+    } finally {
+      setSavingDocumentId(
+        null
+      );
+    }
+  };
+
   const handleSaveCurrentDocument =
     async () => {
       if (
         !currentDocument
       ) {
-        alert(
+        toast.warning(
           'Không xác định được chứng từ cần lưu.'
         );
 
@@ -2285,148 +2665,21 @@ export default function OperationClusterTreeOrderedByLineNo() {
       if (
         !latestDocument
       ) {
-        alert(
+        toast.error(
           'Không tìm thấy dữ liệu chứng từ hiện tại.'
         );
 
         return;
       }
 
-      const payload =
-        buildUpdatePayload(
+      const saved =
+        await saveDocument(
           latestDocument
         );
 
-      if (
-        !payload.groups.some(
-          (group) =>
-            group.operations.length >
-            0
-        )
-      ) {
-        alert(
-          'Chứng từ phải có ít nhất một công đoạn.'
-        );
-
-        return;
-      }
-
-      setSavingDocumentId(
-        latestDocument.id
-      );
-
-      try {
-        const selectedClusterName =
-          cluster?.name ||
-          '';
-
-        const selectedClusterIndex =
-          latestDocument.clusters.findIndex(
-            (item) =>
-              item.key ===
-              selectedClusterKey
-          );
-
-        await operationClusterService
-          .update(
-            latestDocument.id,
-            payload
-          );
-
-        const refreshedDetail =
-          await operationClusterService
-            .getById(
-              latestDocument.id
-            );
-
-        const refreshedDocument =
-          buildTreeFromDetails(
-            [
-              refreshedDetail,
-            ]
-          )[0];
-
-        if (
-          refreshedDocument
-        ) {
-          setTreeData(
-            (currentTree) =>
-              currentTree.map(
-                (item) =>
-                  item.id ===
-                    refreshedDocument.id
-                    ? refreshedDocument
-                    : item
-              )
-          );
-
-          const refreshedCluster =
-            (
-              selectedClusterIndex >=
-                0
-                ? refreshedDocument
-                  .clusters[
-                selectedClusterIndex
-                ]
-                : null
-            ) ||
-            refreshedDocument.clusters.find(
-              (item) =>
-                item.name ===
-                selectedClusterName
-            ) ||
-            refreshedDocument
-              .clusters[0];
-
-          setSelectedClusterKey(
-            refreshedCluster
-              ?.key ||
-            null
-          );
-
-          setSelectedOperationKey(
-            refreshedCluster
-              ?.operations[0]
-              ?.key ||
-            null
-          );
-        }
-
-        setDirtyDocumentIds(
-          (current) => {
-            const next =
-              new Set(
-                current
-              );
-
-            next.delete(
-              latestDocument.id
-            );
-
-            return next;
-          }
-        );
-
-        alert(
+      if (saved) {
+        toast.success(
           'Lưu công đoạn vào chứng từ thành công.'
-        );
-      } catch (
-      saveError
-      ) {
-        console.error(
-          'Lưu công đoạn vào chứng từ lỗi:',
-          saveError
-        );
-
-        alert(
-          saveError instanceof
-            Error
-            ? saveError.message
-            : 'Không lưu được công đoạn vào chứng từ.'
-        );
-      } finally {
-        setSavingDocumentId(
-          null
         );
       }
     };
@@ -2494,7 +2747,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
   const handleOpenGsdPopup =
     () => {
       if (!cluster) {
-        alert(
+        toast.warning(
           'Vui lòng chọn một cụm trước khi thêm công đoạn.'
         );
 
@@ -2828,6 +3081,278 @@ export default function OperationClusterTreeOrderedByLineNo() {
     );
   };
 
+  /*
+   * Đồng bộ lại 1 công đoạn ĐÃ CÓ trong cụm theo dữ liệu GSD mới nhất.
+   * Dùng khi công đoạn GSD gốc đã được sửa (tên, máy, SMV...) sau khi
+   * copy vào kho cụm, mà bản trong cụm chưa được cập nhật theo.
+   *
+   * Cách dùng: bấm chọn 1 dòng công đoạn trong bảng, rồi bấm "Đồng bộ".
+   */
+  const handleSyncSelectedOperationFromGsd = async () => {
+    if (!selectedContext || !cluster) {
+      toast.warning(
+        'Vui lòng chọn một cụm trước khi đồng bộ.'
+      );
+
+      return;
+    }
+
+    const targetOperation =
+      cluster.operations.find(
+        (operation) =>
+          operation.key === selectedOperationKey
+      );
+
+    if (!targetOperation) {
+      toast.warning(
+        'Vui lòng chọn một công đoạn trong danh sách bên dưới trước khi đồng bộ.'
+      );
+
+      return;
+    }
+
+    const gsdAnalysisId =
+      targetOperation.gsdAnalysisId;
+
+    if (!gsdAnalysisId) {
+      toast.warning(
+        'Công đoạn này không liên kết với công đoạn GSD nào, không thể đồng bộ.'
+      );
+
+      return;
+    }
+
+    const latestGsd =
+      gsdOptions.find(
+        (item) =>
+          item.gsd_analysis_id === gsdAnalysisId
+      );
+
+    if (!latestGsd) {
+      toast.warning(
+        'Không tìm thấy công đoạn này trong danh sách GSD (có thể đã bị xóa).'
+      );
+
+      return;
+    }
+
+    const confirmed =
+      await confirmAction({
+        title: 'Đồng bộ công đoạn theo GSD',
+        message:
+          `Đồng bộ lại công đoạn "${targetOperation.name}" theo dữ liệu GSD mới nhất?\n` +
+          'Tên, máy/MMTB, bậc thợ, hệ số lương, SMV và số thao tác sẽ được lấy lại từ GSD, ghi đè lên dữ liệu hiện tại trong cụm.\n' +
+          'Bấm "Đồng bộ & Lưu" sẽ đồng bộ và lưu luôn vào chứng từ.',
+        confirmLabel: 'Đồng bộ & Lưu',
+      });
+
+    if (!confirmed) {
+      return;
+    }
+
+    const requiredEfficiency =
+      cluster.requiredEfficiency;
+
+    const samGsd =
+      toNumber(
+        latestGsd.sam_gsd,
+        0
+      );
+
+    const adjustedSam =
+      requiredEfficiency > 0
+        ? samGsd / requiredEfficiency
+        : samGsd;
+
+    const imageFileName =
+      (latestGsd as any).image_file_name ||
+      (latestGsd as any).imageFileName ||
+      '';
+
+    const imageUrl =
+      (latestGsd as any).image_url ||
+      (latestGsd as any).imageUrl ||
+      '';
+
+    const salaryCoefficient =
+      toNumber(
+        (latestGsd as any).salary_coefficient,
+        0
+      );
+
+    const updatedOperation: TreeOperation = {
+      ...targetOperation,
+
+      code:
+        latestGsd.operation_code ||
+        targetOperation.code,
+
+      name:
+        latestGsd.operation_name ||
+        targetOperation.name,
+
+      imageFileName,
+      imageUrl,
+
+      machineName:
+        latestGsd.machine_name || '-',
+
+      codeMmtb:
+        latestGsd.code_mmtb || '-',
+
+      skillLevel:
+        latestGsd.skill_level !== null &&
+          latestGsd.skill_level !== undefined
+          ? String(latestGsd.skill_level)
+          : '-',
+
+      salaryCoefficient,
+      samGsd,
+      adjustedSam,
+
+      totalActions:
+        toNumber(
+          latestGsd.total_actions,
+          0
+        ),
+
+      totalActionSeconds:
+        toNumber(
+          latestGsd.total_action_seconds,
+          0
+        ),
+
+      gsdCreatedByName:
+        (latestGsd as any).gsd_created_by_full_name ||
+        (latestGsd as any).gsd_created_by_username ||
+        targetOperation.gsdCreatedByName,
+
+      gsdCreatedByUnitName:
+        (latestGsd as any).gsd_created_by_unit_name ||
+        (latestGsd as any).gsd_created_by_unit_code ||
+        targetOperation.gsdCreatedByUnitName,
+
+      /*
+       * raw dùng khi build payload lưu (buildUpdatePayload).
+       * Giữ lại id, header_id, group_id, status_id... của dòng cũ,
+       * chỉ ghi đè các trường có nguồn gốc từ GSD.
+       */
+      raw: {
+        ...targetOperation.raw,
+        operation_code: latestGsd.operation_code,
+        operation_name: latestGsd.operation_name,
+        skill_grade_id: latestGsd.skill_grade_id,
+        skill_level: latestGsd.skill_level,
+        machine_equipment_id: latestGsd.machine_equipment_id,
+        machine_code: latestGsd.machine_code,
+        machine_name: latestGsd.machine_name,
+        code_mmtb: latestGsd.code_mmtb,
+        sam_gsd: samGsd,
+        salary_coefficient: salaryCoefficient,
+        image_file_name: imageFileName,
+        image_url: imageUrl,
+      },
+    };
+
+    /*
+     * Tính thẳng document mới (không đọc lại từ treeData state) để
+     * lưu ngay bằng đúng dữ liệu vừa đồng bộ, không phải chờ React
+     * render lại rồi mới đọc state - tránh trường hợp bấm Lưu ngay
+     * sau đó mà state chưa kịp cập nhật.
+     */
+    const updatedDocument: OperationClusterDocumentTree = {
+      ...selectedContext.document,
+
+      clusters:
+        selectedContext.document.clusters.map(
+          (currentCluster) =>
+            currentCluster.key === cluster.key
+              ? {
+                ...currentCluster,
+
+                operations:
+                  currentCluster.operations.map(
+                    (operation) =>
+                      operation.key === targetOperation.key
+                        ? updatedOperation
+                        : operation
+                  ),
+              }
+              : currentCluster
+        ),
+    };
+
+    setTreeData(
+      (currentTree) =>
+        currentTree.map(
+          (document) =>
+            document.id === updatedDocument.id
+              ? updatedDocument
+              : document
+        )
+    );
+
+    setDirtyDocumentIds(
+      (current) => {
+        const next =
+          new Set(current);
+
+        next.add(
+          selectedContext.document.id
+        );
+
+        return next;
+      }
+    );
+
+    /*
+     * Nếu công đoạn này đã có id thật trong DB, đánh dấu để backend
+     * làm mới snapshot thao tác của nó. Công đoạn mới (chưa lưu, key
+     * "temp:...") thì không cần: khi INSERT lần đầu, backend luôn
+     * snapshot theo gsd_analysis_id hiện tại rồi, không có snapshot
+     * cũ để mà làm mới.
+     */
+    const persistedOperationId =
+      getPersistedOperationId(
+        targetOperation
+      );
+
+    if (persistedOperationId !== null) {
+      setPendingActionResyncIds(
+        (current) => {
+          const next =
+            new Set(current);
+
+          next.add(
+            persistedOperationId
+          );
+
+          return next;
+        }
+      );
+    }
+
+    /*
+     * Đồng bộ xong thì lưu luôn, không bắt người dùng bấm thêm nút Lưu.
+     * Nếu lưu lỗi, dữ liệu vẫn ở trạng thái "có thay đổi" (dirty) và
+     * persistedOperationId vẫn còn trong pendingActionResyncIds, nên
+     * người dùng có thể bấm nút Lưu thủ công để thử lại.
+     */
+    const saved =
+      await saveDocument(
+        updatedDocument,
+        persistedOperationId !== null
+          ? [persistedOperationId]
+          : []
+      );
+
+    if (saved) {
+      toast.success(
+        `Đã đồng bộ và lưu công đoạn "${updatedOperation.name}" theo dữ liệu GSD mới nhất.`
+      );
+    }
+  };
+
   const handleConfirmSelectGsd =
     () => {
       if (!selectedContext || !cluster) {
@@ -2836,7 +3361,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
       }
 
       if (checkedGsdIds.length === 0) {
-        alert('Vui lòng chọn ít nhất một công đoạn GSD.');
+        toast.warning('Vui lòng chọn ít nhất một công đoạn GSD.');
         return;
       }
 
@@ -2858,7 +3383,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
   const handleCopySelectedGsd =
     () => {
       if (!cluster) {
-        alert(
+        toast.warning(
           'Vui lòng chọn một cụm trước khi copy công đoạn.'
         );
 
@@ -2866,7 +3391,7 @@ export default function OperationClusterTreeOrderedByLineNo() {
       }
 
       if (checkedGsdIds.length !== 1) {
-        alert(
+        toast.warning(
           'Vui lòng chỉ chọn 1 công đoạn để copy.'
         );
 
@@ -2908,7 +3433,14 @@ export default function OperationClusterTreeOrderedByLineNo() {
   };
 
   return (
-    <div className="h-[calc(100dvh-72px)] min-h-0 overflow-hidden bg-slate-50 p-3 text-slate-800">
+    <div
+      className="min-h-0 overflow-hidden bg-slate-50 p-3 text-slate-800"
+      style={
+        contentHeight !== null
+          ? { height: contentHeight }
+          : undefined
+      }
+    >
       <div className="grid h-full min-h-0 grid-cols-1 gap-3 overflow-hidden xl:grid-cols-[360px_minmax(0,1fr)]">
         <aside className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-slate-200 bg-white">
           <div className="shrink-0 border-b border-slate-200 px-3 py-3">
@@ -3370,6 +3902,23 @@ export default function OperationClusterTreeOrderedByLineNo() {
                     leftIcon={<X className='w-4 h-4' />}
                   >
                     Hủy
+                  </Button>
+                )}
+
+                {permissions.canUpdate && (
+                  <Button
+                    variant="default"
+                    onClick={handleSyncSelectedOperationFromGsd}
+                    disabled={
+                      !cluster ||
+                      !selectedOperationKey ||
+                      isSavingCurrentDocument
+                    }
+                    size='sm'
+                    leftIcon={<RefreshCw className='w-4 h-4' />}
+                    title="Lấy lại dữ liệu mới nhất từ GSD cho công đoạn đang chọn (tên, máy, SMV...)"
+                  >
+                    Đồng bộ
                   </Button>
                 )}
 
@@ -3892,6 +4441,23 @@ export default function OperationClusterTreeOrderedByLineNo() {
           setCopyFromGsdPicker(
             false
           );
+        }}
+      />
+
+      <ConfirmDialog
+        open={confirmDialogRequest !== null}
+        title={confirmDialogRequest?.title || ''}
+        message={confirmDialogRequest?.message || ''}
+        confirmLabel={confirmDialogRequest?.confirmLabel}
+        cancelLabel={confirmDialogRequest?.cancelLabel}
+        variant={confirmDialogRequest?.variant}
+        onConfirm={() => {
+          confirmDialogRequest?.resolve(true);
+          setConfirmDialogRequest(null);
+        }}
+        onCancel={() => {
+          confirmDialogRequest?.resolve(false);
+          setConfirmDialogRequest(null);
         }}
       />
     </div>

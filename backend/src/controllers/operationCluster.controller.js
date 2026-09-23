@@ -129,7 +129,7 @@ const updateOperationCluster = async (req, res) => {
   } catch (error) {
     console.error('updateOperationCluster error:', error);
 
-    res.status(400).json({
+    res.status(error.statusCode || 400).json({
       message: error.message || 'Không cập nhật được kho cụm công đoạn',
     });
   }

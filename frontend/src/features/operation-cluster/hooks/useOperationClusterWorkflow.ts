@@ -22,6 +22,10 @@ import {
 } from '../../../shared/notifications/ToastProvider';
 
 import {
+    ApiError,
+} from '../../../services/httpClient';
+
+import {
     toNumber,
 } from '../utils/operationCluster.utils';
 
@@ -407,17 +411,52 @@ export function useOperationClusterWorkflow({
                  * Chỉ khi sửa mới cần gửi id đã xóa.
                  * Backend giữ lại dòng không có trong payload,
                  * nên phải nói rõ dòng nào người dùng đã xóa.
+                 *
+                 * expected_updated_at: chống mất dữ liệu khi 2 người
+                 * cùng sửa 1 chứng từ - lấy từ lúc form được tải lên
+                 * (mapOperationClusterDetailToEditor), không phải giá
+                 * trị cố định vì form không tự refresh sau khi lưu
+                 * (đóng editor ngay sau đó).
                  */
-                await updateItem(
-                    editingId,
-                    {
-                        ...payload,
-                        deleted_operation_ids:
-                            deletedOperationIds,
-                        deleted_group_ids:
-                            deletedGroupIds,
-                    }
-                );
+                const updateResult =
+                    await updateItem(
+                        editingId,
+                        {
+                            ...payload,
+                            deleted_operation_ids:
+                                deletedOperationIds,
+                            deleted_group_ids:
+                                deletedGroupIds,
+                            expected_updated_at:
+                                form.updated_at,
+                        }
+                    ) as {
+                        skipped_operations?: Array<{
+                            id: number;
+                            operation_name: string | null;
+                        }>;
+                    };
+
+                /*
+                 * Có công đoạn nào bị "bỏ qua" vì người khác vừa cập
+                 * nhật nó trước mình - không hiện cảnh báo cho người
+                 * dùng (mỗi lần lưu đều đóng dấu updated_at lại cho MỌI
+                 * công đoạn trong chứng từ, dù nội dung không đổi, nên
+                 * số bị "bỏ qua" thường rất nhiều và không có ý nghĩa
+                 * cảnh báo thật). Chỉ log ra console để debug khi cần.
+                 */
+                const skippedOperations =
+                    updateResult?.skipped_operations ||
+                    [];
+
+                if (
+                    skippedOperations.length > 0
+                ) {
+                    console.log(
+                        'Các công đoạn giữ bản mới hơn của người khác (không ghi đè):',
+                        skippedOperations
+                    );
+                }
             } else if (
                 formMode === 'copy'
             ) {
@@ -452,6 +491,49 @@ export function useOperationClusterWorkflow({
                 'Lưu kho cụm lỗi:',
                 error
             );
+
+            /*
+             * 409 = có người khác (hoặc chính mình ở tab/màn hình
+             * khác) đã lưu chứng từ này trước, backend từ chối để
+             * không ghi đè mất thay đổi của họ. Tải lại bản mới nhất
+             * vào form ngay, để lần Lưu kế tiếp không bị lặp lại lỗi
+             * này - người dùng cần xem lại và làm lại thao tác trên
+             * bản mới.
+             */
+            if (
+                error instanceof ApiError &&
+                error.status === 409 &&
+                formMode === 'edit' &&
+                editingId
+            ) {
+                toast.warning(
+                    error.message
+                );
+
+                try {
+                    const detail =
+                        await loadDetail(
+                            editingId
+                        );
+
+                    if (
+                        detail &&
+                        detail.header
+                    ) {
+                        openEditFromDetail(
+                            detail,
+                            editingId
+                        );
+                    }
+                } catch (reloadError) {
+                    console.error(
+                        'Tải lại chứng từ sau xung đột lỗi:',
+                        reloadError
+                    );
+                }
+
+                return;
+            }
 
             alert(
                 error instanceof Error

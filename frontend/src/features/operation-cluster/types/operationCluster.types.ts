@@ -11,6 +11,14 @@ export interface OperationClusterFormState {
     price_method: OperationClusterPriceMethod;
     status_id: number;
     note: string;
+
+    /*
+     * updated_at của chứng từ tại thời điểm tải lên form sửa.
+     * Gửi lại khi Lưu (expected_updated_at) để backend phát hiện
+     * có người khác đã lưu chứng từ này trước mình chưa.
+     * null với chứng từ mới tạo / chưa từng lưu.
+     */
+    updated_at: string | null;
 }
 
 export interface OperationClusterHeader {
@@ -118,6 +126,15 @@ export interface OperationClusterOperationPayload {
     total_action_seconds?: number;
     total_actions?: number;
     status_id?: number;
+
+    /*
+     * updated_at của công đoạn này tại thời điểm client tải lên.
+     * Chỉ có ý nghĩa với công đoạn đã có id thật trong DB. Backend so
+     * với updated_at hiện tại; khác nhau (người khác vừa cập nhật
+     * công đoạn này, ví dụ vừa "Đồng bộ") thì bỏ qua, giữ bản mới hơn
+     * trong DB, không ghi đè bằng giá trị cũ của client này.
+     */
+    expected_updated_at?: string | null;
 }
 
 export interface OperationClusterGroupPayload {
@@ -145,6 +162,23 @@ export interface CreateOperationClusterPayload {
      */
     deleted_operation_ids?: number[];
     deleted_group_ids?: number[];
+
+    /*
+     * Id các công đoạn ĐÃ CÓ trong chứng từ mà người dùng vừa bấm
+     * "Đồng bộ" (lấy lại dữ liệu theo GSD mới nhất). Backend sẽ xóa
+     * và tạo lại snapshot operation_cluster_operation_actions cho
+     * đúng các id này.
+     */
+    resync_actions_operation_ids?: number[];
+
+    /*
+     * Chống ghi đè mất dữ liệu khi 2 người cùng sửa 1 chứng từ:
+     * updated_at của chứng từ tại thời điểm client tải lên. Backend so
+     * với updated_at hiện tại trong DB; khác nhau (đã có người lưu
+     * trước) thì từ chối, không cho ghi đè âm thầm.
+     * Không gửi (create/copy, hoặc client cũ) thì backend bỏ qua check.
+     */
+    expected_updated_at?: string | null;
 }
 
 export interface GsdActionDetail {

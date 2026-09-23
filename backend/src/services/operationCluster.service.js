@@ -974,7 +974,16 @@ const updateOperationCluster = async (id, payload, context = {}) => {
         .input('id', sql.Int, id)
         .query(`
           SELECT TOP 1
-            id
+            id,
+            document_code,
+            work_id,
+            product_category_id,
+            product_category_group_id,
+            required_efficiency,
+            price_method,
+            note,
+            status_id,
+            updated_at
           FROM dbo.operation_cluster_headers
           WHERE id = @id
         `);
@@ -985,6 +994,115 @@ const updateOperationCluster = async (id, payload, context = {}) => {
       throw new Error(
         'Không tìm thấy chứng từ cần cập nhật'
       );
+    }
+
+    const currentHeaderRow =
+      existingHeaderResult.recordset[0];
+
+    /*
+     * 1b. Kiểm tra xung đột chỉnh sửa đồng thời ở HEADER
+     * (optimistic concurrency, so theo GIÁ TRỊ, không so theo
+     * updated_at).
+     *
+     * Lý do không dùng updated_at ở đây: cột này bị cập nhật lại ở
+     * MỌI lần lưu, kể cả khi chỉ có group/operation thay đổi (ví dụ
+     * "Đồng bộ" 1 công đoạn), không riêng khi field header thay đổi.
+     * Nếu so updated_at thì việc "Đồng bộ" của người khác cũng sẽ bị
+     * coi là xung đột ở header, chặn nhầm cả những lần lưu không hề
+     * đụng tới field header nào.
+     *
+     * Nên chỉ báo xung đột thật khi field header (document_code,
+     * work_id, note...) mà client đang gửi lên KHÁC với giá trị
+     * ĐANG CÓ trong DB - tức có ai đã đổi field đó sau khi client tải
+     * lên, và bây giờ client sắp ghi đè lại bằng giá trị cũ.
+     *
+     * Không gửi expected_updated_at (client cũ chưa cập nhật payload)
+     * thì bỏ qua bước này, giữ hành vi cũ.
+     */
+    if (payload.expected_updated_at) {
+      const headerFieldConflicts = [];
+
+      const compareField = (
+        label,
+        payloadValue,
+        currentValue
+      ) => {
+        const normalizedPayload =
+          payloadValue === undefined
+            ? null
+            : payloadValue;
+
+        const normalizedCurrent =
+          currentValue === undefined
+            ? null
+            : currentValue;
+
+        if (
+          String(normalizedPayload ?? '') !==
+          String(normalizedCurrent ?? '')
+        ) {
+          headerFieldConflicts.push(label);
+        }
+      };
+
+      compareField(
+        'Mã chứng từ',
+        documentCode,
+        currentHeaderRow.document_code
+      );
+
+      compareField(
+        'Công việc',
+        Number(payload.work_id),
+        Number(currentHeaderRow.work_id)
+      );
+
+      compareField(
+        'Chủng loại hàng',
+        Number(payload.product_category_id),
+        Number(currentHeaderRow.product_category_id)
+      );
+
+      compareField(
+        'Nhóm chủng loại hàng',
+        Number(payload.product_category_group_id),
+        Number(currentHeaderRow.product_category_group_id)
+      );
+
+      compareField(
+        'Hiệu suất yêu cầu',
+        headerEfficiency,
+        currentHeaderRow.required_efficiency
+      );
+
+      compareField(
+        'Phương pháp giá',
+        priceMethod,
+        currentHeaderRow.price_method
+      );
+
+      compareField(
+        'Ghi chú',
+        payload.note || null,
+        currentHeaderRow.note
+      );
+
+      compareField(
+        'Trạng thái',
+        Number(payload.status_id ?? 0),
+        Number(currentHeaderRow.status_id ?? 0)
+      );
+
+      if (headerFieldConflicts.length > 0) {
+        const err = new Error(
+          `Chứng từ này đã được người khác cập nhật (${headerFieldConflicts.join(', ')}). ` +
+          'Vui lòng tải lại trước khi lưu để không ghi đè mất thay đổi của họ.'
+        );
+
+        err.statusCode = 409;
+
+        throw err;
+      }
     }
 
     /*
@@ -1049,7 +1167,8 @@ const updateOperationCluster = async (id, payload, context = {}) => {
             id,
             header_id,
             group_id,
-            created_by_user_id
+            created_by_user_id,
+            updated_at
           FROM dbo.operation_cluster_operations
           WHERE header_id = @header_id
         `);
@@ -1069,6 +1188,31 @@ const updateOperationCluster = async (id, payload, context = {}) => {
 
     const keptOperationIds =
       new Set();
+
+    /*
+     * Operation bị "bỏ qua" khi lưu vì đã có người khác cập nhật
+     * (sync/sửa) nó sau khi client hiện tại tải chứng từ lên. Giữ
+     * nguyên dữ liệu mới hơn trong DB, không ghi đè bằng payload cũ
+     * của client này. Trả về danh sách này cho client biết.
+     */
+    const skippedOperations = [];
+
+    /*
+     * Id các operation người dùng vừa bấm "Đồng bộ" ở màn hình
+     * (lấy lại tên, máy, SMV... theo GSD mới nhất). Chỉ với các id này
+     * mới xóa + tạo lại snapshot operation_cluster_operation_actions;
+     * các operation khác giữ nguyên snapshot cũ, tránh việc mỗi lần
+     * Lưu đều âm thầm re-snapshot dù người dùng không yêu cầu.
+     */
+    const resyncActionsOperationIds =
+      new Set(
+        normalizeIdList(
+          payload.resync_actions_operation_ids
+        ).filter(
+          (operationId) =>
+            existingOperationMap.has(operationId)
+        )
+      );
 
     /*
      * 5. Update header
@@ -1352,6 +1496,47 @@ const updateOperationCluster = async (id, payload, context = {}) => {
             operationId
           );
 
+          /*
+           * Kiểm tra xung đột đồng thời ở CẤP TỪNG CÔNG ĐOẠN.
+           *
+           * operation.expected_updated_at là updated_at của công đoạn
+           * này tại thời điểm client tải lên. Nếu người khác (ví dụ ai
+           * đó vừa bấm "Đồng bộ" công đoạn này) đã lưu nó sau đó,
+           * updated_at hiện tại trong DB sẽ mới hơn giá trị này.
+           *
+           * Khác với header, ở đây KHÔNG chặn cả chứng từ - chỉ bỏ qua
+           * đúng công đoạn bị xung đột (giữ nguyên bản mới hơn trong
+           * DB), các công đoạn/nhóm khác trong payload vẫn được lưu
+           * bình thường. Nhờ vậy, việc B thêm công đoạn mới không bị
+           * chặn chỉ vì A vừa đồng bộ 1 công đoạn khác trong lúc đó.
+           *
+           * Không gửi expected_updated_at (client cũ) thì bỏ qua bước
+           * này, giữ hành vi cũ (luôn ghi đè).
+           */
+          if (operation.expected_updated_at) {
+            const currentOperationUpdatedAtIso =
+              existingOperation.updated_at
+                ? new Date(
+                  existingOperation.updated_at
+                ).toISOString()
+                : null;
+
+            if (
+              currentOperationUpdatedAtIso &&
+              currentOperationUpdatedAtIso !==
+                operation.expected_updated_at
+            ) {
+              skippedOperations.push({
+                id: operationId,
+                operation_name:
+                  operation.operation_name ||
+                  null,
+              });
+
+              continue;
+            }
+          }
+
           await new sql.Request(transaction)
             .input(
               'operation_id',
@@ -1531,6 +1716,20 @@ const updateOperationCluster = async (id, payload, context = {}) => {
               WHERE id = @operation_id
                 AND header_id = @header_id
             `);
+
+          /*
+           * Người dùng vừa bấm "Đồng bộ" cho công đoạn này: làm mới lại
+           * snapshot thao tác (operation_cluster_operation_actions) theo
+           * gsd_analysis_id hiện tại, tránh danh sách thao tác bị cũ
+           * trong khi các số liệu tổng (SMV, số thao tác...) đã cập nhật.
+           */
+          if (resyncActionsOperationIds.has(operationId)) {
+            await resyncGsdActionsForOperation(
+              transaction,
+              operationId,
+              operation.gsd_analysis_id
+            );
+          }
 
           continue;
         }
@@ -1877,7 +2076,19 @@ const updateOperationCluster = async (id, payload, context = {}) => {
 
     await transaction.commit();
 
-    return getOperationClusterById(id);
+    const savedDetail =
+      await getOperationClusterById(id);
+
+    /*
+     * Báo cho client biết có công đoạn nào bị "bỏ qua" (giữ bản mới
+     * hơn của người khác) trong lần lưu này, để hiển thị thông báo
+     * rõ ràng thay vì im lặng.
+     */
+    return {
+      ...savedDetail,
+      skipped_operations:
+        skippedOperations,
+    };
   } catch (error) {
     try {
       await transaction.rollback();
@@ -2305,6 +2516,39 @@ const snapshotGsdActionsForOperation = async (
         d.line_no,
         d.id;
     `);
+};
+
+/*
+ * Làm mới snapshot thao tác của MỘT operation đã có sẵn.
+ * snapshotGsdActionsForOperation chỉ INSERT (dùng cho operation mới),
+ * gọi trực tiếp cho operation cũ sẽ tạo trùng dòng. Hàm này xóa sạch
+ * snapshot cũ của operation rồi tạo lại theo gsd_analysis_id hiện tại.
+ */
+const resyncGsdActionsForOperation = async (
+  transaction,
+  operationClusterOperationId,
+  gsdAnalysisId
+) => {
+  if (!operationClusterOperationId) {
+    return;
+  }
+
+  await new sql.Request(transaction)
+    .input(
+      'operation_cluster_operation_id',
+      sql.Int,
+      operationClusterOperationId
+    )
+    .query(`
+      DELETE FROM dbo.operation_cluster_operation_actions
+      WHERE operation_cluster_operation_id = @operation_cluster_operation_id
+    `);
+
+  await snapshotGsdActionsForOperation(
+    transaction,
+    operationClusterOperationId,
+    gsdAnalysisId
+  );
 };
 
 // Hàm lấy thao tác snapshot theo operation id

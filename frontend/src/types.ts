@@ -661,6 +661,8 @@ export interface CreateOperationClusterPayload {
   groups: OperationClusterGroupPayload[];
   deleted_operation_ids?: number[];
   deleted_group_ids?: number[];
+  resync_actions_operation_ids?: number[];
+  expected_updated_at?: string | null;
 }
 
 

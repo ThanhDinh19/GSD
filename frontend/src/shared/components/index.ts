@@ -1,5 +1,7 @@
 export { Button } from './Button';
 
+export { ConfirmDialog } from './ConfirmDialog';
+
 export { ComboBox } from './ComboBox';
 
 export { RadioGroup } from './RadioGroup';
