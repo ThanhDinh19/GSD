@@ -228,6 +228,9 @@ export interface GsdAnalysisSummary {
 
     employeeName?: string | null;
     department?: string | null;
+
+    // Trạng thái duyệt: DRAFT (Mới) / APPROVED (Đã duyệt)
+    workflowStatusCode?: string | null;
 }
 
 

@@ -156,6 +156,42 @@ const deactivate = async (req, res) => {
     });
 };
 
+const approveAnalysis = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const updated = await gsdAnalysisService.approveAnalysis(Number(id), {
+        userId: req.user.id,
+    });
+
+    if (!updated) {
+        return res.status(404).json({
+            error: 'Không tìm thấy chứng từ'
+        });
+    }
+
+    return res.json({
+        message: 'Đã duyệt chứng từ'
+    });
+});
+
+const unapproveAnalysis = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+
+    const updated = await gsdAnalysisService.unapproveAnalysis(Number(id), {
+        userId: req.user.id,
+    });
+
+    if (!updated) {
+        return res.status(404).json({
+            error: 'Không tìm thấy chứng từ'
+        });
+    }
+
+    return res.json({
+        message: 'Đã hủy duyệt chứng từ'
+    });
+});
+
 module.exports = {
     getSourceActionsForAnalysis,
     calculateAnalysis,
@@ -166,4 +202,6 @@ module.exports = {
     getAnalysisCopyDraft,
     uploadGsdAnalysisImage,
     deactivate,
+    approveAnalysis,
+    unapproveAnalysis,
 };

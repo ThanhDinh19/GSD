@@ -19,6 +19,7 @@ const productCateGroup = require('./productCateGroup.routes');
 const organizationRoutes_test = require('./organization_test.routes');
 const skillGradeRoutes = require('./skillGrade.routes');
 const salaryCoefficientRoutes = require('./salary_coefficient.routes');
+const balanceTypeRoutes = require('./balanceType.routes');
 // dinh 08/07/2026
 const operationClusterRoutes = require('./operationCluster.routes');
 // dinh 30/06/2026
@@ -83,6 +84,7 @@ router.use('/skill-grade', skillGradeRoutes);
 
 // dinh 08/07/2026
 router.use('/salary-coefficient', salaryCoefficientRoutes);
+router.use('/balance-types', balanceTypeRoutes);
 router.use('/operation-clusters', operationClusterRoutes);
 
 // dinh 15/07/2026

@@ -29,6 +29,7 @@ const PERMISSIONS = {
     CREATE: 'GSD.ANALYSIS.CREATE',
     UPDATE: 'GSD.ANALYSIS.UPDATE',
     DELETE: 'GSD.ANALYSIS.DELETE',
+    APPROVE: 'GSD.ANALYSIS.APPROVE',
 };
 
 /*
@@ -48,6 +49,10 @@ router.post('/calculate', requirePermission(PERMISSIONS.CREATE), gsdAnalysisCont
 router.post('/images/upload', requirePermission(PERMISSIONS.CREATE), uploadGsdAnalysisImage.single('image'), gsdAnalysisController.uploadGsdAnalysisImage);
 
 router.get('/:id/copy-draft', requirePermission(PERMISSIONS.VIEW), gsdAnalysisController.getAnalysisCopyDraft);
+
+router.put('/:id/approve', requirePermission(PERMISSIONS.APPROVE), gsdAnalysisController.approveAnalysis);
+
+router.put('/:id/unapprove', requirePermission(PERMISSIONS.APPROVE), gsdAnalysisController.unapproveAnalysis);
 
 router.get('/', requirePermission(PERMISSIONS.VIEW), gsdAnalysisController.getAnalyses);
 

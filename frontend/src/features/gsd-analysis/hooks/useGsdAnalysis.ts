@@ -82,6 +82,11 @@ export function useGsdAnalysis() {
         setDeactivatingId,
     ] = useState<number | null>(null);
 
+    const [
+        approvingId,
+        setApprovingId,
+    ] = useState<number | null>(null);
+
     const popupRows = useMemo(() => {
         if (!popupSourceId) return [];
         return sourceActionMap[popupSourceId] || [];
@@ -831,6 +836,58 @@ export function useGsdAnalysis() {
             }
         };
 
+    const approveGsdAnalysis =
+        async (id: number) => {
+            if (
+                !Number.isInteger(id) ||
+                id <= 0
+            ) {
+                throw new Error(
+                    'ID chứng từ không hợp lệ'
+                );
+            }
+
+            setApprovingId(id);
+
+            try {
+                const response =
+                    await gsdAnalysisService
+                        .approve(id);
+
+                await loadAnalyses();
+
+                return response;
+            } finally {
+                setApprovingId(null);
+            }
+        };
+
+    const unapproveGsdAnalysis =
+        async (id: number) => {
+            if (
+                !Number.isInteger(id) ||
+                id <= 0
+            ) {
+                throw new Error(
+                    'ID chứng từ không hợp lệ'
+                );
+            }
+
+            setApprovingId(id);
+
+            try {
+                const response =
+                    await gsdAnalysisService
+                        .unapprove(id);
+
+                await loadAnalyses();
+
+                return response;
+            } finally {
+                setApprovingId(null);
+            }
+        };
+
     useEffect(() => {
         loadMasterData();
         loadMachines_test();
@@ -881,5 +938,8 @@ export function useGsdAnalysis() {
         loadAnalysisForEdit,
         loadAnalysisForCopy,
         deactivateGsdAnalysis,
+        approveGsdAnalysis,
+        unapproveGsdAnalysis,
+        approvingId,
     };
 }

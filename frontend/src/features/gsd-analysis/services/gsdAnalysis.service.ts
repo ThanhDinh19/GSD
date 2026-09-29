@@ -173,4 +173,24 @@ export const gsdAnalysisService = {
         );
         return response;
     },
+
+    async approve(id: number): Promise<DeactivateResponse> {
+        const response = await request<ApiResponse<DeactivateResponse>>(
+            `/api/gsd-analysis/${id}/approve`,
+            {
+                method: 'PUT'
+            }
+        );
+        return response;
+    },
+
+    async unapprove(id: number): Promise<DeactivateResponse> {
+        const response = await request<ApiResponse<DeactivateResponse>>(
+            `/api/gsd-analysis/${id}/unapprove`,
+            {
+                method: 'PUT'
+            }
+        );
+        return response;
+    },
 };

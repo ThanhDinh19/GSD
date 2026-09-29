@@ -76,7 +76,8 @@ export default function App() {
     | 'department-type'
     | 'skill-grade'
     | 'salary-coefficient'
-    | 'customer';
+    | 'customer'
+    | 'balance-type';
 
   const [isMasterDataTestOpen, setIsMasterDataTestOpen] = useState<boolean>(false);
   const [activeMasterDataTestTab, setActiveMasterDataTestTab] = useState<MasterDataTestTabKey>('clusters');
@@ -97,6 +98,7 @@ export default function App() {
       { key: 'source-action-mapping', label: 'Khai báo thao tác' },
       { key: 'department-type', label: 'Loại phòng ban' },
       { key: 'customer', label: 'Khách hàng' },
+      { key: 'balance-type', label: 'Danh mục loại cân bằng' },
     ];
 
 

@@ -5,7 +5,7 @@ import {
     useState,
 } from 'react';
 import { GsdAnalysisSummary } from '../types/gsdAnalysis.types';
-import { getGsdAnalysisImageUrl } from '../services/gsdAnalysis.service';
+import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../services/gsdAnalysis.service';
 import { useGsdAnalysis } from '../hooks/useGsdAnalysis';
 import {
     usePermissions,
@@ -29,7 +29,8 @@ import {
     Copy,
     Import,
     FileDown,
-    RefreshCcw
+    RefreshCcw,
+    CheckCircle
 } from 'lucide-react';
 
 interface GsdProcessTableProps {
@@ -66,6 +67,11 @@ function formatDateTime(value?: string) {
     if (!year || !month || !day) return value;
 
     return `${hour}:${minute}:${second} ${day}/${month}/${year}`;
+}
+
+// Trạng thái duyệt: DRAFT (Mới) / APPROVED (Đã duyệt)
+function getApprovalStatusLabel(workflowStatusCode?: string | null) {
+    return workflowStatusCode === 'APPROVED' ? 'Đã duyệt' : 'Mới';
 }
 
 type SelectedFilterValues =
@@ -112,7 +118,13 @@ export default function GsdProcessTable({
     } = useGsdAnalysis();
 
     const permissions = usePermissions(SCREEN.GSD_ANALYSIS);
-    const columnCount = onDetailClick ? 10 : 9;
+    const columnCount =
+        (onDetailClick ? 11 : 10) + (permissions.canApprove ? 1 : 0);
+
+    // Tick chọn nhiều chứng từ để duyệt/hủy duyệt hàng loạt
+    const [selectedApproveIds, setSelectedApproveIds] =
+        useState<Set<number>>(new Set());
+    const [bulkApproving, setBulkApproving] = useState(false);
     const [previewImageUrl, setPreviewImageUrl] = useState('');
 
     const [
@@ -158,6 +170,11 @@ export default function GsdProcessTable({
     const [
         selectedDepartmentValues,
         setSelectedDepartmentValues,
+    ] = useState<SelectedFilterValues>(null);
+
+    const [
+        selectedStatusValues,
+        setSelectedStatusValues,
     ] = useState<SelectedFilterValues>(null);
 
     const operationOptions =
@@ -272,6 +289,17 @@ export default function GsdProcessTable({
             [analyses]
         );
 
+    const statusOptions =
+        useMemo(
+            () =>
+                uniqueOptions(
+                    analyses.map(
+                        (item) => getApprovalStatusLabel(item.workflowStatusCode)
+                    )
+                ),
+            [analyses]
+        );
+
 
     const filteredAnalyses =
         useMemo(
@@ -337,6 +365,11 @@ export default function GsdProcessTable({
                             item.department || '-',
                             selectedDepartmentValues
                         )
+                        &&
+                        isFilterMatch(
+                            getApprovalStatusLabel(item.workflowStatusCode),
+                            selectedStatusValues
+                        )
                     );
                 });
             },
@@ -350,7 +383,8 @@ export default function GsdProcessTable({
                 selectedFinalSmvValues,
                 selectedCreatedAtValues,
                 selectedEmployeeValues,
-                selectedDepartmentValues
+                selectedDepartmentValues,
+                selectedStatusValues
             ]
         );
 
@@ -371,10 +405,8 @@ export default function GsdProcessTable({
             }
 
             try {
-                const response =
-                    await deactivateGsdAnalysis(id);
-
-                alert(response.message);
+                const response = await deactivateGsdAnalysis(id);
+                         alert(response.message);
                 await onRefresh?.();
             } catch (error) {
                 alert(
@@ -384,6 +416,145 @@ export default function GsdProcessTable({
                 );
             }
         };
+
+    const selectedAnalysis = analyses.find((item) => item.id === selectedId) || null;
+
+    const isSelectedApproved = selectedAnalysis?.workflowStatusCode === 'APPROVED';
+
+    const toggleApproveSelection = (id: number) => {
+        setSelectedApproveIds((prev) => {
+            const next = new Set(prev);
+
+            if (next.has(id)) {
+                next.delete(id);
+            } else {
+                next.add(id);
+            }
+
+            return next;
+        });
+    };
+
+    const isAllFilteredChecked =
+        filteredAnalyses.length > 0 &&
+        filteredAnalyses.every((item) => selectedApproveIds.has(item.id));
+
+    const toggleSelectAllFiltered = () => {
+        setSelectedApproveIds((prev) => {
+            if (isAllFilteredChecked) {
+                const next = new Set(prev);
+                filteredAnalyses.forEach((item) => next.delete(item.id));
+                return next;
+            }
+
+            const next = new Set(prev);
+            filteredAnalyses.forEach((item) => next.add(item.id));
+            return next;
+        });
+    };
+
+    // Trong các chứng từ đã tick, tách ra chứng từ nào duyệt được / hủy duyệt được
+    const checkedDraftIds = Array.from(selectedApproveIds).filter((id) => {
+        const item = analyses.find((a) => a.id === id);
+        return item && item.workflowStatusCode !== 'APPROVED';
+    });
+
+    const checkedApprovedIds = Array.from(selectedApproveIds).filter((id) => {
+        const item = analyses.find((a) => a.id === id);
+        return item && item.workflowStatusCode === 'APPROVED';
+    });
+
+    const handleBulkApprove = async () => {
+        if (checkedDraftIds.length === 0) return;
+
+        const confirmed = window.confirm(
+            `Bạn có chắc muốn duyệt ${checkedDraftIds.length} chứng từ đã chọn?`
+        );
+
+        if (!confirmed) return;
+
+        setBulkApproving(true);
+
+        try {
+            const results = await Promise.allSettled(
+                checkedDraftIds.map((id) => gsdAnalysisService.approve(id))
+            );
+
+            const failed = results.filter((r) => r.status === 'rejected').length;
+            const succeeded = results.length - failed;
+
+            alert(
+                failed > 0
+                    ? `Đã duyệt ${succeeded}/${results.length} chứng từ. ${failed} chứng từ thất bại.`
+                    : `Đã duyệt ${succeeded} chứng từ.`
+            );
+
+            /*
+             * Bỏ tích TOÀN BỘ (kể cả các chứng từ đã "Đã duyệt" sẵn,
+             * không đổi trạng thái lần này) - không chỉ riêng mấy dòng
+             * vừa được duyệt lên. Người dùng phải tick lại từ đầu cho
+             * lần cập nhật tiếp theo.
+             */
+            setSelectedApproveIds(new Set());
+
+            await onRefresh?.();
+        } finally {
+            setBulkApproving(false);
+        }
+    };
+
+    /*
+     * Gộp Duyệt/Hủy duyệt thành 1 nút "Cập nhật trạng thái":
+     * - Trong các chứng từ đã tick, còn CÓ chứng từ nào đang "Mới"
+     *   -> duyệt lên "Đã duyệt" (chỉ đổi mấy chứng từ Mới, chứng từ
+     *      đã duyệt sẵn giữ nguyên giá trị, không đụng vào).
+     * - Tick toàn chứng từ đã "Đã duyệt" rồi, không còn cái nào "Mới"
+     *   -> hủy duyệt xuống lại "Mới".
+     * Dù đi theo hướng nào, sau khi cập nhật xong đều bỏ tích HẾT tất
+     * cả chứng từ đang tick (không riêng mấy dòng vừa đổi trạng thái).
+     */
+    const handleUpdateApprovalStatus = async () => {
+        if (checkedDraftIds.length > 0) {
+            await handleBulkApprove();
+            return;
+        }
+
+        await handleBulkUnapprove();
+    };
+
+    const handleBulkUnapprove = async () => {
+        if (checkedApprovedIds.length === 0) return;
+
+        const confirmed = window.confirm(
+            `Bạn có chắc muốn hủy duyệt ${checkedApprovedIds.length} chứng từ đã chọn?`
+        );
+
+        if (!confirmed) return;
+
+        setBulkApproving(true);
+
+        try {
+            const results = await Promise.allSettled(
+                checkedApprovedIds.map((id) => gsdAnalysisService.unapprove(id))
+            );
+
+            const failed = results.filter((r) => r.status === 'rejected').length;
+            const succeeded = results.length - failed;
+
+            alert(
+                failed > 0
+                    ? `Đã hủy duyệt ${succeeded}/${results.length} chứng từ. ${failed} chứng từ thất bại.`
+                    : `Đã hủy duyệt ${succeeded} chứng từ.`
+            );
+
+            // Bỏ tích toàn bộ, giống hệt handleBulkApprove.
+            setSelectedApproveIds(new Set());
+
+            await onRefresh?.();
+        } finally {
+            setBulkApproving(false);
+        }
+    };
 
     return (
         <div className="bg-white border-slate-200 p-5 pt-2">
@@ -411,7 +582,12 @@ export default function GsdProcessTable({
                             <Button
                                 variant='warning'
                                 onClick={onEdit}
-                                disabled={!selectedId}
+                                disabled={!selectedId || isSelectedApproved}
+                                title={
+                                    isSelectedApproved
+                                        ? 'Chứng từ đã duyệt, không thể sửa. Vui lòng hủy duyệt trước.'
+                                        : undefined
+                                }
                                 size='sm'
                                 leftIcon={<Edit className='w-4 h-4' />}
                             >
@@ -431,7 +607,6 @@ export default function GsdProcessTable({
                             </Button>
                         )}
 
-
                         {permissions.canDelete && (
                             <Button
                                 variant='danger'
@@ -443,6 +618,27 @@ export default function GsdProcessTable({
                                 }
                             >
                                 Trash
+                            </Button>
+                        )}
+
+                        {permissions.canApprove && (
+                            <Button
+                                variant={checkedDraftIds.length > 0 ? 'success' : 'warning'}
+                                disabled={selectedApproveIds.size === 0 || bulkApproving}
+                                size='sm'
+                                leftIcon={<CheckCircle className='w-4 h-4' />}
+                                onClick={() => void handleUpdateApprovalStatus()}
+                                title={
+                                    checkedDraftIds.length > 0
+                                        ? 'Duyệt các chứng từ "Mới" đang tick, chứng từ đã duyệt giữ nguyên'
+                                        : 'Tick toàn chứng từ đã duyệt sẽ hủy duyệt, chuyển lại thành "Mới"'
+                                }
+                            >
+                                {bulkApproving
+                                    ? 'Processing...'
+                                    : selectedApproveIds.size > 0
+                                        ? `Update status (${selectedApproveIds.size})`
+                                        : 'Update status'}
                             </Button>
                         )}
 
@@ -464,6 +660,18 @@ export default function GsdProcessTable({
                 <table className="min-w-[1100px] w-full text-xs border-collapse">
                     <thead className="bg-slate-50 text-slate-500 uppercase sticky top-0 z-10">
                         <tr>
+                            {permissions.canApprove && (
+                                <th className="px-4 py-1.5 border border-slate-200 text-center">
+                                    <input
+                                        type="checkbox"
+                                        className="w-3.5 h-3.5 cursor-pointer"
+                                        checked={isAllFilteredChecked}
+                                        onChange={toggleSelectAllFiltered}
+                                        title="Chọn tất cả để duyệt/hủy duyệt hàng loạt"
+                                    />
+                                </th>
+                            )}
+
                             <th className="px-4 py-1.5 border border-slate-200 text-left">
                                 STT
                             </th>
@@ -495,7 +703,6 @@ export default function GsdProcessTable({
                                     options={skillGradeOptions}
                                     selectedValues={selectedSkillGradeValues}
                                     onChange={setSelectedSkillGradeValues}
-                                    align="right"
                                 />
                             </th>
 
@@ -552,6 +759,16 @@ export default function GsdProcessTable({
                                     options={createdAtOptions}
                                     selectedValues={selectedCreatedAtValues}
                                     onChange={setSelectedCreatedAtValues}
+                                />
+                            </th>
+
+                            <th className="relative px-4 py-1.5 border border-slate-200 text-center whitespace-nowrap">
+                                <DropdownColumnFilter
+                                    title="Trạng thái"
+                                    options={statusOptions}
+                                    selectedValues={selectedStatusValues}
+                                    onChange={setSelectedStatusValues}
+                                    align="center"
                                 />
                             </th>
                         </tr>
@@ -612,6 +829,19 @@ export default function GsdProcessTable({
                                         `}
                                         title="Chọn công đoạn"
                                     >
+                                        {permissions.canApprove && (
+                                            <td
+                                                className="px-4 py-3 border border-slate-200 text-center"
+                                                onClick={(event) => event.stopPropagation()}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    className="w-3.5 h-3.5 cursor-pointer"
+                                                    checked={selectedApproveIds.has(item.id)}
+                                                    onChange={() => toggleApproveSelection(item.id)}
+                                                />
+                                            </td>
+                                        )}
 
                                         <td className="px-4 py-3 border border-slate-200 font-mono text-slate-500 text-sm">
                                             {index + 1}
@@ -691,6 +921,17 @@ export default function GsdProcessTable({
 
                                         <td className="px-4 py-1.5 border border-slate-200 text-slate-500 text-sm whitespace-nowrap">
                                             {formatDateTime(item.createdAt || item.analysisDate)}
+                                        </td>
+
+                                        <td className="px-4 py-3 border border-slate-200 text-center whitespace-nowrap">
+                                            <span
+                                                className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-bold ${item.workflowStatusCode === 'APPROVED'
+                                                    ? 'bg-green-100 text-green-700'
+                                                    : 'bg-slate-100 text-slate-600'
+                                                    }`}
+                                            >
+                                                {getApprovalStatusLabel(item.workflowStatusCode)}
+                                            </span>
                                         </td>
 
                                         {/* {onDetailClick && (

@@ -5,6 +5,10 @@ import SourceActionPickerModal from '../components/SourceActionPickerModal';
 import { gsdAnalysisService, getGsdAnalysisImageUrl } from '../services/gsdAnalysis.service';
 import { MetricCard } from '../../../shared/components';
 import { formatOperationName } from "../utils/gsdAnalysis.formatters";
+import {
+    DIFFICULTY_PERCENT_OPTIONS,
+    getLaborGradeByDifficulty,
+} from '../constants/laborGrade';
 
 
 
@@ -35,14 +39,6 @@ function formatNumber(value: number | null | undefined, digits = 2) {
     return numberValue.toFixed(digits);
 }
 
-
-function getLaborGradeByDifficulty(value: number | null | undefined) {
-    if (value === null || value === undefined || value === 0) return 2;
-    if (Number(value) === 5) return 3;
-    if (Number(value) === 10) return 4;
-    if (Number(value) === 15) return 5;
-    return 6;
-}
 
 type MachineSearchOption = {
     id: number | string;
@@ -663,21 +659,16 @@ export default function GsdAnalysisEditor({
                                     }
                                     className="h-10 w-full rounded-lg border border-slate-300 bg-white px-3 text-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                                 >
-                                    <option value={0}>
-                                        0%
-                                    </option>
-                                    <option value={5}>
-                                        5%
-                                    </option>
-                                    <option value={10}>
-                                        10%
-                                    </option>
-                                    <option value={15}>
-                                        15%
-                                    </option>
-                                    <option value={20}>
-                                        20%
-                                    </option>
+                                    {DIFFICULTY_PERCENT_OPTIONS.map(
+                                        (percent) => (
+                                            <option
+                                                key={percent}
+                                                value={percent}
+                                            >
+                                                {percent}%
+                                            </option>
+                                        )
+                                    )}
                                 </select>
                             </div>
 

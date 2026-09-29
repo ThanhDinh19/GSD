@@ -8,15 +8,36 @@ function toNumber(value, defaultValue = 0) {
     return Number.isNaN(numberValue) ? defaultValue : numberValue;
 }
 
+// Bảng quy đổi Mức độ phức tạp (%) -> Bậc thợ
+const LABOR_GRADE_BY_DIFFICULTY = [
+    { difficultyPercent: 0, laborGrade: 1 },
+    { difficultyPercent: 3, laborGrade: 2 },
+    { difficultyPercent: 6, laborGrade: 2 },
+    { difficultyPercent: 9, laborGrade: 3 },
+    { difficultyPercent: 12, laborGrade: 3 },
+    { difficultyPercent: 15, laborGrade: 4 },
+    { difficultyPercent: 18, laborGrade: 4 },
+    { difficultyPercent: 21, laborGrade: 5 },
+    { difficultyPercent: 24, laborGrade: 5 },
+    { difficultyPercent: 27, laborGrade: 6 },
+    { difficultyPercent: 30, laborGrade: 6 },
+];
+
 function calculateSkillGrade(difficultyPercent) {
     const value = toNumber(difficultyPercent, 0);
 
-    if (!value) return 2;
-    if (value === 5) return 3;
-    if (value === 10) return 4;
-    if (value === 15) return 5;
+    if (!value || value < 0) return LABOR_GRADE_BY_DIFFICULTY[0].laborGrade;
 
-    return 6;
+    // Giá trị không nằm đúng trong bảng lấy theo mốc gần nhất phía dưới
+    let matched = LABOR_GRADE_BY_DIFFICULTY[0];
+
+    for (const item of LABOR_GRADE_BY_DIFFICULTY) {
+        if (value >= item.difficultyPercent) {
+            matched = item;
+        }
+    }
+
+    return matched.laborGrade;
 }
 
 function generateAnalysisNo() {
@@ -617,8 +638,43 @@ async function createAnalysis(
 async function getAnalyses() {
     const pool = getPool();
 
+    /*
+     * Trước đây JOIN thẳng gsd_analysis_image_links/media_files và
+     * organization_unit_employee - cả 2 đều là quan hệ 1-nhiều (1 công
+     * đoạn có thể có nhiều ảnh, 1 nhân viên có thể có nhiều dòng đơn vị
+     * theo thời gian). JOIN thẳng làm NHÂN DÒNG: 1 công đoạn xuất hiện
+     * 2 lần với cùng id -> React nhận 2 phần tử cùng key, render nhầm
+     * checkbox giữa 2 dòng mỗi khi bảng load lại (thấy rõ khi bấm
+     * duyệt/hủy duyệt hàng loạt rồi refresh - tick bị mất sai chỗ).
+     *
+     * Dùng ROW_NUMBER() để chỉ lấy đúng 1 ảnh (mới nhất theo sort_order)
+     * và đúng 1 đơn vị (mới nhất) cho mỗi công đoạn/nhân viên.
+     */
     const result = await pool.request().query(`
-               SELECT
+        WITH PrimaryImage AS (
+            SELECT
+                l.gsd_analysis_id,
+                f.image_url,
+                f.image_file_name,
+                ROW_NUMBER() OVER (
+                    PARTITION BY l.gsd_analysis_id
+                    ORDER BY l.sort_order ASC, l.media_file_id ASC
+                ) AS rn
+            FROM gsd_analysis_image_links l
+            LEFT JOIN media_files f ON f.id = l.media_file_id
+        ),
+        LatestEmployeeUnit AS (
+            SELECT
+                oue.employee_code,
+                dt.department_name,
+                ROW_NUMBER() OVER (
+                    PARTITION BY oue.employee_code
+                    ORDER BY oue.id DESC
+                ) AS rn
+            FROM organization_unit_employee oue
+            LEFT JOIN departments_test dt ON dt.department_code = oue.unit_code
+        )
+        SELECT
             a.is_deleted,
             a.id AS [id],
             a.analysis_no AS [analysisNo],
@@ -638,23 +694,24 @@ async function getAnalyses() {
             a.final_smv AS [finalSmv],
             a.skill_grade AS [skillGrade],
             a.created_at AS [createdAt],
-            files.image_url as [imageUrl],
-            files.image_file_name as [imageFileName],
+            img.image_url as [imageUrl],
+            img.image_file_name as [imageFileName],
 
             -- thêm người tạo, chi nhánh
             emp.full_name AS [employeeName], -- Người tạo
-            d.department_name AS [department] -- Chi nhánh 
+            unitInfo.department_name AS [department], -- Chi nhánh
+
+            -- Trạng thái duyệt: DRAFT (Mới) / APPROVED (Đã duyệt)
+            a.workflow_status_code AS [workflowStatusCode]
 
 
         FROM gsd_analysis_headers a
         LEFT JOIN sources s ON a.source_id = s.id
         LEFT JOIN machine_equipments_test m ON a.machine_id = m.id
-        LEFT JOIN gsd_analysis_image_links links ON links.gsd_analysis_id = a.id
-        LEFT JOIN media_files files ON links.media_file_id = files.id
+        LEFT JOIN PrimaryImage img ON img.gsd_analysis_id = a.id AND img.rn = 1
         LEFT JOIN auth.users u ON u.id = a.created_by_user_id
         LEFT JOIN hr.employees emp ON emp.id = u.employee_id
-        LEFT JOIN organization_unit_employee orn ON orn.employee_code = emp.employee_code
-        LEFT JOIN departments_test d ON d.department_code = orn.unit_code
+        LEFT JOIN LatestEmployeeUnit unitInfo ON unitInfo.employee_code = emp.employee_code AND unitInfo.rn = 1
         WHERE a.is_deleted = 0
         ORDER BY a.id DESC
     `);
@@ -705,7 +762,10 @@ async function getAnalysisById(id) {
         a.created_at AS [createdAt],
         a.updated_at AS [updatedAt],
         files.image_file_name AS [imageFileName],
-        files.image_url AS [imageUrl]
+        files.image_url AS [imageUrl],
+
+        -- Trạng thái duyệt: DRAFT (Mới) / APPROVED (Đã duyệt)
+        a.workflow_status_code AS [workflowStatusCode]
       FROM gsd_analysis_headers a
       LEFT JOIN sources s ON a.source_id = s.id
       LEFT JOIN machine_equipments_test m ON a.machine_id = m.id
@@ -893,7 +953,7 @@ async function updateAnalysis(id, payload, context = {}) {
     const currentResult = await pool.request()
         .input('id', sql.Int, analysisId)
         .query(`
-            SELECT TOP 1 id, analysis_no AS [analysisNo]
+            SELECT TOP 1 id, analysis_no AS [analysisNo], workflow_status_code AS [workflowStatusCode]
             FROM dbo.gsd_analysis_headers
             WHERE id = @id
         `);
@@ -903,6 +963,12 @@ async function updateAnalysis(id, payload, context = {}) {
     if (!current) {
         const err = new Error('Không tìm thấy phân tích công đoạn cần cập nhật.');
         err.statusCode = 404;
+        throw err;
+    }
+
+    if (current.workflowStatusCode === 'APPROVED') {
+        const err = new Error('Chứng từ đã được duyệt, không thể chỉnh sửa. Vui lòng hủy duyệt trước khi sửa.');
+        err.statusCode = 400;
         throw err;
     }
 
@@ -1259,6 +1325,75 @@ async function deactivate(id, context = {}) {
     return result.rowsAffected[0] > 0;
 }
 
+async function setApprovalStatus(id, targetStatusCode, context = {}) {
+    const pool = getPool();
+    const userId = Number(context.userId);
+
+    if (!Number.isInteger(userId) || userId <= 0) {
+        const err = new Error('Bạn chưa đăng nhập.');
+        err.statusCode = 401;
+        throw err;
+    }
+
+    const analysisId = Number(id);
+
+    if (!Number.isInteger(analysisId) || analysisId <= 0) {
+        const err = new Error('Mã phân tích công đoạn không hợp lệ.');
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const currentResult = await pool.request()
+        .input('id', sql.Int, analysisId)
+        .query(`
+            SELECT TOP 1 id, is_deleted, workflow_status_code AS [workflowStatusCode]
+            FROM gsd_analysis_headers
+            WHERE id = @id
+        `);
+
+    const current = currentResult.recordset[0];
+
+    if (!current || current.is_deleted) {
+        const err = new Error('Không tìm thấy chứng từ.');
+        err.statusCode = 404;
+        throw err;
+    }
+
+    if (current.workflowStatusCode === targetStatusCode) {
+        const err = new Error(
+            targetStatusCode === 'APPROVED'
+                ? 'Chứng từ đã được duyệt.'
+                : 'Chứng từ chưa được duyệt.'
+        );
+        err.statusCode = 400;
+        throw err;
+    }
+
+    const result = await pool.request()
+        .input('id', sql.Int, analysisId)
+        .input('workflow_status_code', sql.VarChar(30), targetStatusCode)
+        .input('updated_by_user_id', sql.BigInt, userId)
+        .query(`
+            UPDATE gsd_analysis_headers
+            SET
+                workflow_status_code = @workflow_status_code,
+                updated_by_user_id = @updated_by_user_id,
+                updated_at = SYSDATETIME()
+            WHERE id = @id
+                AND is_deleted = 0
+        `);
+
+    return result.rowsAffected[0] > 0;
+}
+
+async function approveAnalysis(id, context = {}) {
+    return setApprovalStatus(id, 'APPROVED', context);
+}
+
+async function unapproveAnalysis(id, context = {}) {
+    return setApprovalStatus(id, 'DRAFT', context);
+}
+
 module.exports = {
     getSourceActionsForAnalysis,
     calculateAnalysis,
@@ -1269,6 +1404,8 @@ module.exports = {
     getAnalysisCopyDraft,
     insertImages,
     deactivate,
+    approveAnalysis,
+    unapproveAnalysis,
 };
 
 

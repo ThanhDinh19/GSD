@@ -11,8 +11,9 @@ import DepartmentTypeMasterPage from './DepartmentTypeMasterPage';
 import SkillGradeMasterPage from './SkillGradeMasterPage';
 import SalaryCoefficientMasterPage from './SalaryCoefficientMasterPage';
 import CustomerMasterPage from './CustomerMasterPage';
+import BalanceTypeMasterPage from './BalanceTypeMasterPage';
 
-type MasterTabKey = 'salary-coefficient' | 'skill-grade' | 'clusters' | 'gsd-codes' | 'machine-equipments' | 'sources' | 'source-action-mapping' | 'works' | 'product-category' | 'product-category-group' | 'department-type' | 'customer';
+type MasterTabKey = 'salary-coefficient' | 'skill-grade' | 'clusters' | 'gsd-codes' | 'machine-equipments' | 'sources' | 'source-action-mapping' | 'works' | 'product-category' | 'product-category-group' | 'department-type' | 'customer' | 'balance-type';
 
 interface MasterTab {
     key: MasterTabKey;
@@ -82,6 +83,11 @@ const masterTabs: MasterTab[] = [
         label: 'Khách hàng',
         description: '',
     },
+    {
+        key: 'balance-type',
+        label: 'Danh mục loại cân bằng',
+        description: 'Quản lý loại cân bằng',
+    },
 ];
 
 interface MasterDataPageTestProps {
@@ -130,6 +136,9 @@ export default function MasterDataPage_test({
 
             case 'customer':
                 return <CustomerMasterPage />
+
+            case 'balance-type':
+                return <BalanceTypeMasterPage />;
 
             default:
                 return <ClusterMasterPage />;

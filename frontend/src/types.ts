@@ -498,6 +498,22 @@ export interface ProductCatePayload {
   statusId: number;
 }
 
+
+export interface BalanceType {
+  id: number;
+  balanceTypeCode: string;
+  balanceTypeName: string;
+  statusId: number;
+  statusName?: string;
+  createdAt?: string;
+}
+
+export interface BalanceTypePayload {
+  balanceTypeCode: string;
+  balanceTypeName: string;
+  statusId: number;
+}
+
 // dinh 07/07/2026
 export interface ProductCateGroup {
   id: number;
